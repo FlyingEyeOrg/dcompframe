@@ -24,11 +24,19 @@ struct Style {
 
 class Theme {
 public:
+    static Theme make_dark();
+    static Theme make_light();
+    static Theme make_brand();
+
     void set_style(std::string key, Style style);
     [[nodiscard]] Style resolve(const std::string& key, const Style& fallback = {}) const;
 
+    void set_active_palette(std::string palette_name);
+    [[nodiscard]] const std::string& active_palette() const;
+
 private:
     std::unordered_map<std::string, Style> styles_;
+    std::string active_palette_ = "dark";
 };
 
 }  // namespace dcompframe

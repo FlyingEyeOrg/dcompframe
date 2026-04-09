@@ -4,7 +4,10 @@
 #include <dcomp.h>
 
 #include <algorithm>
+#include <fstream>
 #include <numeric>
+
+#include <nlohmann/json.hpp>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dcomp.lib")
@@ -76,6 +79,40 @@ void DiagnosticsCenter::record_frame(std::chrono::milliseconds frame_time) {
     frame_times_.push_back(frame_time);
 }
 
+void DiagnosticsCenter::record_commit() {
+    const auto now = std::chrono::steady_clock::now();
+    if (commit_count_ == 0) {
+        first_commit_time_ = now;
+    }
+    last_commit_time_ = now;
+    ++commit_count_;
+}
+
+void DiagnosticsCenter::update_resource_peak(std::size_t total_bytes) {
+    if (total_bytes > peak_resource_bytes_) {
+        peak_resource_bytes_ = total_bytes;
+    }
+}
+
+bool DiagnosticsCenter::export_report(const std::filesystem::path& output) const {
+    nlohmann::json json;
+    json["log_count"] = log_count();
+    json["warning_count"] = warning_count();
+    json["error_count"] = error_count();
+    json["average_frame_ms"] = average_frame_ms();
+    json["frame_p95_ms"] = frame_p95_ms();
+    json["commits_per_second"] = commits_per_second();
+    json["peak_resource_bytes"] = peak_resource_bytes();
+
+    std::ofstream file(output);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    file << json.dump(2);
+    return true;
+}
+
 std::size_t DiagnosticsCenter::log_count() const {
     return logs_.size();
 }
@@ -107,6 +144,38 @@ double DiagnosticsCenter::average_frame_ms() const {
     return static_cast<double>(total.count()) / static_cast<double>(frame_times_.size());
 }
 
+double DiagnosticsCenter::frame_p95_ms() const {
+    if (frame_times_.empty()) {
+        return 0.0;
+    }
+
+    std::vector<long long> values;
+    values.reserve(frame_times_.size());
+    for (const auto frame : frame_times_) {
+        values.push_back(frame.count());
+    }
+    std::sort(values.begin(), values.end());
+    const std::size_t idx = static_cast<std::size_t>(0.95 * static_cast<double>(values.size() - 1));
+    return static_cast<double>(values[idx]);
+}
+
+double DiagnosticsCenter::commits_per_second() const {
+    if (commit_count_ <= 1) {
+        return 0.0;
+    }
+
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(last_commit_time_ - first_commit_time_);
+    if (duration.count() <= 0) {
+        return static_cast<double>(commit_count_);
+    }
+
+    return static_cast<double>(commit_count_) * 1000.0 / static_cast<double>(duration.count());
+}
+
+std::size_t DiagnosticsCenter::peak_resource_bytes() const {
+    return peak_resource_bytes_;
+}
+
 CompositionBridge::CompositionBridge(RenderManager* owner) : owner_(owner) {}
 
 bool CompositionBridge::bind_target_handle(HWND hwnd) {
@@ -129,7 +198,9 @@ bool CompositionBridge::commit_changes(bool has_dirty_changes) {
 
     ++commit_count_;
     owner_->notify_commit();
+    owner_->diagnostics().record_commit();
     owner_->diagnostics().record_frame(std::chrono::milliseconds {16});
+    owner_->diagnostics().update_resource_peak(owner_->resource_manager().total_bytes());
     return true;
 }
 

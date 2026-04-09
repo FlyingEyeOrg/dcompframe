@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "dcompframe/binding/observable.h"
 #include "dcompframe/controls/style.h"
 #include "dcompframe/ui_element.h"
 
@@ -69,10 +70,80 @@ public:
 
     void set_on_click(std::function<void()> callback);
     bool click();
+    void bind_enabled(Observable<bool>& observable);
 
 private:
     std::string text_;
     std::function<void()> on_click_ {};
+    int enabled_binding_id_ = 0;
+};
+
+class TextBox : public StyledElement {
+public:
+    TextBox();
+
+    void set_text(std::string text);
+    [[nodiscard]] const std::string& text() const;
+
+    void set_placeholder(std::string placeholder);
+    [[nodiscard]] const std::string& placeholder() const;
+
+    void bind_text(Observable<std::string>& observable);
+
+private:
+    std::string text_;
+    std::string placeholder_;
+    int text_binding_id_ = 0;
+};
+
+class ListView : public StyledElement {
+public:
+    ListView();
+
+    void set_items(std::vector<std::string> items);
+    [[nodiscard]] const std::vector<std::string>& items() const;
+    void set_selected_index(std::size_t index);
+    [[nodiscard]] std::optional<std::size_t> selected_index() const;
+
+private:
+    std::vector<std::string> items_;
+    std::optional<std::size_t> selected_index_ {};
+};
+
+class ScrollViewer : public StyledElement {
+public:
+    ScrollViewer();
+
+    void set_scroll_offset(float x, float y);
+    [[nodiscard]] Point scroll_offset() const;
+
+private:
+    Point offset_ {};
+};
+
+class CheckBox : public StyledElement {
+public:
+    CheckBox();
+
+    void set_checked(bool checked);
+    [[nodiscard]] bool checked() const;
+
+private:
+    bool checked_ = false;
+};
+
+class Slider : public StyledElement {
+public:
+    Slider();
+
+    void set_range(float min_value, float max_value);
+    void set_value(float value);
+    [[nodiscard]] float value() const;
+
+private:
+    float min_ = 0.0F;
+    float max_ = 100.0F;
+    float value_ = 0.0F;
 };
 
 class Card : public StyledElement {
@@ -91,6 +162,7 @@ public:
 
     void set_primary_action(std::shared_ptr<Button> action);
     [[nodiscard]] std::shared_ptr<Button> primary_action() const;
+    void bind(BindingContext& context);
 
 private:
     std::string title_;
@@ -98,6 +170,8 @@ private:
     std::string icon_;
     std::vector<std::string> tags_;
     std::shared_ptr<Button> primary_action_ {};
+    int title_binding_id_ = 0;
+    int body_binding_id_ = 0;
 };
 
 }  // namespace dcompframe

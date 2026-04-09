@@ -1,0 +1,10 @@
+{
+  "width": 1280,
+  "height": 720,
+  "use_directx_backend": false,
+  "theme_name": "brand",
+  "card_style": {
+    "corner_radius": 18.0,
+    "border_thickness": 1.5
+  }
+}

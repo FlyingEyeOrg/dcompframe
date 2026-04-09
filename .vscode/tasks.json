@@ -191,6 +191,21 @@
       "problemMatcher": []
     },
     {
+      "label": "Package x64 Release (ZIP)",
+      "type": "shell",
+      "command": "cpack",
+      "args": [
+        "-G",
+        "ZIP",
+        "-C",
+        "Release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/build/vs2022-x64"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Debug Prep Demo x64",
       "dependsOn": [
         "Configure x64",

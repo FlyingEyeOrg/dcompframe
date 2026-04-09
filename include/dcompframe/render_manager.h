@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -76,15 +77,25 @@ class DiagnosticsCenter {
 public:
     void log(LogLevel level, std::string message);
     void record_frame(std::chrono::milliseconds frame_time);
+    void record_commit();
+    void update_resource_peak(std::size_t total_bytes);
+    bool export_report(const std::filesystem::path& output) const;
 
     [[nodiscard]] std::size_t log_count() const;
     [[nodiscard]] std::size_t warning_count() const;
     [[nodiscard]] std::size_t error_count() const;
     [[nodiscard]] double average_frame_ms() const;
+    [[nodiscard]] double frame_p95_ms() const;
+    [[nodiscard]] double commits_per_second() const;
+    [[nodiscard]] std::size_t peak_resource_bytes() const;
 
 private:
     std::vector<LogEntry> logs_;
     std::vector<std::chrono::milliseconds> frame_times_;
+    std::size_t commit_count_ = 0;
+    std::chrono::steady_clock::time_point first_commit_time_ {};
+    std::chrono::steady_clock::time_point last_commit_time_ {};
+    std::size_t peak_resource_bytes_ = 0;
 };
 
 class RenderManager;

@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [vs2022-x64, vs2022-x86]
+        buildPreset: [debug, release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: "**/vcpkg.json"
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}-${{ matrix.buildPreset }}
+
+      - name: Test (Debug only)
+        if: matrix.buildPreset == 'debug'
+        run: ctest --preset ${{ matrix.preset }}-debug-tests
+
+      - name: clang-format check config exists
+        run: |
+          if (!(Test-Path .clang-format)) { throw ".clang-format missing" }
+
+      - name: clang-tidy check config exists
+        run: |
+          if (!(Test-Path .clang-tidy)) { throw ".clang-tidy missing" }

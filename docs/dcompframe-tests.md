@@ -26,6 +26,13 @@
 18. `LayoutManagerTests.StackStrategyAppliesSequentialBounds`
 19. `WindowRenderTargetTests.InitializeAndPresentFrames`
 20. `WindowHostTests.MessageLoopExitsWhenQuitPosted`
+21. `ThemeTests.BuiltinPalettesWork`
+22. `BindingTests.CardAndTextBoxBindingsUpdateState`
+23. `ControlExtensionTests.AdditionalControlsStoreAndExposeState`
+24. `InputManagerTests.FocusDoubleClickAndDragAreHandled`
+25. `ConfigTests.JsonConfigCanBeLoaded`
+26. `DiagnosticsTests.ExportReportAndMetricsWork`
+27. `IntegrationTests.WindowRenderAnimationAndInputFlow`
 
 ## 覆盖点
 
@@ -40,4 +47,5 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：20/20 通过
+- 结果：27/27 通过
+- 补充验证：`ctest --preset vs2022-x86-debug-tests`，27/27 通过

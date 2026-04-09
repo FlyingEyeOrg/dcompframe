@@ -55,6 +55,11 @@
 - `Image`：图像资源引用控件。
 - `Button`：支持回调点击与禁用态。
 - `Card`：支持标题、正文、图标、标签与主操作按钮组合。
+- `TextBox`：支持占位文本和可观察字符串绑定。
+- `ListView`：支持数据项和选中索引。
+- `ScrollViewer`：支持滚动偏移。
+- `CheckBox`：支持勾选态与选中样式。
+- `Slider`：支持范围和数值设置。
 
 ## 样式与主题
 
@@ -79,3 +84,24 @@
 - `DeviceRecovery`：设备丢失与恢复计数。
 - `DiagnosticsCenter`：日志和帧耗时统计。
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
+
+## 输入系统
+
+职责：处理焦点环、点击/双击和拖拽行为。
+
+- `InputManager`：焦点切换、点击、双击、拖拽回调。
+
+## 数据绑定
+
+职责：将状态变化同步到控件/组件。
+
+- `Observable<T>`：可观察值容器。
+- `BindingContext`：业务字段绑定容器。
+- `Card::bind` / `TextBox::bind_text` / `Button::bind_enabled`。
+
+## 配置与错误
+
+职责：配置驱动运行参数与统一错误边界。
+
+- `AppConfigLoader`：JSON 配置加载。
+- `Status` / `ErrorCode`：统一状态返回。
