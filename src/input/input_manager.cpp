@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include <windows.h>
+
 namespace dcompframe {
 
 void InputManager::set_focus_ring_root(const std::shared_ptr<UIElement>& root) {
@@ -59,9 +61,6 @@ void InputManager::on_mouse_down(const std::shared_ptr<UIElement>& target, Point
     last_click_target_ = target;
     drag_target_ = target;
     drag_start_ = position;
-    press_started_at_ = now;
-    pressed_target_ = target;
-    long_press_fired_ = false;
 }
 
 void InputManager::on_mouse_move(Point position) {
@@ -78,20 +77,6 @@ void InputManager::on_mouse_move(Point position) {
 void InputManager::on_mouse_up(Point /*position*/) {
     drag_target_.reset();
     drag_start_.reset();
-    pressed_target_.reset();
-    long_press_fired_ = false;
-}
-
-void InputManager::tick(std::chrono::milliseconds hold_threshold) {
-    if (!pressed_target_ || long_press_fired_ || !long_press_handler_) {
-        return;
-    }
-
-    const auto now = std::chrono::steady_clock::now();
-    if (now - press_started_at_ >= hold_threshold) {
-        long_press_handler_(*pressed_target_);
-        long_press_fired_ = true;
-    }
 }
 
 void InputManager::set_click_handler(ClickHandler handler) {
@@ -106,12 +91,38 @@ void InputManager::set_drag_handler(DragHandler handler) {
     drag_handler_ = std::move(handler);
 }
 
-void InputManager::set_long_press_handler(LongPressHandler handler) {
-    long_press_handler_ = std::move(handler);
+void InputManager::register_shortcut(int virtual_key, bool ctrl, bool alt, bool shift, ShortcutHandler handler) {
+    shortcuts_[make_shortcut_key(virtual_key, ctrl, alt, shift)] = std::move(handler);
+}
+
+bool InputManager::on_key_down(int virtual_key, bool ctrl, bool alt, bool shift) {
+    const auto it = shortcuts_.find(make_shortcut_key(virtual_key, ctrl, alt, shift));
+    if (it == shortcuts_.end()) {
+        return false;
+    }
+
+    if (it->second) {
+        it->second();
+    }
+    return true;
 }
 
 std::shared_ptr<UIElement> InputManager::focused_element() const {
     return focused_;
+}
+
+std::uint32_t InputManager::make_shortcut_key(int virtual_key, bool ctrl, bool alt, bool shift) {
+    std::uint32_t key = static_cast<std::uint32_t>(virtual_key & 0xFFFF);
+    if (ctrl) {
+        key |= (1U << 16U);
+    }
+    if (alt) {
+        key |= (1U << 17U);
+    }
+    if (shift) {
+        key |= (1U << 18U);
+    }
+    return key;
 }
 
 }  // namespace dcompframe

@@ -2,6 +2,7 @@
 
 #include <dxgi.h>
 #include <iterator>
+#include <string>
 
 namespace dcompframe {
 
@@ -92,6 +93,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         }
 
         render_manager_->notify_commit();
+        render_manager_->enqueue_command(RenderCommand {.type = RenderCommandType::Present, .payload = "dx11-present"});
         render_manager_->diagnostics().record_commit();
         render_manager_->diagnostics().record_frame(std::chrono::milliseconds {16});
         render_manager_->diagnostics().update_resource_peak(render_manager_->resource_manager().total_bytes());
@@ -99,8 +101,27 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         return true;
     }
 
+    if (has_dirty_changes && window_host_ != nullptr && window_host_->hwnd() != nullptr) {
+        HDC dc = GetDC(window_host_->hwnd());
+        if (dc != nullptr) {
+            RECT rect {};
+            GetClientRect(window_host_->hwnd(), &rect);
+            const COLORREF color = RGB(24, static_cast<int>(80 + (presented_frames_ % 120)), 140);
+            HBRUSH brush = CreateSolidBrush(color);
+            FillRect(dc, &rect, brush);
+            DeleteObject(brush);
+
+            SetBkMode(dc, TRANSPARENT);
+            SetTextColor(dc, RGB(255, 255, 255));
+            const std::wstring text = L"DCompFrame fallback renderer active";
+            TextOutW(dc, 16, 16, text.c_str(), static_cast<int>(text.size()));
+            ReleaseDC(window_host_->hwnd(), dc);
+        }
+    }
+
     const bool committed = bridge_.commit_changes(has_dirty_changes);
     if (committed) {
+        render_manager_->enqueue_command(RenderCommand {.type = RenderCommandType::Commit, .payload = "bridge-commit"});
         ++presented_frames_;
     }
 
@@ -131,30 +152,26 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     };
     D3D_FEATURE_LEVEL used_feature_level = D3D_FEATURE_LEVEL_11_0;
 
-    HRESULT hr = D3D11CreateDevice(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        create_flags,
-        feature_levels,
-        static_cast<UINT>(std::size(feature_levels)),
-        D3D11_SDK_VERSION,
-        &d3d_device_,
-        &used_feature_level,
-        &d3d_context_);
-
-    if (FAILED(hr)) {
-        hr = D3D11CreateDevice(
+    const auto create_device = [&](D3D_DRIVER_TYPE driver_type, UINT flags) {
+        return D3D11CreateDevice(
             nullptr,
-            D3D_DRIVER_TYPE_WARP,
+            driver_type,
             nullptr,
-            create_flags,
+            flags,
             feature_levels,
             static_cast<UINT>(std::size(feature_levels)),
             D3D11_SDK_VERSION,
             &d3d_device_,
             &used_feature_level,
             &d3d_context_);
+    };
+
+    HRESULT hr = create_device(D3D_DRIVER_TYPE_HARDWARE, create_flags);
+    if (FAILED(hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
+        hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
+    }
+    if (FAILED(hr)) {
+        hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
     }
 
     if (FAILED(hr) || d3d_device_ == nullptr || d3d_context_ == nullptr) {

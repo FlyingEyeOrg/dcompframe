@@ -48,11 +48,22 @@ TEST(ControlExtensionTests, AdditionalControlsStoreAndExposeState) {
     list_view.set_selected_index(1);
     ASSERT_TRUE(list_view.selected_index().has_value());
     EXPECT_EQ(*list_view.selected_index(), 1U);
+    list_view.set_groups({
+        ListGroup {.name = "G1", .items = {"A", "B"}},
+        ListGroup {.name = "G2", .items = {"C", "D"}},
+    });
+    const auto visible = list_view.visible_range(8.0F, 24.0F, 8.0F);
+    EXPECT_EQ(visible.first, 1U);
+    EXPECT_GE(visible.second, visible.first);
 
     ScrollViewer scroll;
     scroll.set_scroll_offset(10.0F, 20.0F);
     EXPECT_FLOAT_EQ(scroll.scroll_offset().x, 10.0F);
     EXPECT_FLOAT_EQ(scroll.scroll_offset().y, 20.0F);
+    scroll.set_inertia_velocity(0.2F, 0.1F);
+    scroll.tick_inertia(std::chrono::milliseconds {10});
+    EXPECT_GT(scroll.scroll_offset().x, 10.0F);
+    EXPECT_GT(scroll.scroll_offset().y, 20.0F);
 
     CheckBox check;
     check.set_checked(true);
@@ -77,13 +88,13 @@ TEST(InputManagerTests, FocusDoubleClickAndDragAreHandled) {
 
     int click_count = 0;
     int double_click_count = 0;
-    int long_press_count = 0;
+    int shortcut_count = 0;
     Point drag_delta {};
 
     input.set_click_handler([&](UIElement&) { ++click_count; });
     input.set_double_click_handler([&](UIElement&) { ++double_click_count; });
     input.set_drag_handler([&](UIElement&, Point delta) { drag_delta = delta; });
-    input.set_long_press_handler([&](UIElement&) { ++long_press_count; });
+    input.register_shortcut('S', true, false, false, [&shortcut_count] { ++shortcut_count; });
 
     input.focus_next();
     EXPECT_EQ(input.focused_element(), a);
@@ -96,12 +107,38 @@ TEST(InputManagerTests, FocusDoubleClickAndDragAreHandled) {
     EXPECT_GE(double_click_count, 1);
 
     input.on_mouse_down(b, Point {.x = 2.0F, .y = 2.0F});
-    input.tick(std::chrono::milliseconds {0});
     input.on_mouse_move(Point {.x = 9.0F, .y = 11.0F});
     input.on_mouse_up(Point {.x = 9.0F, .y = 11.0F});
     EXPECT_FLOAT_EQ(drag_delta.x, 7.0F);
     EXPECT_FLOAT_EQ(drag_delta.y, 9.0F);
-    EXPECT_EQ(long_press_count, 1);
+    EXPECT_TRUE(input.on_key_down('S', true, false, false));
+    EXPECT_EQ(shortcut_count, 1);
+}
+
+TEST(TextBoxTests, CompositionAndSelectionWorkflow) {
+    TextBox text_box;
+    text_box.set_text("abcd");
+    text_box.set_selection(1, 3);
+    text_box.set_composition_text("XYZ");
+    text_box.commit_composition();
+
+    EXPECT_EQ(text_box.text(), "aXYZd");
+    EXPECT_TRUE(text_box.composition_text().empty());
+    const auto [start, end] = text_box.selection();
+    EXPECT_EQ(start, end);
+}
+
+TEST(RenderManagerTests, BackendRegistryAndCommandBatchingWork) {
+    RenderManager manager;
+    const auto backends = manager.supported_backends();
+    EXPECT_GE(backends.size(), 4U);
+
+    manager.enqueue_command(RenderCommand {.type = RenderCommandType::Clear, .payload = "c0"});
+    manager.enqueue_command(RenderCommand {.type = RenderCommandType::Commit, .payload = "c1"});
+    auto drained = manager.drain_commands();
+    ASSERT_EQ(drained.size(), 2U);
+    EXPECT_EQ(drained[0].payload, "c0");
+    EXPECT_EQ(drained[1].payload, "c1");
 }
 
 TEST(ConfigTests, JsonConfigCanBeLoaded) {

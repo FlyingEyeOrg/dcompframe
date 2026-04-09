@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,7 +16,20 @@ namespace dcompframe {
 
 enum class RenderBackend {
     Simulated,
-    DirectX
+    DirectX,
+    Warp,
+    DirectX12
+};
+
+enum class RenderCommandType {
+    Clear,
+    Commit,
+    Present
+};
+
+struct RenderCommand {
+    RenderCommandType type = RenderCommandType::Commit;
+    std::string payload;
 };
 
 enum class ResourceType {
@@ -125,6 +141,7 @@ public:
     [[nodiscard]] bool is_initialized() const;
     [[nodiscard]] RenderCapabilities capabilities() const;
     [[nodiscard]] RenderBackend backend() const;
+    [[nodiscard]] std::vector<RenderBackend> supported_backends() const;
     [[nodiscard]] CompositionBridge create_composition_bridge();
     [[nodiscard]] int total_commit_count() const;
     [[nodiscard]] ResourceManager& resource_manager();
@@ -133,6 +150,12 @@ public:
     [[nodiscard]] const DeviceRecovery& device_recovery() const;
     [[nodiscard]] DiagnosticsCenter& diagnostics();
     [[nodiscard]] const DiagnosticsCenter& diagnostics() const;
+
+    void enqueue_command(RenderCommand command);
+    [[nodiscard]] std::vector<RenderCommand> drain_commands();
+    void start_render_thread();
+    void stop_render_thread();
+    [[nodiscard]] bool is_render_thread_running() const;
 
     void notify_commit();
 
@@ -144,6 +167,11 @@ private:
     ResourceManager resource_manager_ {};
     DeviceRecovery device_recovery_ {};
     DiagnosticsCenter diagnostics_ {};
+    std::queue<RenderCommand> command_queue_ {};
+    mutable std::mutex command_queue_mutex_ {};
+    std::thread render_thread_ {};
+    bool render_thread_running_ = false;
+    mutable std::mutex render_thread_mutex_ {};
 };
 
 }  // namespace dcompframe

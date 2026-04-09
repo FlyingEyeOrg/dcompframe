@@ -50,6 +50,7 @@ if(BUILD_TESTING)
         tests/tools_and_layout_manager_tests.cpp
         tests/product_features_tests.cpp
         tests/integration_flow_tests.cpp
+        tests/reliability_tests.cpp
     )
 
     target_compile_features(dcompframe_tests PRIVATE cxx_std_20)

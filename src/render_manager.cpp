@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iterator>
 #include <numeric>
 
 #include <nlohmann/json.hpp>
@@ -230,6 +231,13 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
         return initialize(true);
     }
 
+    if (backend == RenderBackend::DirectX12) {
+        diagnostics_.log(LogLevel::Warning, "DirectX12 backend is not implemented yet");
+        capabilities_ = {};
+        initialized_ = false;
+        return false;
+    }
+
     UINT create_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #if defined(_DEBUG)
     create_flags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -246,17 +254,38 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
     ID3D11DeviceContext* raw_context = nullptr;
     D3D_FEATURE_LEVEL actual_level = D3D_FEATURE_LEVEL_10_0;
 
-    const HRESULT d3d_hr = D3D11CreateDevice(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        create_flags,
-        feature_levels,
-        static_cast<UINT>(std::size(feature_levels)),
-        D3D11_SDK_VERSION,
-        &raw_device,
-        &actual_level,
-        &raw_context);
+    const auto create_device = [&](D3D_DRIVER_TYPE driver_type, UINT flags) {
+        return D3D11CreateDevice(
+            nullptr,
+            driver_type,
+            nullptr,
+            flags,
+            feature_levels,
+            static_cast<UINT>(std::size(feature_levels)),
+            D3D11_SDK_VERSION,
+            &raw_device,
+            &actual_level,
+            &raw_context);
+    };
+
+    HRESULT d3d_hr = E_FAIL;
+    if (backend == RenderBackend::Warp) {
+        d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, create_flags);
+        if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
+            d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
+        }
+    } else {
+        d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, create_flags);
+        if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
+            d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
+        }
+        if (FAILED(d3d_hr)) {
+            d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
+            if (SUCCEEDED(d3d_hr)) {
+                backend_ = RenderBackend::Warp;
+            }
+        }
+    }
 
     if (raw_context != nullptr) {
         raw_context->Release();
@@ -301,6 +330,7 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
 }
 
 void RenderManager::shutdown() {
+    stop_render_thread();
     initialized_ = false;
     capabilities_ = {};
     total_commit_count_ = 0;
@@ -321,6 +351,15 @@ RenderCapabilities RenderManager::capabilities() const {
 
 RenderBackend RenderManager::backend() const {
     return backend_;
+}
+
+std::vector<RenderBackend> RenderManager::supported_backends() const {
+    return {
+        RenderBackend::Simulated,
+        RenderBackend::DirectX,
+        RenderBackend::Warp,
+        RenderBackend::DirectX12,
+    };
 }
 
 int RenderManager::total_commit_count() const {
@@ -353,6 +392,65 @@ DiagnosticsCenter& RenderManager::diagnostics() {
 
 const DiagnosticsCenter& RenderManager::diagnostics() const {
     return diagnostics_;
+}
+
+void RenderManager::enqueue_command(RenderCommand command) {
+    std::lock_guard<std::mutex> lock(command_queue_mutex_);
+    command_queue_.push(std::move(command));
+}
+
+std::vector<RenderCommand> RenderManager::drain_commands() {
+    std::vector<RenderCommand> drained;
+    std::lock_guard<std::mutex> lock(command_queue_mutex_);
+    while (!command_queue_.empty()) {
+        drained.push_back(std::move(command_queue_.front()));
+        command_queue_.pop();
+    }
+    return drained;
+}
+
+void RenderManager::start_render_thread() {
+    std::lock_guard<std::mutex> lock(render_thread_mutex_);
+    if (render_thread_running_) {
+        return;
+    }
+
+    render_thread_running_ = true;
+    render_thread_ = std::thread([this]() {
+        while (true) {
+            {
+                std::lock_guard<std::mutex> guard(render_thread_mutex_);
+                if (!render_thread_running_) {
+                    break;
+                }
+            }
+
+            auto commands = drain_commands();
+            if (!commands.empty()) {
+                diagnostics_.log(LogLevel::Info, "Render thread drained batched commands");
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds {1});
+        }
+    });
+}
+
+void RenderManager::stop_render_thread() {
+    {
+        std::lock_guard<std::mutex> lock(render_thread_mutex_);
+        if (!render_thread_running_) {
+            return;
+        }
+        render_thread_running_ = false;
+    }
+
+    if (render_thread_.joinable()) {
+        render_thread_.join();
+    }
+}
+
+bool RenderManager::is_render_thread_running() const {
+    std::lock_guard<std::mutex> lock(render_thread_mutex_);
+    return render_thread_running_;
 }
 
 }  // namespace dcompframe

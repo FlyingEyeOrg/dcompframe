@@ -34,6 +34,11 @@
 26. `DiagnosticsTests.ExportReportAndMetricsWork`
 27. `IntegrationTests.WindowRenderAnimationAndInputFlow`
 28. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
+29. `ReliabilityTests.SoakBaselineLoopMaintainsConsistency`
+30. `ReliabilityTests.ResourcePeakPatrolStaysBoundedAfterReleaseCycles`
+31. `ReliabilityTests.FaultInjectionCoversDeviceLostConfigMissingAndCorruptJson`
+32. `TextBoxTests.CompositionAndSelectionWorkflow`
+33. `RenderManagerTests.BackendRegistryAndCommandBatchingWork`
 
 ## 覆盖点
 
@@ -45,9 +50,12 @@
 - 动画时间线、属性更新、完成回收
 - 窗口渲染目标呈现链路
 - 设备丢失/恢复集成压测循环与恢复稳定性
+- 交互高级能力：文本选择/输入法组合、列表虚拟范围、惯性滚动、快捷键命令路由
+- 可靠性：soak baseline、资源峰值巡检、配置缺失与损坏故障注入
+- 架构能力：可插拔后端清单、命令缓冲与批量 drain
 
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：28/28 通过
-- 补充验证：`ctest --preset vs2022-x86-debug-tests`，28/28 通过
+- 结果：33/33 通过
+- 补充验证：`ctest --preset vs2022-x86-debug-tests`，33/33 通过

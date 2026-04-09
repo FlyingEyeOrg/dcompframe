@@ -39,6 +39,7 @@ int main() {
             return 1;
         }
     }
+    render_manager.start_render_thread();
 
     dcompframe::WindowHost host;
     if (!host.create(L"DCompFrame Demo", config.width, config.height)) {
@@ -76,10 +77,20 @@ int main() {
 
     auto text_box = std::make_shared<dcompframe::TextBox>();
     text_box->set_placeholder("Type title via binding");
+    text_box->set_text("Demo");
+    text_box->set_selection(0, 4);
+    text_box->set_composition_text("DCompFrame");
+    text_box->commit_composition();
 
     auto list_view = std::make_shared<dcompframe::ListView>();
     list_view->set_items({"Overview", "Diagnostics", "Settings", "About"});
     list_view->set_selected_index(1);
+    list_view->set_groups({
+        dcompframe::ListGroup {.name = "Core", .items = {"Overview", "Diagnostics"}},
+        dcompframe::ListGroup {.name = "App", .items = {"Settings", "About"}},
+    });
+    const auto visible = list_view->visible_range(0.0F, 48.0F, 16.0F);
+    render_manager.diagnostics().log(dcompframe::LogLevel::Info, fmt::format("List visible range: {}-{}", visible.first, visible.second));
 
     auto check_box = std::make_shared<dcompframe::CheckBox>();
     check_box->set_checked(true);
@@ -90,6 +101,8 @@ int main() {
 
     auto scroll_viewer = std::make_shared<dcompframe::ScrollViewer>();
     scroll_viewer->set_scroll_offset(16.0F, 48.0F);
+    scroll_viewer->set_inertia_velocity(0.02F, 0.12F);
+    scroll_viewer->tick_inertia(std::chrono::milliseconds {120});
 
     auto stack = std::make_shared<dcompframe::StackPanel>(dcompframe::Orientation::Vertical);
     stack->set_spacing(12.0F);
@@ -150,14 +163,14 @@ int main() {
     input.set_drag_handler([&](dcompframe::UIElement&, dcompframe::Point delta) {
         render_manager.diagnostics().log(dcompframe::LogLevel::Info, fmt::format("Drag delta=({}, {})", delta.x, delta.y));
     });
-    input.set_long_press_handler([&](dcompframe::UIElement&) {
-        render_manager.diagnostics().log(dcompframe::LogLevel::Info, "Long press captured");
+    input.register_shortcut('S', true, false, false, [&render_manager] {
+        render_manager.diagnostics().log(dcompframe::LogLevel::Info, "Ctrl+S command executed");
     });
     input.on_mouse_down(action, dcompframe::Point {.x = 10.0F, .y = 10.0F});
     input.on_mouse_down(action, dcompframe::Point {.x = 10.0F, .y = 10.0F});
-    input.tick(std::chrono::milliseconds {0});
     input.on_mouse_move(dcompframe::Point {.x = 30.0F, .y = 24.0F});
     input.on_mouse_up(dcompframe::Point {.x = 30.0F, .y = 24.0F});
+    input.on_key_down('S', true, false, false);
     action->click();
 
     render_manager.resource_manager().register_resource("main-card-texture", dcompframe::ResourceType::Texture, 2048 * 2048 * 4);
@@ -170,6 +183,7 @@ int main() {
 
     const auto report_path = std::filesystem::path("build") / "diagnostics-report.json";
     render_manager.diagnostics().export_report(report_path);
+    const auto drained = render_manager.drain_commands();
 
     fmt::print(
         "DCompFrame demo initialized. dpi_scale={:.2f}, target_ready={}, commits={}, resources={}, avg_frame_ms={:.2f}, p95_ms={:.2f}, cps={:.2f}, theme={}\n",
@@ -182,8 +196,10 @@ int main() {
         render_manager.diagnostics().commits_per_second(),
         theme.active_palette());
     fmt::print("Message loop exited. rendered_frames={}\n", rendered);
+    fmt::print("Drained render commands: {}\n", drained.size());
     fmt::print("Diagnostics report: {}\n", report_path.string());
 
+    render_manager.stop_render_thread();
     host.destroy();
 
     return 0;

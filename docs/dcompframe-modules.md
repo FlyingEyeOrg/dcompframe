@@ -7,6 +7,9 @@
 - `RenderManager::initialize(bool)`：模拟后端初始化。
 - `RenderManager::initialize_with_backend(RenderBackend)`：按后端策略初始化（含 DirectX 路径）。
 - `RenderManager::shutdown()`：清理状态和资源注册表。
+- `RenderManager::supported_backends()`：返回可插拔后端列表。
+- `RenderManager::enqueue_command/drain_commands`：命令缓冲与批量提交基础能力。
+- `RenderManager::start_render_thread/stop_render_thread`：渲染线程生命周期控制。
 - `CompositionBridge::bind_target_handle(HWND)`：绑定提交目标。
 - `CompositionBridge::commit_changes(bool)`：执行提交门禁并记录提交计数/帧统计。
 
@@ -55,9 +58,9 @@
 - `Image`：图像资源引用控件。
 - `Button`：支持回调点击与禁用态。
 - `Card`：支持标题、正文、图标、标签与主操作按钮组合。
-- `TextBox`：支持占位文本和可观察字符串绑定。
-- `ListView`：支持数据项和选中索引。
-- `ScrollViewer`：支持滚动偏移。
+- `TextBox`：支持占位文本、可观察字符串绑定、文本选择和输入法组合提交。
+- `ListView`：支持数据项、选中索引、分组与可视范围计算。
+- `ScrollViewer`：支持滚动偏移与惯性滚动。
 - `CheckBox`：支持勾选态与选中样式。
 - `Slider`：支持范围和数值设置。
 
@@ -90,10 +93,10 @@
 
 ## 输入系统
 
-职责：处理焦点环、点击/双击、拖拽和长按行为。
+职责：处理焦点环、点击/双击、拖拽与快捷键命令路由。
 
-- `InputManager`：焦点切换、点击、双击、拖拽、长按回调。
-- `InputManager::tick`：按阈值触发长按手势。
+- `InputManager`：焦点切换、点击、双击、拖拽回调。
+- `InputManager::register_shortcut/on_key_down`：快捷键注册与命令分发。
 
 ## 数据绑定
 

@@ -15,8 +15,15 @@
 ## 2. 渲染后端策略
 
 - 保留 `Simulated` 后端用于测试与快速验证。
-- 提供 `DirectX` 后端入口，使用 D3D11 设备并通过 DXGI 创建设备到 DComp。
+- 提供可插拔后端枚举：`Simulated` / `DirectX` / `Warp` / `DirectX12(预留)`。
+- 当前渲染实现覆盖 DX11（硬件与 WARP），DX12 保留插件位并给出明确未实现状态。
 - 统一通过 `CompositionBridge` 执行提交门禁和节流。
+
+## 2.2 渲染线程与命令缓冲
+
+- `RenderManager` 提供线程安全命令队列（enqueue/drain）。
+- 提供后台渲染线程生命周期（start/stop）以支持 UI 与渲染解耦。
+- 当前阶段以基础设施和测试验证为主，后续接入真实异步提交与批处理调度策略。
 
 ## 2.1 窗口消息循环策略
 
@@ -63,3 +70,10 @@
 - 主路径：`WS_EX_NOREDIRECTIONBITMAP + DirectComposition + DX11`。
 - 初始化回退：D3D11 设备创建按 `Hardware -> WARP` 顺序降级。
 - 运行时回退：demo 在 DirectX 后端初始化失败时自动降级到 `Simulated`，避免直接退出。
+
+## 9. 交互系统策略
+
+- `TextBox` 增加文本选择与输入法组合提交模型（selection + composition）。
+- `ListView` 增加分组模型和虚拟窗口范围计算（virtual range）。
+- `ScrollViewer` 增加惯性滚动速度模型与阻尼衰减。
+- 输入命令系统基于快捷键路由（如 Ctrl+S）实现轻量 command dispatch。

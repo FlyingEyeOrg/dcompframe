@@ -1,6 +1,7 @@
 #include "dcompframe/controls/controls.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace dcompframe {
 
@@ -110,6 +111,43 @@ const std::string& TextBox::placeholder() const {
     return placeholder_;
 }
 
+void TextBox::set_selection(std::size_t start, std::size_t end) {
+    const std::size_t max_size = text_.size();
+    selection_start_ = std::min(start, max_size);
+    selection_end_ = std::min(end, max_size);
+    if (selection_start_ > selection_end_) {
+        std::swap(selection_start_, selection_end_);
+    }
+    mark_dirty();
+}
+
+std::pair<std::size_t, std::size_t> TextBox::selection() const {
+    return {selection_start_, selection_end_};
+}
+
+void TextBox::set_composition_text(std::string text) {
+    composition_text_ = std::move(text);
+    mark_dirty();
+}
+
+const std::string& TextBox::composition_text() const {
+    return composition_text_;
+}
+
+void TextBox::commit_composition() {
+    if (composition_text_.empty()) {
+        return;
+    }
+
+    const std::size_t start = std::min(selection_start_, text_.size());
+    const std::size_t end = std::min(selection_end_, text_.size());
+    text_.replace(start, end - start, composition_text_);
+    selection_start_ = start + composition_text_.size();
+    selection_end_ = selection_start_;
+    composition_text_.clear();
+    mark_dirty();
+}
+
 void TextBox::bind_text(Observable<std::string>& observable) {
     if (text_binding_id_ != 0) {
         observable.unbind(text_binding_id_);
@@ -150,6 +188,33 @@ std::optional<std::size_t> ListView::selected_index() const {
     return selected_index_;
 }
 
+void ListView::set_groups(std::vector<ListGroup> groups) {
+    groups_ = std::move(groups);
+    items_.clear();
+    for (const auto& group : groups_) {
+        items_.insert(items_.end(), group.items.begin(), group.items.end());
+    }
+    if (selected_index_ && *selected_index_ >= items_.size()) {
+        selected_index_.reset();
+    }
+    mark_dirty();
+}
+
+const std::vector<ListGroup>& ListView::groups() const {
+    return groups_;
+}
+
+std::pair<std::size_t, std::size_t> ListView::visible_range(float scroll_offset, float viewport_height, float item_height) const {
+    if (items_.empty() || viewport_height <= 0.0F || item_height <= 0.0F) {
+        return {0U, 0U};
+    }
+
+    const std::size_t begin = static_cast<std::size_t>(std::max(0.0F, scroll_offset) / item_height);
+    const std::size_t visible_count = static_cast<std::size_t>(std::ceil(viewport_height / item_height)) + 1U;
+    const std::size_t end = std::min(items_.size(), begin + visible_count);
+    return {std::min(begin, items_.size()), end};
+}
+
 ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {}
 
 void ScrollViewer::set_scroll_offset(float x, float y) {
@@ -159,6 +224,35 @@ void ScrollViewer::set_scroll_offset(float x, float y) {
 
 Point ScrollViewer::scroll_offset() const {
     return offset_;
+}
+
+void ScrollViewer::set_inertia_velocity(float x, float y) {
+    velocity_ = Point {.x = x, .y = y};
+}
+
+void ScrollViewer::tick_inertia(std::chrono::milliseconds delta_time, float deceleration) {
+    const float dt = static_cast<float>(delta_time.count());
+    if (dt <= 0.0F) {
+        return;
+    }
+
+    offset_.x += velocity_.x * dt;
+    offset_.y += velocity_.y * dt;
+
+    const auto damp = [&](float value) {
+        if (value > 0.0F) {
+            return std::max(0.0F, value - deceleration * dt);
+        }
+        return std::min(0.0F, value + deceleration * dt);
+    };
+
+    velocity_.x = damp(velocity_.x);
+    velocity_.y = damp(velocity_.y);
+    mark_dirty();
+}
+
+Point ScrollViewer::inertia_velocity() const {
+    return velocity_;
 }
 
 CheckBox::CheckBox() : StyledElement("check_box") {

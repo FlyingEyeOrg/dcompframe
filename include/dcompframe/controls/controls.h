@@ -1,8 +1,10 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dcompframe/binding/observable.h"
@@ -88,12 +90,27 @@ public:
     void set_placeholder(std::string placeholder);
     [[nodiscard]] const std::string& placeholder() const;
 
+    void set_selection(std::size_t start, std::size_t end);
+    [[nodiscard]] std::pair<std::size_t, std::size_t> selection() const;
+
+    void set_composition_text(std::string text);
+    [[nodiscard]] const std::string& composition_text() const;
+    void commit_composition();
+
     void bind_text(Observable<std::string>& observable);
 
 private:
     std::string text_;
     std::string placeholder_;
+    std::size_t selection_start_ = 0;
+    std::size_t selection_end_ = 0;
+    std::string composition_text_;
     int text_binding_id_ = 0;
+};
+
+struct ListGroup {
+    std::string name;
+    std::vector<std::string> items;
 };
 
 class ListView : public StyledElement {
@@ -105,8 +122,13 @@ public:
     void set_selected_index(std::size_t index);
     [[nodiscard]] std::optional<std::size_t> selected_index() const;
 
+    void set_groups(std::vector<ListGroup> groups);
+    [[nodiscard]] const std::vector<ListGroup>& groups() const;
+    [[nodiscard]] std::pair<std::size_t, std::size_t> visible_range(float scroll_offset, float viewport_height, float item_height) const;
+
 private:
     std::vector<std::string> items_;
+    std::vector<ListGroup> groups_;
     std::optional<std::size_t> selected_index_ {};
 };
 
@@ -116,9 +138,13 @@ public:
 
     void set_scroll_offset(float x, float y);
     [[nodiscard]] Point scroll_offset() const;
+    void set_inertia_velocity(float x, float y);
+    void tick_inertia(std::chrono::milliseconds delta_time, float deceleration = 0.0015F);
+    [[nodiscard]] Point inertia_velocity() const;
 
 private:
     Point offset_ {};
+    Point velocity_ {};
 };
 
 class CheckBox : public StyledElement {
