@@ -17,6 +17,10 @@ add_library(dcompframe
     src/ui_element.cpp
     src/layout/grid_panel.cpp
     src/layout/stack_panel.cpp
+    src/controls/style.cpp
+    src/controls/controls.cpp
+    src/animation/animation_manager.cpp
+    src/tools/window_render_target.cpp
 )
 
 target_include_directories(dcompframe
@@ -26,6 +30,11 @@ target_include_directories(dcompframe
 
 target_compile_features(dcompframe PUBLIC cxx_std_20)
 target_link_libraries(dcompframe PUBLIC fmt::fmt)
+target_compile_definitions(dcompframe PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX)
+
+if(WIN32)
+    target_link_libraries(dcompframe PUBLIC d3d11 dxgi dcomp user32 gdi32)
+endif()
 
 if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
@@ -33,6 +42,8 @@ if(BUILD_TESTING)
     add_executable(dcompframe_tests
         tests/render_and_window_tests.cpp
         tests/ui_and_layout_tests.cpp
+        tests/controls_and_animation_tests.cpp
+        tests/tools_and_layout_manager_tests.cpp
     )
 
     target_compile_features(dcompframe_tests PRIVATE cxx_std_20)

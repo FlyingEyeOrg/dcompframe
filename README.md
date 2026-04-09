@@ -3,14 +3,24 @@
 DCompFrame 是一个基于 C++20 + CMake + vcpkg 的 Windows UI 框架原型，面向
 `Direct3D11 + DirectComposition + WS_EX_NOREDIRECTIONBITMAP` 技术路线。
 
-## 当前实现范围（阶段 1/2 最小可用）
+## 当前实现范围（完整工程版）
 
-- 渲染层骨架：`RenderManager`、`CompositionBridge`
-- 窗口层骨架：`WindowHost`（默认包含 `WS_EX_NOREDIRECTIONBITMAP`）
-- UI 核心层：`UIElement` 视觉树与捕获/目标/冒泡事件分发
-- 布局面板：`GridPanel`、`StackPanel`
-- 测试：10 个单元测试（全部通过）
-- 示例：`dcompframe_demo`
+- 渲染层：
+	- `RenderManager`（`Simulated` / `DirectX` 后端）
+	- `CompositionBridge`
+	- `ResourceManager`、`DeviceRecovery`、`DiagnosticsCenter`
+- 窗口层：
+	- `WindowHost`（创建/销毁、消息循环、状态管理、DPI、`WS_EX_NOREDIRECTIONBITMAP`）
+	- `WindowRenderTarget`
+- UI 核心：
+	- `UIElement`（视觉树、事件捕获/目标/冒泡、脏标记、焦点、变换、裁剪）
+	- `LayoutManager`
+- 布局层：`GridPanel`、`StackPanel`
+- 控件层：`Panel`、`TextBlock`、`Image`、`Button`、`Card`
+- 主题样式：`Theme` / `Style`
+- 动画层：`AnimationManager`（属性动画 + 缓动）
+- 测试：19 个单元测试（全部通过）
+- 示例：`dcompframe_demo`（已覆盖完整模块链路）
 
 ## 依赖管理
 
@@ -58,7 +68,7 @@ docs/                    # 项目文档
 
 ## 后续规划
 
-- 接入真实 D3D11 / DirectComposition 设备与目标
-- 扩展输入系统（键鼠焦点细化）
-- 引入控件层（Button/TextBlock/Card）
-- 引入动画与资源恢复机制
+- 接入真实 D2D/DirectWrite 到 D3D11 纹理绘制路径
+- 扩展输入系统（拖拽、双击、键盘导航）
+- 增加数据绑定与更多控件（ListView/TextBox）
+- 增强设备丢失恢复与性能压测

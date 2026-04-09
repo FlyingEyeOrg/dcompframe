@@ -7,25 +7,36 @@
 ## 用例清单
 
 1. `RenderManagerTests.InitializeAndShutdown`
-2. `RenderManagerTests.CommitRequiresInitBindingAndDirtyFlag`
-3. `WindowHostTests.DefaultConfigIncludesNoRedirectionBitmap`
-4. `WindowHostTests.ResizeAndDpiChangeTriggerRedraw`
-5. `WindowHostTests.StateTransitionsAreTracked`
-6. `UIElementTests.VisualTreeAddAndRemoveChild`
-7. `UIElementTests.EventDispatchSupportsCaptureTargetAndBubble`
-8. `GridPanelTests.ArrangeSplitsCellsAndAppliesPlacement`
-9. `StackPanelTests.VerticalArrangeRespectsSpacing`
-10. `StackPanelTests.HorizontalArrangeWrapsWhenEnabled`
+2. `RenderManagerTests.ResourceManagerAndRecoveryWorkflows`
+3. `RenderManagerTests.CommitRequiresInitBindingAndDirtyFlag`
+4. `WindowHostTests.DefaultConfigIncludesNoRedirectionBitmap`
+5. `WindowHostTests.ResizeAndDpiChangeTriggerRedraw`
+6. `WindowHostTests.StateTransitionsAreTracked`
+7. `WindowHostTests.CreateMessageLoopAndDestroy`
+8. `UIElementTests.VisualTreeAddAndRemoveChild`
+9. `UIElementTests.EventDispatchSupportsCaptureTargetAndBubble`
+10. `UIElementTests.DirtyAndFocusFlagsPropagateCorrectly`
+11. `GridPanelTests.ArrangeSplitsCellsAndAppliesPlacement`
+12. `StackPanelTests.VerticalArrangeRespectsSpacing`
+13. `StackPanelTests.HorizontalArrangeWrapsWhenEnabled`
+14. `ControlsTests.ThemeResolvesAndButtonClickStateWorks`
+15. `ControlsTests.CardStoresMetadataAndAction`
+16. `AnimationTests.PropertyAnimationUpdatesElementAndCompletes`
+17. `AnimationTests.PositionAnimationChangesBounds`
+18. `LayoutManagerTests.StackStrategyAppliesSequentialBounds`
+19. `WindowRenderTargetTests.InitializeAndPresentFrames`
 
 ## 覆盖点
 
-- 渲染初始化与提交门禁
-- 窗口样式、DPI 处理、重绘触发
-- 视觉树结构维护
-- 事件分发顺序
-- Grid / Stack 布局结果
+- 渲染初始化、提交门禁、资源管理、设备恢复、诊断统计
+- 窗口样式、生命周期、消息循环、DPI、状态切换
+- 视觉树结构、事件分发、脏标记、焦点
+- Grid / Stack / LayoutManager 布局结果
+- 控件状态机、样式主题、Card 组合结构
+- 动画时间线、属性更新、完成回收
+- 窗口渲染目标呈现链路
 
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：10/10 通过
+- 结果：19/19 通过

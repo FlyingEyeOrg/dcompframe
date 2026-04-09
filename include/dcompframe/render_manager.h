@@ -1,9 +1,91 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 #include <windows.h>
 
 namespace dcompframe {
+
+enum class RenderBackend {
+    Simulated,
+    DirectX
+};
+
+enum class ResourceType {
+    Texture,
+    Buffer,
+    Unknown
+};
+
+struct RenderCapabilities {
+    bool d3d11_ready = false;
+    bool dcomp_ready = false;
+    bool d2d_ready = false;
+    bool dwrite_ready = false;
+};
+
+struct GpuResourceInfo {
+    std::string name;
+    ResourceType type = ResourceType::Unknown;
+    std::size_t byte_size = 0;
+};
+
+class ResourceManager {
+public:
+    bool register_resource(std::string name, ResourceType type, std::size_t byte_size);
+    bool release_resource(const std::string& name);
+    void clear();
+
+    [[nodiscard]] std::size_t resource_count() const;
+    [[nodiscard]] std::size_t total_bytes() const;
+    [[nodiscard]] bool contains(const std::string& name) const;
+
+private:
+    std::unordered_map<std::string, GpuResourceInfo> resources_;
+};
+
+class DeviceRecovery {
+public:
+    void notify_device_lost();
+    bool try_recover();
+
+    [[nodiscard]] bool is_device_lost() const;
+    [[nodiscard]] int recover_count() const;
+
+private:
+    bool device_lost_ = false;
+    int recover_count_ = 0;
+};
+
+enum class LogLevel {
+    Info,
+    Warning,
+    Error
+};
+
+struct LogEntry {
+    LogLevel level = LogLevel::Info;
+    std::string message;
+};
+
+class DiagnosticsCenter {
+public:
+    void log(LogLevel level, std::string message);
+    void record_frame(std::chrono::milliseconds frame_time);
+
+    [[nodiscard]] std::size_t log_count() const;
+    [[nodiscard]] std::size_t warning_count() const;
+    [[nodiscard]] std::size_t error_count() const;
+    [[nodiscard]] double average_frame_ms() const;
+
+private:
+    std::vector<LogEntry> logs_;
+    std::vector<std::chrono::milliseconds> frame_times_;
+};
 
 class RenderManager;
 
@@ -26,17 +108,31 @@ private:
 class RenderManager {
 public:
     bool initialize(bool simulate_device_available = true);
+    bool initialize_with_backend(RenderBackend backend);
     void shutdown();
 
     [[nodiscard]] bool is_initialized() const;
+    [[nodiscard]] RenderCapabilities capabilities() const;
+    [[nodiscard]] RenderBackend backend() const;
     [[nodiscard]] CompositionBridge create_composition_bridge();
     [[nodiscard]] int total_commit_count() const;
+    [[nodiscard]] ResourceManager& resource_manager();
+    [[nodiscard]] const ResourceManager& resource_manager() const;
+    [[nodiscard]] DeviceRecovery& device_recovery();
+    [[nodiscard]] const DeviceRecovery& device_recovery() const;
+    [[nodiscard]] DiagnosticsCenter& diagnostics();
+    [[nodiscard]] const DiagnosticsCenter& diagnostics() const;
 
     void notify_commit();
 
 private:
     bool initialized_ = false;
+    RenderBackend backend_ = RenderBackend::Simulated;
+    RenderCapabilities capabilities_ {};
     int total_commit_count_ = 0;
+    ResourceManager resource_manager_ {};
+    DeviceRecovery device_recovery_ {};
+    DiagnosticsCenter diagnostics_ {};
 };
 
 }  // namespace dcompframe

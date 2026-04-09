@@ -2,24 +2,35 @@
 
 ## 已完成
 
-- 完成 CMake 工程初始化，启用 C++20。
-- 确认并使用 vcpkg 管理第三方依赖（fmt、gtest）。
-- 采用 TDD 流程完成首批能力：
-  - 红灯：先编写 10 个测试并执行失败。
-  - 绿灯：实现 `RenderManager`、`WindowHost`、`UIElement`、`GridPanel`、`StackPanel`。
-  - 回归：10/10 测试通过。
-- 编写并验证 demo：`dcompframe_demo`。
-- 修复构建问题：MSVC Runtime 与 `x64-windows-static` triplet 一致化。
+- 工程基础：完成 CMake + vcpkg + C++20 工程化配置。
+- 渲染层：
+  - `RenderManager` 支持 `Simulated` 与 `DirectX` 后端初始化入口。
+  - `CompositionBridge` 完成绑定、提交与提交计数。
+  - 新增 `ResourceManager`、`DeviceRecovery`、`DiagnosticsCenter`。
+- 窗口层：
+  - `WindowHost` 支持创建/销毁、可见性、状态切换、DPI、消息循环渲染调度。
+  - 默认扩展样式保持 `WS_EX_NOREDIRECTIONBITMAP`。
+- UI 核心层：
+  - `UIElement` 新增透明度、裁剪、变换、边距、焦点、脏标记与递归清理。
+  - 新增 `LayoutManager`，支持 `Absolute/Stack/Grid` 布局策略。
+- 布局面板：`GridPanel` 与 `StackPanel` 完成布局计算和换行能力。
+- 控件层：完成 `Panel`、`TextBlock`、`Image`、`Button`、`Card` 与主题样式系统。
+- 动画层：完成 `AnimationManager`，支持位置/透明度/旋转/裁剪属性动画和缓动函数。
+- 工具层：完成 `WindowRenderTarget`，实现窗口与提交流程桥接。
+- 测试：从 10 个扩展到 19 个测试，`ctest` 全部通过。
+- demo：升级 `dcompframe_demo`，覆盖窗口、控件、动画、资源、诊断与渲染目标链路。
 
 ## 当前状态
 
-- 阶段 1（基础渲染与窗口框架）: 最小骨架已完成。
-- 阶段 2（UI 核心与视觉树）: 核心行为已完成并测试覆盖。
-- 阶段 3（布局面板）: `GridPanel` / `StackPanel` 基础能力已完成。
+- 阶段 1（基础渲染与窗口框架）：完成。
+- 阶段 2（UI 核心与视觉树）：完成。
+- 阶段 3（布局面板与控件实现）：完成。
+- 阶段 4（动画与效果）：核心能力完成。
+- 阶段 5（稳定性、测试与文档）：进行中，当前测试和文档已同步到最新实现。
 
-## 待办
+## 后续待办
 
-- 接入真实 Direct3D11 / DirectComposition 初始化与提交流程。
-- 增加 DPI/窗口状态的更细粒度行为测试。
-- 增加控件层（Button/Panel/TextBlock/Image/Card）。
-- 引入动画、资源管理与设备恢复模块。
+- 补充真实 D2D/DirectWrite 到 D3D 纹理绘制链路。
+- 增加设备丢失/恢复的集成级压测用例。
+- 增加更复杂控件（ListView/TextBox）与数据绑定能力。
+- 增强 DWM 兼容说明与回退策略文档。

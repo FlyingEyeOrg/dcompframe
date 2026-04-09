@@ -17,6 +17,34 @@ TEST(RenderManagerTests, InitializeAndShutdown) {
     EXPECT_FALSE(manager.initialize(false));
 }
 
+TEST(RenderManagerTests, ResourceManagerAndRecoveryWorkflows) {
+    RenderManager manager;
+    ASSERT_TRUE(manager.initialize(true));
+
+    auto& resources = manager.resource_manager();
+    EXPECT_TRUE(resources.register_resource("main_texture", ResourceType::Texture, 4096));
+    EXPECT_TRUE(resources.register_resource("vertex_buffer", ResourceType::Buffer, 1024));
+    EXPECT_EQ(resources.resource_count(), 2U);
+    EXPECT_EQ(resources.total_bytes(), 5120U);
+    EXPECT_TRUE(resources.contains("main_texture"));
+
+    EXPECT_TRUE(resources.release_resource("main_texture"));
+    EXPECT_EQ(resources.resource_count(), 1U);
+
+    auto& recovery = manager.device_recovery();
+    recovery.notify_device_lost();
+    EXPECT_TRUE(recovery.is_device_lost());
+    EXPECT_TRUE(recovery.try_recover());
+    EXPECT_FALSE(recovery.is_device_lost());
+    EXPECT_EQ(recovery.recover_count(), 1);
+
+    auto& diagnostics = manager.diagnostics();
+    diagnostics.log(LogLevel::Warning, "commit throttled");
+    diagnostics.log(LogLevel::Error, "device timeout");
+    EXPECT_EQ(diagnostics.warning_count(), 1U);
+    EXPECT_EQ(diagnostics.error_count(), 1U);
+}
+
 TEST(RenderManagerTests, CommitRequiresInitBindingAndDirtyFlag) {
     RenderManager manager;
     auto bridge = manager.create_composition_bridge();
@@ -66,6 +94,24 @@ TEST(WindowHostTests, StateTransitionsAreTracked) {
 
     host.set_window_state(WindowState::Fullscreen);
     EXPECT_EQ(host.window_state(), WindowState::Fullscreen);
+}
+
+TEST(WindowHostTests, CreateMessageLoopAndDestroy) {
+    WindowHost host;
+
+    ASSERT_TRUE(host.create(L"DCompFrameTest", 640, 480));
+    EXPECT_TRUE(host.is_created());
+    EXPECT_NE(host.hwnd(), nullptr);
+
+    host.set_visible(true);
+    EXPECT_TRUE(host.is_visible());
+
+    host.request_render();
+    const int rendered = host.run_message_loop([] { return true; }, 3);
+    EXPECT_EQ(rendered, 1);
+
+    host.destroy();
+    EXPECT_FALSE(host.is_created());
 }
 
 }  // namespace dcompframe::tests
