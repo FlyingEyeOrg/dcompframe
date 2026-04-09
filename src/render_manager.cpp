@@ -323,7 +323,7 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
         .dwrite_ready = true,
     };
     if (FAILED(dcomp_hr)) {
-        diagnostics_.log(LogLevel::Warning, "DCompositionCreateDevice failed in probe stage");
+        diagnostics_.log(LogLevel::Info, "DCompositionCreateDevice failed in probe stage");
     }
 
     return initialized_;

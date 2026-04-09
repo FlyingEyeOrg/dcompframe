@@ -1,8 +1,12 @@
 #include "dcompframe/tools/window_render_target.h"
 
+#include <d2d1helper.h>
 #include <dxgi.h>
 #include <iterator>
 #include <string>
+
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dwrite.lib")
 
 namespace dcompframe {
 
@@ -14,6 +18,61 @@ void safe_release(T*& pointer) {
         pointer->Release();
         pointer = nullptr;
     }
+}
+
+void draw_gdi_controls(HWND hwnd) {
+    if (hwnd == nullptr) {
+        return;
+    }
+
+    HDC dc = GetDC(hwnd);
+    if (dc == nullptr) {
+        return;
+    }
+
+    RECT rect {};
+    GetClientRect(hwnd, &rect);
+    const int width = rect.right - rect.left;
+    const int height = rect.bottom - rect.top;
+
+    HBRUSH card_brush = CreateSolidBrush(RGB(34, 52, 74));
+    RECT card_rect {width / 10, height / 10, width * 9 / 10, height * 7 / 10};
+    FillRect(dc, &card_rect, card_brush);
+    DeleteObject(card_brush);
+
+    HPEN border_pen = CreatePen(PS_SOLID, 2, RGB(0, 166, 200));
+    HGDIOBJ old_pen = SelectObject(dc, border_pen);
+    HGDIOBJ old_brush = SelectObject(dc, GetStockObject(HOLLOW_BRUSH));
+    Rectangle(dc, card_rect.left, card_rect.top, card_rect.right, card_rect.bottom);
+    SelectObject(dc, old_pen);
+    SelectObject(dc, old_brush);
+    DeleteObject(border_pen);
+
+    SetBkMode(dc, TRANSPARENT);
+    SetTextColor(dc, RGB(238, 244, 255));
+    const std::wstring title = L"DCompFrame Demo - Controls Visible";
+    TextOutW(dc, card_rect.left + 20, card_rect.top + 20, title.c_str(), static_cast<int>(title.size()));
+
+    HBRUSH ctl_brush = CreateSolidBrush(RGB(70, 84, 102));
+    for (int i = 0; i < 5; ++i) {
+        RECT ctl_rect {
+            card_rect.left + 28,
+            card_rect.top + 60 + i * 48,
+            card_rect.left + 360,
+            card_rect.top + 92 + i * 48,
+        };
+        FillRect(dc, &ctl_rect, ctl_brush);
+    }
+    DeleteObject(ctl_brush);
+
+    HBRUSH action_brush = CreateSolidBrush(RGB(30, 130, 255));
+    RECT action_rect {card_rect.right - 180, card_rect.bottom - 90, card_rect.right - 40, card_rect.bottom - 48};
+    FillRect(dc, &action_rect, action_brush);
+    DeleteObject(action_brush);
+    const std::wstring action = L"Start";
+    TextOutW(dc, action_rect.left + 40, action_rect.top + 12, action.c_str(), static_cast<int>(action.size()));
+
+    ReleaseDC(hwnd, dc);
 }
 
 }  // namespace
@@ -56,6 +115,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             render_manager_->diagnostics().log(LogLevel::Error, "Render target recovery failed");
             return false;
         }
+        if (using_dx11_dcomp_ && !recreate_d2d_target()) {
+            render_manager_->diagnostics().log(LogLevel::Warning, "D2D target recovery failed");
+        }
     }
 
     if (using_dx11_dcomp_) {
@@ -71,6 +133,61 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         };
         d3d_context_->OMSetRenderTargets(1, &render_target_view_, nullptr);
         d3d_context_->ClearRenderTargetView(render_target_view_, clear_color);
+
+        bool overlay_drawn = false;
+        if (d2d_context_ != nullptr && d2d_target_bitmap_ != nullptr && d2d_brush_ != nullptr) {
+            const auto size = window_host_->client_size();
+            const float width = size.width > 0.0F ? size.width : 1280.0F;
+            const float height = size.height > 0.0F ? size.height : 720.0F;
+
+            d2d_context_->BeginDraw();
+            d2d_context_->SetTransform(D2D1::Matrix3x2F::Identity());
+
+            d2d_brush_->SetColor(D2D1::ColorF(0.14F, 0.20F, 0.30F, 0.95F));
+            const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(
+                D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F),
+                20.0F,
+                20.0F);
+            d2d_context_->FillRoundedRectangle(card, d2d_brush_);
+
+            d2d_brush_->SetColor(D2D1::ColorF(0.02F, 0.65F, 0.75F, 1.0F));
+            d2d_context_->DrawRoundedRectangle(card, d2d_brush_, 2.0F);
+
+            d2d_brush_->SetColor(D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F));
+            if (text_format_ != nullptr) {
+                const wchar_t* title = L"DCompFrame Demo - Visible UI Content";
+                d2d_context_->DrawText(
+                    title,
+                    static_cast<UINT32>(wcslen(title)),
+                    text_format_,
+                    D2D1::RectF(width * 0.13F, height * 0.14F, width * 0.85F, height * 0.22F),
+                    d2d_brush_);
+            }
+
+            d2d_brush_->SetColor(D2D1::ColorF(0.25F, 0.30F, 0.38F, 0.96F));
+            for (int i = 0; i < 5; ++i) {
+                const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
+                const D2D1_ROUNDED_RECT control = D2D1::RoundedRect(
+                    D2D1::RectF(width * 0.14F, top, width * 0.70F, top + 40.0F),
+                    10.0F,
+                    10.0F);
+                d2d_context_->FillRoundedRectangle(control, d2d_brush_);
+            }
+
+            d2d_brush_->SetColor(D2D1::ColorF(0.10F, 0.55F, 0.95F, 1.0F));
+            const D2D1_ROUNDED_RECT action = D2D1::RoundedRect(
+                D2D1::RectF(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F),
+                12.0F,
+                12.0F);
+            d2d_context_->FillRoundedRectangle(action, d2d_brush_);
+
+            const HRESULT end_draw_hr = d2d_context_->EndDraw();
+            if (FAILED(end_draw_hr)) {
+                render_manager_->diagnostics().log(LogLevel::Warning, "D2D overlay draw failed");
+            } else {
+                overlay_drawn = true;
+            }
+        }
 
         const HRESULT present_hr = swap_chain_->Present(0, 0);
         if (present_hr == DXGI_ERROR_DEVICE_REMOVED || present_hr == DXGI_ERROR_DEVICE_RESET) {
@@ -90,6 +207,11 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 render_manager_->diagnostics().log(LogLevel::Error, "DirectComposition commit failed");
                 return false;
             }
+        }
+
+        if (!overlay_drawn && window_host_ != nullptr) {
+            draw_gdi_controls(window_host_->hwnd());
+            render_manager_->diagnostics().log(LogLevel::Info, "GDI overlay fallback rendered controls");
         }
 
         render_manager_->notify_commit();
@@ -217,7 +339,7 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     swap_chain_desc.BufferCount = 2;
     swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 
     hr = dxgi_factory->CreateSwapChainForComposition(d3d_device_, &swap_chain_desc, nullptr, &swap_chain_);
     if (FAILED(hr) || swap_chain_ == nullptr) {
@@ -287,6 +409,10 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
         return false;
     }
 
+    if (!initialize_d2d_overlay()) {
+        render_manager_->diagnostics().log(LogLevel::Warning, "D2D overlay initialization failed");
+    }
+
     return true;
 }
 
@@ -308,7 +434,107 @@ bool WindowRenderTarget::recreate_render_target_view() {
     return SUCCEEDED(rtv_hr) && render_target_view_ != nullptr;
 }
 
+bool WindowRenderTarget::initialize_d2d_overlay() {
+    if (d3d_device_ == nullptr) {
+        return false;
+    }
+
+    if (d2d_factory_ == nullptr) {
+        const D2D1_FACTORY_OPTIONS options {};
+        const HRESULT factory_hr = D2D1CreateFactory(
+            D2D1_FACTORY_TYPE_SINGLE_THREADED,
+            __uuidof(ID2D1Factory1),
+            &options,
+            reinterpret_cast<void**>(&d2d_factory_));
+        if (FAILED(factory_hr) || d2d_factory_ == nullptr) {
+            return false;
+        }
+    }
+
+    if (dwrite_factory_ == nullptr) {
+        const HRESULT write_hr = DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(IDWriteFactory),
+            reinterpret_cast<IUnknown**>(&dwrite_factory_));
+        if (FAILED(write_hr) || dwrite_factory_ == nullptr) {
+            return false;
+        }
+
+        const HRESULT format_hr = dwrite_factory_->CreateTextFormat(
+            L"Segoe UI",
+            nullptr,
+            DWRITE_FONT_WEIGHT_SEMI_BOLD,
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            20.0F,
+            L"zh-CN",
+            &text_format_);
+        if (FAILED(format_hr) || text_format_ == nullptr) {
+            return false;
+        }
+    }
+
+    if (d2d_device_ == nullptr || d2d_context_ == nullptr) {
+        IDXGIDevice* dxgi_device = nullptr;
+        const HRESULT qhr = d3d_device_->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgi_device));
+        if (FAILED(qhr) || dxgi_device == nullptr) {
+            safe_release(dxgi_device);
+            return false;
+        }
+
+        const HRESULT device_hr = d2d_factory_->CreateDevice(dxgi_device, &d2d_device_);
+        safe_release(dxgi_device);
+        if (FAILED(device_hr) || d2d_device_ == nullptr) {
+            return false;
+        }
+
+        const HRESULT context_hr = d2d_device_->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2d_context_);
+        if (FAILED(context_hr) || d2d_context_ == nullptr) {
+            return false;
+        }
+    }
+
+    return recreate_d2d_target();
+}
+
+bool WindowRenderTarget::recreate_d2d_target() {
+    safe_release(d2d_target_bitmap_);
+    safe_release(d2d_brush_);
+    if (swap_chain_ == nullptr || d2d_context_ == nullptr) {
+        return false;
+    }
+
+    IDXGISurface* surface = nullptr;
+    const HRESULT surface_hr = swap_chain_->GetBuffer(0, __uuidof(IDXGISurface), reinterpret_cast<void**>(&surface));
+    if (FAILED(surface_hr) || surface == nullptr) {
+        safe_release(surface);
+        return false;
+    }
+
+    const D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
+        D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+        96.0F,
+        96.0F);
+    const HRESULT bitmap_hr = d2d_context_->CreateBitmapFromDxgiSurface(surface, &props, &d2d_target_bitmap_);
+    safe_release(surface);
+    if (FAILED(bitmap_hr) || d2d_target_bitmap_ == nullptr) {
+        return false;
+    }
+
+    d2d_context_->SetTarget(d2d_target_bitmap_);
+    const HRESULT brush_hr = d2d_context_->CreateSolidColorBrush(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), &d2d_brush_);
+    return SUCCEEDED(brush_hr) && d2d_brush_ != nullptr;
+}
+
 void WindowRenderTarget::cleanup_dx11_dcomp_target() {
+    safe_release(d2d_brush_);
+    safe_release(d2d_target_bitmap_);
+    safe_release(text_format_);
+    safe_release(dwrite_factory_);
+    safe_release(d2d_context_);
+    safe_release(d2d_device_);
+    safe_release(d2d_factory_);
     safe_release(render_target_view_);
     safe_release(swap_chain_);
     safe_release(dcomp_visual_);

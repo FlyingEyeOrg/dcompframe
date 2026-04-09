@@ -41,6 +41,10 @@
 - 修复：D3D11 创建设备增加无调试层重试与 WARP 回退，并增加窗口可视 fallback 绘制。
 - 发现：`WS_EX_NOREDIRECTIONBITMAP` 场景下 DComp 探测使用错误接口会触发误回退，表现为 demo 透明。
 - 修复：DComp 探测改为 `IDCompositionDevice`，DirectX 初始化不再误判失败。
+- 发现：DX 路径只做背景清屏，未绘制控件内容，用户观感为“无内容”。
+- 修复：在 swapchain 上增加 D2D/DirectWrite 叠加绘制，显示卡片与控件占位内容。
+- 发现：D2D 工厂/目标位图初始化参数不稳，部分环境可能仍出现“仅背景”现象。
+- 修复：改为显式 `ID2D1Factory1` 创建和 `PREMULTIPLIED` 目标位图参数，并在恢复路径重建 D2D target。
 - 发现：交互高级需求（文本选择/IME 组合、虚拟列表、惯性滚动、快捷键命令）缺失。
 - 修复：扩展控件与输入模块并补齐对应测试。
 - 发现：可靠性体系缺少 soak/资源巡检/配置故障注入覆盖。

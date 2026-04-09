@@ -64,6 +64,7 @@
 	- `IDCompositionDevice/Target/Visual`
 - 每帧执行 `ClearRenderTargetView -> Present -> DComp Commit`，确保 demo 有实际可见绘制内容。
 - `Present` 返回 `DXGI_ERROR_DEVICE_REMOVED/RESET` 时进入设备丢失处理路径。
+- 在 swapchain 上叠加 D2D/DirectWrite 绘制卡片与控件占位内容，避免“仅背景色”现象。
 
 ## 8. DWM 兼容与回退策略
 
