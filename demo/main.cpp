@@ -28,8 +28,16 @@ int main() {
     dcompframe::RenderManager render_manager;
     const auto backend = config.use_directx_backend ? dcompframe::RenderBackend::DirectX : dcompframe::RenderBackend::Simulated;
     if (!render_manager.initialize_with_backend(backend)) {
-        fmt::print("RenderManager initialization failed.\n");
-        return 1;
+        if (backend == dcompframe::RenderBackend::DirectX) {
+            fmt::print("DirectX backend init failed. Fallback to simulated backend.\n");
+            if (!render_manager.initialize_with_backend(dcompframe::RenderBackend::Simulated)) {
+                fmt::print("RenderManager fallback initialization failed.\n");
+                return 1;
+            }
+        } else {
+            fmt::print("RenderManager initialization failed.\n");
+            return 1;
+        }
     }
 
     dcompframe::WindowHost host;
@@ -142,8 +150,12 @@ int main() {
     input.set_drag_handler([&](dcompframe::UIElement&, dcompframe::Point delta) {
         render_manager.diagnostics().log(dcompframe::LogLevel::Info, fmt::format("Drag delta=({}, {})", delta.x, delta.y));
     });
+    input.set_long_press_handler([&](dcompframe::UIElement&) {
+        render_manager.diagnostics().log(dcompframe::LogLevel::Info, "Long press captured");
+    });
     input.on_mouse_down(action, dcompframe::Point {.x = 10.0F, .y = 10.0F});
     input.on_mouse_down(action, dcompframe::Point {.x = 10.0F, .y = 10.0F});
+    input.tick(std::chrono::milliseconds {0});
     input.on_mouse_move(dcompframe::Point {.x = 30.0F, .y = 24.0F});
     input.on_mouse_up(dcompframe::Point {.x = 30.0F, .y = 24.0F});
     action->click();

@@ -84,12 +84,16 @@
 - `DeviceRecovery`：设备丢失与恢复计数。
 - `DiagnosticsCenter`：日志和帧耗时统计。
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
+	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
+	- `render_frame` 执行清屏、`Present` 与 `IDCompositionDevice::Commit`。
+	- 设备丢失时通过 `DeviceRecovery` 触发恢复并重建渲染目标视图。
 
 ## 输入系统
 
-职责：处理焦点环、点击/双击和拖拽行为。
+职责：处理焦点环、点击/双击、拖拽和长按行为。
 
-- `InputManager`：焦点切换、点击、双击、拖拽回调。
+- `InputManager`：焦点切换、点击、双击、拖拽、长按回调。
+- `InputManager::tick`：按阈值触发长按手势。
 
 ## 数据绑定
 

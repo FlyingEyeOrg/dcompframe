@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -76,11 +77,13 @@ TEST(InputManagerTests, FocusDoubleClickAndDragAreHandled) {
 
     int click_count = 0;
     int double_click_count = 0;
+    int long_press_count = 0;
     Point drag_delta {};
 
     input.set_click_handler([&](UIElement&) { ++click_count; });
     input.set_double_click_handler([&](UIElement&) { ++double_click_count; });
     input.set_drag_handler([&](UIElement&, Point delta) { drag_delta = delta; });
+    input.set_long_press_handler([&](UIElement&) { ++long_press_count; });
 
     input.focus_next();
     EXPECT_EQ(input.focused_element(), a);
@@ -93,10 +96,12 @@ TEST(InputManagerTests, FocusDoubleClickAndDragAreHandled) {
     EXPECT_GE(double_click_count, 1);
 
     input.on_mouse_down(b, Point {.x = 2.0F, .y = 2.0F});
+    input.tick(std::chrono::milliseconds {0});
     input.on_mouse_move(Point {.x = 9.0F, .y = 11.0F});
     input.on_mouse_up(Point {.x = 9.0F, .y = 11.0F});
     EXPECT_FLOAT_EQ(drag_delta.x, 7.0F);
     EXPECT_FLOAT_EQ(drag_delta.y, 9.0F);
+    EXPECT_EQ(long_press_count, 1);
 }
 
 TEST(ConfigTests, JsonConfigCanBeLoaded) {

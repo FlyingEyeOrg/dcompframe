@@ -18,15 +18,17 @@
 - 扩展控件：完成 `TextBox`、`ListView`、`ScrollViewer`、`CheckBox`、`Slider`。
 - 样式主题：支持 `dark/light/brand` 预设主题与主题切换。
 - 数据绑定：新增 `Observable` 与 `BindingContext`，支持控件绑定更新。
-- 输入系统：新增 `InputManager`，支持焦点环、双击、拖拽。
+- 输入系统：新增 `InputManager`，支持焦点环、双击、拖拽与长按手势。
 - 配置系统：新增 `AppConfigLoader`，支持 JSON 配置驱动。
 - 动画层：完成 `AnimationManager`，支持位置/透明度/旋转/裁剪属性动画和缓动函数。
-- 工具层：完成 `WindowRenderTarget`，实现窗口与提交流程桥接。
-- 测试：扩展到 27 个测试，x64/x86 Debug 下 `ctest` 全部通过。
+- 工具层：完成 `WindowRenderTarget`，实现窗口与提交流程桥接，并新增 DX11 + DirectComposition 实际清屏/Present 路径。
+- 测试：扩展到 28 个测试，x64/x86 Debug 下 `ctest` 全部通过。
 - demo：升级 `dcompframe_demo`，覆盖窗口、控件、动画、资源、诊断与渲染目标链路。
 - 调试与构建任务：补齐 `.vscode/tasks.json` 与 `.vscode/launch.json`，覆盖 x64/x86、Debug/Release 的构建/测试/运行/调试流。
 - 修复 demo 生命周期：消息循环改为阻塞运行，窗口关闭后退出，不再“弹一下就退出”。
 - 工程交付：新增 CI workflow、clang 配置、CPack ZIP 打包与 CHANGELOG。
+- 兼容文档：新增 DWM 兼容与回退策略文档，明确能力探测与降级路径。
+- 稳定性：新增设备丢失/恢复集成级压测用例（500 次循环）。
 
 ## 当前状态
 
@@ -39,6 +41,5 @@
 ## 后续待办
 
 - 补充真实 D2D/DirectWrite 到 D3D 纹理绘制链路。
-- 增加设备丢失/恢复的集成级压测用例。
-- 增强 DWM 兼容说明与回退策略文档。
-- 按 `docs/future-todo.md` 持续推进 P3 增强事项。
+- 增加设备丢失/恢复的长稳压测（8h soak）与统计报表。
+- 按 `docs/future-todo.md` 持续推进剩余 P3 增强事项。

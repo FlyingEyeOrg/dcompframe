@@ -48,3 +48,18 @@
 - 包管理：vcpkg manifest
 - 测试框架：GoogleTest
 - 调试与任务：VS Code `tasks.json` + `launch.json`（x64/x86、Debug/Release）
+
+## 7. DX11 + DComp 呈现策略
+
+- `WindowRenderTarget` 在 DirectX 后端下创建并维护：
+	- `ID3D11Device/ID3D11DeviceContext`
+	- `IDXGISwapChain1`（`CreateSwapChainForComposition`）
+	- `IDCompositionDevice/Target/Visual`
+- 每帧执行 `ClearRenderTargetView -> Present -> DComp Commit`，确保 demo 有实际可见绘制内容。
+- `Present` 返回 `DXGI_ERROR_DEVICE_REMOVED/RESET` 时进入设备丢失处理路径。
+
+## 8. DWM 兼容与回退策略
+
+- 主路径：`WS_EX_NOREDIRECTIONBITMAP + DirectComposition + DX11`。
+- 初始化回退：D3D11 设备创建按 `Hardware -> WARP` 顺序降级。
+- 运行时回退：demo 在 DirectX 后端初始化失败时自动降级到 `Simulated`，避免直接退出。

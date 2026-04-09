@@ -33,6 +33,7 @@
 25. `ConfigTests.JsonConfigCanBeLoaded`
 26. `DiagnosticsTests.ExportReportAndMetricsWork`
 27. `IntegrationTests.WindowRenderAnimationAndInputFlow`
+28. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
 
 ## 覆盖点
 
@@ -43,9 +44,10 @@
 - 控件状态机、样式主题、Card 组合结构
 - 动画时间线、属性更新、完成回收
 - 窗口渲染目标呈现链路
+- 设备丢失/恢复集成压测循环与恢复稳定性
 
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：27/27 通过
-- 补充验证：`ctest --preset vs2022-x86-debug-tests`，27/27 通过
+- 结果：28/28 通过
+- 补充验证：`ctest --preset vs2022-x86-debug-tests`，28/28 通过
