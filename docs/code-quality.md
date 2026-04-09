@@ -39,6 +39,8 @@
 - 修复：新增 `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`（500 次循环）。
 - 发现：Debug 环境可能因 D3D11 调试层缺失导致 DirectX 初始化失败并退化为不可见模拟提交。
 - 修复：D3D11 创建设备增加无调试层重试与 WARP 回退，并增加窗口可视 fallback 绘制。
+- 发现：`WS_EX_NOREDIRECTIONBITMAP` 场景下 DComp 探测使用错误接口会触发误回退，表现为 demo 透明。
+- 修复：DComp 探测改为 `IDCompositionDevice`，DirectX 初始化不再误判失败。
 - 发现：交互高级需求（文本选择/IME 组合、虚拟列表、惯性滚动、快捷键命令）缺失。
 - 修复：扩展控件与输入模块并补齐对应测试。
 - 发现：可靠性体系缺少 soak/资源巡检/配置故障注入覆盖。

@@ -8,6 +8,7 @@
   - `CompositionBridge` 完成绑定、提交与提交计数。
   - 新增 `ResourceManager`、`DeviceRecovery`、`DiagnosticsCenter`（含 P95/提交频率/峰值资源/导出报告）。
   - 新增命令缓冲与后台渲染线程基础能力（渲染线程与 UI 线程解耦基础设施）。
+  - 修复 `WS_EX_NOREDIRECTIONBITMAP` 场景下的 DirectX 误回退：DComp 探测改为 `IDCompositionDevice`，避免 demo 透明窗口。
 - 窗口层：
   - `WindowHost` 支持创建/销毁、可见性、状态切换、DPI、消息循环渲染调度。
   - 默认扩展样式保持 `WS_EX_NOREDIRECTIONBITMAP`。

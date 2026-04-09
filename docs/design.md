@@ -70,6 +70,7 @@
 - 主路径：`WS_EX_NOREDIRECTIONBITMAP + DirectComposition + DX11`。
 - 初始化回退：D3D11 设备创建按 `Hardware -> WARP` 顺序降级。
 - 运行时回退：demo 在 DirectX 后端初始化失败时自动降级到 `Simulated`，避免直接退出。
+- DComp 探测使用 `IDCompositionDevice` 接口，避免探测误失败导致透明窗口误回退。
 
 ## 9. 交互系统策略
 

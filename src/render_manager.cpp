@@ -301,10 +301,10 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
     IDXGIDevice* dxgi_device = nullptr;
     const HRESULT qhr = raw_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgi_device));
 
-    IUnknown* dcomp_device = nullptr;
+    IDCompositionDevice* dcomp_device = nullptr;
     HRESULT dcomp_hr = E_FAIL;
     if (SUCCEEDED(qhr) && dxgi_device != nullptr) {
-        dcomp_hr = DCompositionCreateDevice(dxgi_device, __uuidof(IUnknown), reinterpret_cast<void**>(&dcomp_device));
+        dcomp_hr = DCompositionCreateDevice(dxgi_device, __uuidof(IDCompositionDevice), reinterpret_cast<void**>(&dcomp_device));
     }
 
     raw_device->Release();
@@ -315,15 +315,15 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
         dcomp_device->Release();
     }
 
-    initialized_ = SUCCEEDED(dcomp_hr);
+    initialized_ = true;
     capabilities_ = RenderCapabilities {
         .d3d11_ready = true,
-        .dcomp_ready = initialized_,
+        .dcomp_ready = SUCCEEDED(dcomp_hr),
         .d2d_ready = true,
         .dwrite_ready = true,
     };
-    if (!initialized_) {
-        diagnostics_.log(LogLevel::Error, "DCompositionCreateDevice failed");
+    if (FAILED(dcomp_hr)) {
+        diagnostics_.log(LogLevel::Warning, "DCompositionCreateDevice failed in probe stage");
     }
 
     return initialized_;

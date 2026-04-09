@@ -6,6 +6,7 @@
 
 - `RenderManager::initialize(bool)`：模拟后端初始化。
 - `RenderManager::initialize_with_backend(RenderBackend)`：按后端策略初始化（含 DirectX 路径）。
+- DirectX 探测阶段使用 `IDCompositionDevice` 接口校验 DComp 能力，避免误判回退。
 - `RenderManager::shutdown()`：清理状态和资源注册表。
 - `RenderManager::supported_backends()`：返回可插拔后端列表。
 - `RenderManager::enqueue_command/drain_commands`：命令缓冲与批量提交基础能力。
