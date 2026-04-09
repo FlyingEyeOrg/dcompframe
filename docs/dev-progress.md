@@ -26,6 +26,8 @@
 - 工具层：完成 `WindowRenderTarget`，实现窗口与提交流程桥接，并新增 DX11 + DirectComposition 实际清屏/Present 路径。
   - 在 DX 路径增加 D2D/DirectWrite 叠加绘制，demo 可见卡片与控件内容，不再仅有背景色。
   - 修复 D2D 目标创建参数与工厂初始化细节，提升控件可见绘制稳定性。
+  - 新增 DX11 `ClearView` 几何兜底层：当 D2D 初始化失败时仍绘制控件块，确保 no-redirection 场景下不出现“只有背景”。
+  - 去除非 DX 路径中的 GDI 绘制逻辑，保持渲染链路为 DX/DComp 提交模型。
 - 测试：扩展到 33 个测试，x64/x86 Debug 下 `ctest` 全部通过。
 - demo：升级 `dcompframe_demo`，覆盖窗口、控件、动画、资源、诊断与渲染目标链路。
 - 调试与构建任务：补齐 `.vscode/tasks.json` 与 `.vscode/launch.json`，覆盖 x64/x86、Debug/Release 的构建/测试/运行/调试流。
@@ -45,6 +47,5 @@
 
 ## 后续待办
 
-- 补充真实 D2D/DirectWrite 到 D3D 纹理绘制链路。
 - 增加设备丢失/恢复的 8h 长稳压测与统计报表自动归档。
 - 按 `docs/future-todo.md` 持续推进剩余 P3 增强事项。

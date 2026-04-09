@@ -90,6 +90,7 @@
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
+	- D2D 初始化失败时，使用 DX11.1 `ClearView` 绘制几何控件块兜底，保持控件可见。
 	- `render_frame` 执行清屏、`Present` 与 `IDCompositionDevice::Commit`。
 	- 设备丢失时通过 `DeviceRecovery` 触发恢复并重建渲染目标视图。
 

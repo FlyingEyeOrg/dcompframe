@@ -177,6 +177,16 @@ int main() {
     render_manager.resource_manager().register_resource("ui-vertex-buffer", dcompframe::ResourceType::Buffer, 1024 * 64);
 
     dcompframe::WindowRenderTarget render_target(&render_manager, &host);
+    render_target.set_overlay_scene(dcompframe::WindowRenderTarget::OverlayScene {
+        .title = L"DCompFrame Product Demo Controls",
+        .items = {
+            L"TextBox: DCompFrame Bound Title",
+            L"ListView: Overview, Diagnostics, Settings, About",
+            L"CheckBox: checked",
+            L"Slider: value=0.75",
+            L"ScrollViewer: offset=(16,48)",
+        },
+    });
     const bool initialized = render_target.initialize();
     host.request_render();
     const int rendered = host.run_message_loop([&render_target] { return render_target.render_frame(true); });

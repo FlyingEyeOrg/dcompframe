@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <d3d11.h>
 #include <d2d1_1.h>
 #include <dcomp.h>
@@ -13,9 +16,15 @@ namespace dcompframe {
 
 class WindowRenderTarget {
 public:
+    struct OverlayScene {
+        std::wstring title;
+        std::vector<std::wstring> items;
+    };
+
     WindowRenderTarget(RenderManager* render_manager, WindowHost* window_host);
     ~WindowRenderTarget();
 
+    void set_overlay_scene(OverlayScene scene);
     bool initialize();
     bool render_frame(bool has_dirty_changes = true);
 
@@ -27,6 +36,7 @@ private:
     bool recreate_render_target_view();
     bool initialize_d2d_overlay();
     bool recreate_d2d_target();
+    void draw_dx11_overlay_fallback(float width, float height);
     void cleanup_dx11_dcomp_target();
 
     RenderManager* render_manager_ = nullptr;
@@ -38,6 +48,7 @@ private:
 
     ID3D11Device* d3d_device_ = nullptr;
     ID3D11DeviceContext* d3d_context_ = nullptr;
+    ID3D11DeviceContext1* d3d_context1_ = nullptr;
     IDXGISwapChain1* swap_chain_ = nullptr;
     ID3D11RenderTargetView* render_target_view_ = nullptr;
     IDCompositionDevice* dcomp_device_ = nullptr;
@@ -51,6 +62,8 @@ private:
     ID2D1SolidColorBrush* d2d_brush_ = nullptr;
     IDWriteFactory* dwrite_factory_ = nullptr;
     IDWriteTextFormat* text_format_ = nullptr;
+    IDWriteTextFormat* item_text_format_ = nullptr;
+    OverlayScene overlay_scene_ {};
 };
 
 }  // namespace dcompframe

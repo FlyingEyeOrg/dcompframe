@@ -65,6 +65,8 @@
 - 每帧执行 `ClearRenderTargetView -> Present -> DComp Commit`，确保 demo 有实际可见绘制内容。
 - `Present` 返回 `DXGI_ERROR_DEVICE_REMOVED/RESET` 时进入设备丢失处理路径。
 - 在 swapchain 上叠加 D2D/DirectWrite 绘制卡片与控件占位内容，避免“仅背景色”现象。
+- 当 D2D 初始化失败时，使用 DX11.1 `ClearView` 绘制几何控件块作为兜底，仍保持控件可见。
+- 不再使用 GDI 作为渲染兜底路径，统一采用 DX + DComp 呈现链路。
 
 ## 8. DWM 兼容与回退策略
 

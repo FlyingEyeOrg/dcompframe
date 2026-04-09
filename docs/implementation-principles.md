@@ -52,3 +52,4 @@
 - 业务入口（demo）在后端不可用时回退到模拟后端，保证功能演示连续性。
 - 在 `WS_EX_NOREDIRECTIONBITMAP` 场景必须使用正确 DComp 接口探测，避免透明窗口的误回退链路。
 - 在 no-redirection 路径必须保证 swapchain 上有实际内容绘制（D2D/DirectWrite 或等价路径），禁止只清屏不绘制控件内容。
+- 禁止使用 GDI 作为渲染兜底；D2D 不可用时应优先采用 DX11 几何绘制兜底以维持统一图形管线。
