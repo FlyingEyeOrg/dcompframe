@@ -18,6 +18,12 @@
 - 提供 `DirectX` 后端入口，使用 D3D11 设备并通过 DXGI 创建设备到 DComp。
 - 统一通过 `CompositionBridge` 执行提交门禁和节流。
 
+## 2.1 窗口消息循环策略
+
+- `WindowHost` 采用阻塞式消息循环（`GetMessage`）作为默认运行模式。
+- 在 `WM_CLOSE/WM_DESTROY` 上触发退出消息，保证应用可预测退出。
+- 测试场景可使用有限迭代循环（`max_iterations`）确保用例可控。
+
 ## 3. 事件与脏标记策略
 
 - 事件路由固定为 Capture -> Target -> Bubble。
@@ -41,3 +47,4 @@
 - 构建：CMake（Preset + CTest）
 - 包管理：vcpkg manifest
 - 测试框架：GoogleTest
+- 调试与任务：VS Code `tasks.json` + `launch.json`（x64/x86、Debug/Release）

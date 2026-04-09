@@ -21,7 +21,10 @@ int main() {
     }
 
     dcompframe::WindowHost host;
-    host.create(L"DCompFrame Demo", 1280, 720);
+    if (!host.create(L"DCompFrame Demo", 1280, 720)) {
+        fmt::print("Window creation failed.\n");
+        return 2;
+    }
     host.set_visible(true);
     host.apply_dpi(144);
 
@@ -70,7 +73,7 @@ int main() {
     dcompframe::WindowRenderTarget render_target(&render_manager, &host);
     const bool initialized = render_target.initialize();
     host.request_render();
-    host.run_message_loop([&render_target] { return render_target.render_frame(true); }, 1);
+    const int rendered = host.run_message_loop([&render_target] { return render_target.render_frame(true); });
 
     fmt::print(
         "DCompFrame demo initialized. dpi_scale={:.2f}, target_ready={}, commits={}, resources={}, avg_frame_ms={:.2f}\n",
@@ -79,6 +82,7 @@ int main() {
         render_manager.total_commit_count(),
         render_manager.resource_manager().resource_count(),
         render_manager.diagnostics().average_frame_ms());
+    fmt::print("Message loop exited. rendered_frames={}\n", rendered);
 
     host.destroy();
 

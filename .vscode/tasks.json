@@ -2,7 +2,78 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build DCompFrame Demo",
+      "label": "Configure x64",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "vs2022-x64"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Configure x86",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "vs2022-x86"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build x64 Debug (All)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x64-debug"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Build x64 Release (All)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x64-release"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build x86 Debug (All)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x86-debug"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build x86 Release (All)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x86-release"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build Demo x64 Debug",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -13,18 +84,91 @@
         "dcompframe_demo"
       ],
       "problemMatcher": ["$msCompile"],
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      }
+      "group": "build"
     },
     {
-      "label": "Run DCompFrame Demo",
+      "label": "Build Demo x64 Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x64-release",
+        "--target",
+        "dcompframe_demo"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build Demo x86 Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x86-debug",
+        "--target",
+        "dcompframe_demo"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build Tests x64 Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x64-debug",
+        "--target",
+        "dcompframe_tests"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Build Tests x86 Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "vs2022-x86-debug",
+        "--target",
+        "dcompframe_tests"
+      ],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Run Tests x64 Debug",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "vs2022-x64-debug-tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests x86 Debug",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "vs2022-x86-debug-tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Demo x64 Debug",
       "type": "shell",
       "command": "${workspaceFolder}\\build\\vs2022-x64\\Debug\\dcompframe_demo.exe",
       "problemMatcher": [],
       "group": {
-        "kind": "test",
+        "kind": "none",
         "isDefault": false
       },
       "presentation": {
@@ -33,6 +177,36 @@
         "focus": false,
         "panel": "shared"
       }
+    },
+    {
+      "label": "Run Demo x64 Release",
+      "type": "shell",
+      "command": "${workspaceFolder}\\build\\vs2022-x64\\Release\\dcompframe_demo.exe",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Demo x86 Debug",
+      "type": "shell",
+      "command": "${workspaceFolder}\\build\\vs2022-x86\\Debug\\dcompframe_demo.exe",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug Prep Demo x64",
+      "dependsOn": [
+        "Configure x64",
+        "Build Demo x64 Debug"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug Prep Tests x64",
+      "dependsOn": [
+        "Configure x64",
+        "Build Tests x64 Debug"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
     }
   ]
 }

@@ -114,4 +114,15 @@ TEST(WindowHostTests, CreateMessageLoopAndDestroy) {
     EXPECT_FALSE(host.is_created());
 }
 
+TEST(WindowHostTests, MessageLoopExitsWhenQuitPosted) {
+    WindowHost host;
+    ASSERT_TRUE(host.create(L"DCompFrameQuitTest", 320, 240));
+
+    PostQuitMessage(0);
+    const int rendered = host.run_message_loop([] { return false; });
+    EXPECT_EQ(rendered, 0);
+
+    host.destroy();
+}
+
 }  // namespace dcompframe::tests

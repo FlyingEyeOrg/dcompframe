@@ -7,6 +7,32 @@ namespace dcompframe {
 namespace {
 
 LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    auto* self = reinterpret_cast<WindowHost*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+    if (msg == WM_NCCREATE) {
+        const auto* create_struct = reinterpret_cast<CREATESTRUCTW*>(lparam);
+        self = reinterpret_cast<WindowHost*>(create_struct->lpCreateParams);
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+    }
+
+    if (self != nullptr) {
+        switch (msg) {
+        case WM_SIZE:
+            self->on_size_changed(LOWORD(lparam), HIWORD(lparam));
+            return 0;
+        case WM_DPICHANGED:
+            self->apply_dpi(HIWORD(wparam));
+            return 0;
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            return 0;
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+        default:
+            break;
+        }
+    }
+
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
@@ -52,11 +78,10 @@ bool WindowHost::create(std::wstring title, int width, int height) {
         nullptr,
         nullptr,
         GetModuleHandleW(nullptr),
-        nullptr);
+        this);
 
     if (hwnd_ == nullptr) {
-        // Keep framework testable without a real native window.
-        hwnd_ = reinterpret_cast<HWND>(1);
+        return false;
     }
 
     created_ = true;
@@ -69,7 +94,7 @@ void WindowHost::destroy() {
         return;
     }
 
-    if (hwnd_ != nullptr && hwnd_ != reinterpret_cast<HWND>(1)) {
+    if (hwnd_ != nullptr) {
         DestroyWindow(hwnd_);
     }
 
@@ -94,7 +119,7 @@ void WindowHost::set_window_state(WindowState state) {
         return;
     }
 
-    if (hwnd_ != nullptr && hwnd_ != reinterpret_cast<HWND>(1)) {
+    if (hwnd_ != nullptr) {
         switch (state) {
         case WindowState::Normal:
             SetWindowLongW(hwnd_, GWL_STYLE, static_cast<LONG>(saved_window_style_));
@@ -120,17 +145,42 @@ void WindowHost::set_window_state(WindowState state) {
 
 void WindowHost::set_visible(bool visible) {
     visible_ = visible;
-    if (hwnd_ != nullptr && hwnd_ != reinterpret_cast<HWND>(1)) {
+    if (hwnd_ != nullptr) {
         ShowWindow(hwnd_, visible ? SW_SHOW : SW_HIDE);
     }
 }
 
 int WindowHost::run_message_loop(const std::function<bool()>& render_callback, int max_iterations) {
+    if (!created_) {
+        return 0;
+    }
+
     int rendered_frames = 0;
     int iterations = 0;
     MSG msg {};
 
-    while (max_iterations < 0 || iterations < max_iterations) {
+    if (max_iterations < 0) {
+        while (true) {
+            const BOOL result = GetMessageW(&msg, nullptr, 0, 0);
+            if (result <= 0) {
+                break;
+            }
+
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+
+            if (needs_redraw_ && render_callback) {
+                if (render_callback()) {
+                    ++rendered_frames;
+                }
+                needs_redraw_ = false;
+            }
+        }
+
+        return rendered_frames;
+    }
+
+    while (iterations < max_iterations) {
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) {
                 return rendered_frames;

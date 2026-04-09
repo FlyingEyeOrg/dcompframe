@@ -25,6 +25,7 @@
 17. `AnimationTests.PositionAnimationChangesBounds`
 18. `LayoutManagerTests.StackStrategyAppliesSequentialBounds`
 19. `WindowRenderTargetTests.InitializeAndPresentFrames`
+20. `WindowHostTests.MessageLoopExitsWhenQuitPosted`
 
 ## 覆盖点
 
@@ -39,4 +40,4 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：19/19 通过
+- 结果：20/20 通过
