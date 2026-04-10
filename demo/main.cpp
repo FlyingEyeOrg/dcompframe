@@ -40,14 +40,14 @@ struct DemoWindow {
     std::shared_ptr<dcompframe::ScrollViewer> scroll_viewer = std::make_shared<dcompframe::ScrollViewer>();
     std::shared_ptr<dcompframe::ItemsControl> items_control = std::make_shared<dcompframe::ItemsControl>();
     std::shared_ptr<dcompframe::ListView> list_view = std::make_shared<dcompframe::ListView>();
-    std::shared_ptr<dcompframe::TextBlock> text_block = std::make_shared<dcompframe::TextBlock>("Element Plus 风格预览");
-        std::shared_ptr<dcompframe::Label> label = std::make_shared<dcompframe::Label>("状态：准备就绪");
+    std::shared_ptr<dcompframe::TextBlock> text_block = std::make_shared<dcompframe::TextBlock>("StackPanel 式纵向示例布局，标题固定，内容区独立滚动。");
+    std::shared_ptr<dcompframe::Label> label = std::make_shared<dcompframe::Label>("状态：动画预览中");
     std::shared_ptr<dcompframe::Image> image = std::make_shared<dcompframe::Image>();
-        std::shared_ptr<dcompframe::Progress> progress = std::make_shared<dcompframe::Progress>();
-        std::shared_ptr<dcompframe::Loading> loading = std::make_shared<dcompframe::Loading>();
-        std::shared_ptr<dcompframe::TabControl> tab_control = std::make_shared<dcompframe::TabControl>();
-        std::shared_ptr<dcompframe::Popup> popup = std::make_shared<dcompframe::Popup>();
-        std::shared_ptr<dcompframe::Expander> expander = std::make_shared<dcompframe::Expander>();
+    std::shared_ptr<dcompframe::Progress> progress = std::make_shared<dcompframe::Progress>();
+    std::shared_ptr<dcompframe::Loading> loading = std::make_shared<dcompframe::Loading>();
+    std::shared_ptr<dcompframe::TabControl> tab_control = std::make_shared<dcompframe::TabControl>();
+    std::shared_ptr<dcompframe::Popup> popup = std::make_shared<dcompframe::Popup>();
+    std::shared_ptr<dcompframe::Expander> expander = std::make_shared<dcompframe::Expander>();
     std::shared_ptr<dcompframe::Card> card = std::make_shared<dcompframe::Card>();
     DemoApplication* app = nullptr;
     std::size_t id = 0;
@@ -203,13 +203,17 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
         "Theta responsive panel",
         "Iota virtual viewport",
         "Kappa action footer",
+        "Lambda tab switching",
+        "Mu expander details",
+        "Nu scrollbar track click",
+        "Xi stacked sections",
     });
     items_control->set_selected_index((id - 1U) % items_control->items().size());
     items_control->set_item_spacing(6.0F);
 
     std::vector<std::string> scroll_items;
-    scroll_items.reserve(36);
-    for (int index = 1; index <= 36; ++index) {
+    scroll_items.reserve(48);
+    for (int index = 1; index <= 48; ++index) {
         scroll_items.push_back(fmt::format("Scroll item {:02d} - 用于检查滚动条、裁剪区、文本对齐与 hover 呈现", index));
     }
     auto scroll_content = std::make_shared<dcompframe::ItemsControl>();
@@ -217,32 +221,32 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     scroll_viewer->set_content(scroll_content);
 
     list_view->set_groups({
-        dcompframe::ListGroup {.name = "Primary", .items = {"Layout", "Rendering", "Input", "Composition", "Typography"}},
-        dcompframe::ListGroup {.name = "Secondary", .items = {"Diagnostics", "Theme", "Assets", "Preview", "Scroll"}},
-        dcompframe::ListGroup {.name = "Utility", .items = {"Card", "Popup", "Editor", "Tokens", "Status"}},
+        dcompframe::ListGroup {.name = "Primary", .items = {"Layout", "Rendering", "Input", "Composition", "Typography", "Animation"}},
+        dcompframe::ListGroup {.name = "Secondary", .items = {"Diagnostics", "Theme", "Assets", "Preview", "Scroll", "Tabs"}},
+        dcompframe::ListGroup {.name = "Utility", .items = {"Card", "Popup", "Editor", "Tokens", "Status", "Expander"}},
     });
     list_view->set_selected_index(2);
 
     image->set_source("demo://element-plus-placeholder");
-        progress->set_range(0.0F, 100.0F);
-        progress->set_value(36.0F + static_cast<float>((id % 4U) * 12U));
-        progress->set_indeterminate(false);
-        loading->set_active((id % 2U) == 0U);
-        loading->set_overlay_mode(false);
-        loading->set_text("同步渲染状态...");
-        tab_control->set_tabs({"概览", "交互", "诊断"});
-        tab_control->set_selected_index((id - 1U) % 3U);
-        popup->set_title("状态弹层");
-        popup->set_body("用于演示 Popup/Modal 语义与层级展示。\nEsc 可关闭临时 UI。\n当前为示例展示模式。");
-        popup->set_modal(true);
-        popup->set_open((id % 2U) == 1U);
-        expander->set_header("更多控件说明");
-        expander->set_content_text("Expander 在收起时不占据正文空间，展开后展示附加说明。\n该行为遵循 ui-requirements 的容器与状态规范。");
-        expander->set_expanded((id % 3U) != 0U);
+    progress->set_range(0.0F, 100.0F);
+    progress->set_value(36.0F + static_cast<float>((id % 4U) * 12U));
+    progress->set_indeterminate(false);
+    loading->set_active((id % 2U) == 0U);
+    loading->set_overlay_mode(false);
+    loading->set_text("同步渲染状态...");
+    tab_control->set_tabs({"概览", "动画", "数据", "诊断"});
+    tab_control->set_selected_index((id - 1U) % 4U);
+    popup->set_title("状态弹层");
+    popup->set_body("用于演示 Popup/Modal 语义与层级展示。\nEsc 可关闭临时 UI。\n当前为示例展示模式。");
+    popup->set_modal(true);
+    popup->set_open((id % 2U) == 1U);
+    expander->set_header("更多控件说明");
+    expander->set_content_text("点击标题可展开或收起。\n滚动条轨道支持直接点击跳转。\n右侧预览区现在包含 TabControl 与动画示例。\n整体内容区按纵向堆叠方式排列，避免滚动遮挡标题。");
+    expander->set_expanded(true);
     card->set_title("Element Plus Card");
-    card->set_body("用于展示卡片、标签、按钮与描述文本的组合布局。当前使用更轻的分层、浅蓝标题带和更贴近 Web Element Plus 的信息密度。");
+    card->set_body("用于展示卡片、页签、动画、进度与展开区的组合布局。当前改为更清晰的纵向分区，便于在滚动时保持标题稳定。");
     card->set_icon("picture");
-    card->set_tags({"Preview", "Control", "Card"});
+    card->set_tags({"Preview", "Tabs", "Animation"});
     card->set_primary_action(primary_button);
 
     root_grid->set_rows_cols(12, 2);
