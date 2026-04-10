@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,6 +14,7 @@
 #include <dxgi1_2.h>
 
 #include "dcompframe/render_manager.h"
+#include "dcompframe/controls/controls.h"
 #include "dcompframe/window_host.h"
 
 namespace dcompframe {
@@ -22,12 +26,23 @@ public:
         std::vector<std::wstring> items;
     };
 
+    struct InteractiveControls {
+        std::shared_ptr<Button> primary_button;
+        std::shared_ptr<TextBox> text_box;
+        std::shared_ptr<CheckBox> check_box;
+        std::shared_ptr<ComboBox> combo_box;
+        std::shared_ptr<Slider> slider;
+    };
+
     WindowRenderTarget(RenderManager* render_manager, WindowHost* window_host);
     ~WindowRenderTarget();
 
     void set_overlay_scene(OverlayScene scene);
+    void set_interactive_controls(InteractiveControls controls);
+    void set_primary_action_handler(std::function<void()> handler);
     bool initialize();
     bool render_frame(bool has_dirty_changes = true);
+    bool handle_window_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result);
 
     [[nodiscard]] bool is_ready() const;
     [[nodiscard]] int presented_frames() const;
@@ -39,6 +54,10 @@ private:
     bool initialize_d2d_overlay();
     bool recreate_d2d_target();
     void cleanup_dx11_dcomp_target();
+    void sync_focus_state();
+    void reset_caret_blink();
+    void close_combo_box();
+    void perform_primary_action();
 
     RenderManager* render_manager_ = nullptr;
     WindowHost* window_host_ = nullptr;
@@ -66,13 +85,27 @@ private:
     IDWriteFactory* dwrite_factory_ = nullptr;
     IDWriteTextFormat* text_format_ = nullptr;
     IDWriteTextFormat* item_text_format_ = nullptr;
+    IDWriteTextFormat* input_text_format_ = nullptr;
     OverlayScene overlay_scene_ {};
+    InteractiveControls interactive_controls_ {};
+    std::function<void()> primary_action_handler_ {};
+    bool interactive_mode_enabled_ = false;
     bool mouse_left_down_ = false;
     bool button_hovered_ = false;
     bool button_pressed_ = false;
-    bool button_toggled_ = false;
+    bool text_box_selecting_ = false;
+    bool slider_dragging_ = false;
+    bool combo_box_hovered_ = false;
+    bool combo_box_pressed_ = false;
+    bool slider_hovered_ = false;
+    bool check_box_hovered_ = false;
+    bool text_box_hovered_ = false;
     int hovered_item_index_ = -1;
+    int hovered_combo_index_ = -1;
     int button_click_count_ = 0;
+    std::size_t focused_control_index_ = 0;
+    std::optional<std::size_t> pressed_combo_index_ {};
+    unsigned long long caret_blink_seed_ = 0;
 };
 
 }  // namespace dcompframe

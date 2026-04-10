@@ -24,6 +24,8 @@ struct WindowConfig {
 
 class WindowHost {
 public:
+    using MessageHandler = std::function<bool(UINT, WPARAM, LPARAM, LRESULT&)>;
+
     explicit WindowHost(WindowConfig config = {});
 
     bool create(std::wstring title, int width, int height);
@@ -31,8 +33,10 @@ public:
 
     void on_size_changed(int width, int height);
     void apply_dpi(unsigned int dpi);
+    void on_destroyed();
     void set_window_state(WindowState state);
     void set_visible(bool visible);
+    void set_message_handler(MessageHandler handler);
 
     int run_message_loop(const std::function<bool()>& render_callback, int max_iterations = -1);
     void request_render();
@@ -44,6 +48,7 @@ public:
     [[nodiscard]] bool is_created() const;
     [[nodiscard]] bool is_visible() const;
     [[nodiscard]] HWND hwnd() const;
+    [[nodiscard]] bool dispatch_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result);
 
 private:
     WindowConfig config_;
@@ -54,6 +59,7 @@ private:
     bool visible_ = false;
     HWND hwnd_ = nullptr;
     DWORD saved_window_style_ = WS_OVERLAPPEDWINDOW;
+    MessageHandler message_handler_ {};
 };
 
 }  // namespace dcompframe

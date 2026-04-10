@@ -3,7 +3,62 @@
 #include <algorithm>
 #include <cmath>
 
+#include <windows.h>
+
 namespace dcompframe {
+
+namespace {
+
+template <typename T>
+T min_value(const T& left, const T& right) {
+    return left < right ? left : right;
+}
+
+template <typename T>
+T max_value(const T& left, const T& right) {
+    return left > right ? left : right;
+}
+
+template <typename T>
+T clamp_value(const T& value, const T& low, const T& high) {
+    return min_value(max_value(value, low), high);
+}
+
+std::wstring utf8_to_wstring(const std::string& value) {
+    if (value.empty()) {
+        return {};
+    }
+
+    const int count = MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, nullptr, 0);
+    if (count <= 1) {
+        return {};
+    }
+
+    std::vector<wchar_t> buffer(static_cast<std::size_t>(count), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, buffer.data(), count);
+    return std::wstring(buffer.data());
+}
+
+std::string wstring_to_utf8(const std::wstring& value) {
+    if (value.empty()) {
+        return {};
+    }
+
+    const int count = WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (count <= 1) {
+        return {};
+    }
+
+    std::vector<char> buffer(static_cast<std::size_t>(count), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, buffer.data(), count, nullptr, nullptr);
+    return std::string(buffer.data());
+}
+
+std::size_t code_unit_length(const std::string& value) {
+    return utf8_to_wstring(value).size();
+}
+
+}  // namespace
 
 StyledElement::StyledElement(std::string name) : UIElement(std::move(name)) {}
 
@@ -116,6 +171,7 @@ TextBox::TextBox() : StyledElement("text_box") {
 
 void TextBox::set_text(std::string text) {
     text_ = std::move(text);
+    clamp_selection();
     mark_dirty();
 }
 
@@ -133,17 +189,123 @@ const std::string& TextBox::placeholder() const {
 }
 
 void TextBox::set_selection(std::size_t start, std::size_t end) {
-    const std::size_t max_size = text_.size();
-    selection_start_ = std::min(start, max_size);
-    selection_end_ = std::min(end, max_size);
-    if (selection_start_ > selection_end_) {
-        std::swap(selection_start_, selection_end_);
-    }
+    const std::size_t max_size = code_unit_length(text_);
+    selection_start_ = min_value(start, max_size);
+    selection_end_ = min_value(end, max_size);
+    caret_position_ = selection_end_;
     mark_dirty();
 }
 
 std::pair<std::size_t, std::size_t> TextBox::selection() const {
-    return {selection_start_, selection_end_};
+    return {min_value(selection_start_, selection_end_), max_value(selection_start_, selection_end_)};
+}
+
+bool TextBox::has_selection() const {
+    return selection_start_ != selection_end_;
+}
+
+void TextBox::clear_selection() {
+    selection_start_ = caret_position_;
+    selection_end_ = caret_position_;
+    mark_dirty();
+}
+
+void TextBox::select_all() {
+    selection_start_ = 0;
+    selection_end_ = code_unit_length(text_);
+    caret_position_ = selection_end_;
+    mark_dirty();
+}
+
+void TextBox::set_caret_position(std::size_t position, bool extend_selection) {
+    const std::size_t clamped = min_value(position, code_unit_length(text_));
+    caret_position_ = clamped;
+    if (extend_selection) {
+        selection_end_ = caret_position_;
+    } else {
+        selection_start_ = caret_position_;
+        selection_end_ = caret_position_;
+    }
+    mark_dirty();
+}
+
+std::size_t TextBox::caret_position() const {
+    return caret_position_;
+}
+
+void TextBox::move_caret_left(bool extend_selection) {
+    if (caret_position_ == 0) {
+        return;
+    }
+
+    set_caret_position(caret_position_ - 1, extend_selection);
+}
+
+void TextBox::move_caret_right(bool extend_selection) {
+    const std::size_t length = code_unit_length(text_);
+    if (caret_position_ >= length) {
+        return;
+    }
+
+    set_caret_position(caret_position_ + 1, extend_selection);
+}
+
+void TextBox::move_caret_home(bool extend_selection) {
+    set_caret_position(0, extend_selection);
+}
+
+void TextBox::move_caret_end(bool extend_selection) {
+    set_caret_position(code_unit_length(text_), extend_selection);
+}
+
+bool TextBox::insert_text(std::string text) {
+    if (text.empty()) {
+        return false;
+    }
+
+    replace_selection_with(text);
+    return true;
+}
+
+bool TextBox::backspace() {
+    if (has_selection()) {
+        replace_selection_with("");
+        return true;
+    }
+
+    if (caret_position_ == 0) {
+        return false;
+    }
+
+    const std::wstring wide = utf8_to_wstring(text_);
+    std::wstring updated = wide;
+    updated.erase(caret_position_ - 1, 1);
+    text_ = wstring_to_utf8(updated);
+    caret_position_ -= 1;
+    selection_start_ = caret_position_;
+    selection_end_ = caret_position_;
+    notify_text_changed();
+    mark_dirty();
+    return true;
+}
+
+bool TextBox::delete_forward() {
+    if (has_selection()) {
+        replace_selection_with("");
+        return true;
+    }
+
+    const std::wstring wide = utf8_to_wstring(text_);
+    if (caret_position_ >= wide.size()) {
+        return false;
+    }
+
+    std::wstring updated = wide;
+    updated.erase(caret_position_, 1);
+    text_ = wstring_to_utf8(updated);
+    notify_text_changed();
+    mark_dirty();
+    return true;
 }
 
 void TextBox::set_composition_text(std::string text) {
@@ -160,24 +322,57 @@ void TextBox::commit_composition() {
         return;
     }
 
-    const std::size_t start = std::min(selection_start_, text_.size());
-    const std::size_t end = std::min(selection_end_, text_.size());
-    text_.replace(start, end - start, composition_text_);
-    selection_start_ = start + composition_text_.size();
-    selection_end_ = selection_start_;
+    replace_selection_with(composition_text_);
     composition_text_.clear();
-    mark_dirty();
 }
 
 void TextBox::bind_text(Observable<std::string>& observable) {
     if (text_binding_id_ != 0) {
-        observable.unbind(text_binding_id_);
+        bound_text_->unbind(text_binding_id_);
     }
 
+    bound_text_ = &observable;
     text_binding_id_ = observable.bind([this](const std::string& value) {
+        updating_from_binding_ = true;
         set_text(value);
+        updating_from_binding_ = false;
     });
     set_text(observable.get());
+}
+
+void TextBox::set_on_text_changed(TextChangedHandler handler) {
+    on_text_changed_ = std::move(handler);
+}
+
+void TextBox::replace_selection_with(const std::string& replacement) {
+    const auto [begin, end] = selection();
+    const std::wstring wide_text = utf8_to_wstring(text_);
+    const std::wstring wide_replacement = utf8_to_wstring(replacement);
+    std::wstring updated = wide_text;
+    updated.replace(begin, end - begin, wide_replacement);
+    text_ = wstring_to_utf8(updated);
+    caret_position_ = begin + wide_replacement.size();
+    selection_start_ = caret_position_;
+    selection_end_ = caret_position_;
+    notify_text_changed();
+    mark_dirty();
+}
+
+void TextBox::clamp_selection() {
+    const std::size_t length = code_unit_length(text_);
+    selection_start_ = min_value(selection_start_, length);
+    selection_end_ = min_value(selection_end_, length);
+    caret_position_ = min_value(caret_position_, length);
+}
+
+void TextBox::notify_text_changed() {
+    if (!updating_from_binding_ && bound_text_ != nullptr) {
+        bound_text_->set(text_);
+    }
+
+    if (on_text_changed_) {
+        on_text_changed_(text_);
+    }
 }
 
 RichTextBox::RichTextBox() : StyledElement("rich_text_box") {
@@ -244,10 +439,10 @@ std::pair<std::size_t, std::size_t> ListView::visible_range(float scroll_offset,
         return {0U, 0U};
     }
 
-    const std::size_t begin = static_cast<std::size_t>(std::max(0.0F, scroll_offset) / item_height);
+    const std::size_t begin = static_cast<std::size_t>(max_value(0.0F, scroll_offset) / item_height);
     const std::size_t visible_count = static_cast<std::size_t>(std::ceil(viewport_height / item_height)) + 1U;
-    const std::size_t end = std::min(items_.size(), begin + visible_count);
-    return {std::min(begin, items_.size()), end};
+    const std::size_t end = min_value(items_.size(), begin + visible_count);
+    return {min_value(begin, items_.size()), end};
 }
 
 ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {}
@@ -276,9 +471,9 @@ void ScrollViewer::tick_inertia(std::chrono::milliseconds delta_time, float dece
 
     const auto damp = [&](float value) {
         if (value > 0.0F) {
-            return std::max(0.0F, value - deceleration * dt);
+            return max_value(0.0F, value - deceleration * dt);
         }
-        return std::min(0.0F, value + deceleration * dt);
+        return min_value(0.0F, value + deceleration * dt);
     };
 
     velocity_.x = damp(velocity_.x);
@@ -295,13 +490,30 @@ CheckBox::CheckBox() : StyledElement("check_box") {
 }
 
 void CheckBox::set_checked(bool checked) {
+    if (checked_ == checked) {
+        return;
+    }
+
     checked_ = checked;
     set_state(checked_ ? ControlState::Selected : ControlState::Normal);
     mark_dirty();
+
+    if (on_checked_changed_) {
+        on_checked_changed_(checked_);
+    }
 }
 
 bool CheckBox::checked() const {
     return checked_;
+}
+
+bool CheckBox::toggle() {
+    set_checked(!checked_);
+    return checked_;
+}
+
+void CheckBox::set_on_checked_changed(CheckedChangedHandler handler) {
+    on_checked_changed_ = std::move(handler);
 }
 
 ComboBox::ComboBox() : StyledElement("combo_box") {
@@ -314,6 +526,7 @@ void ComboBox::set_items(std::vector<std::string> items) {
         selected_index_.reset();
     }
     mark_dirty();
+    notify_selection_changed();
 }
 
 const std::vector<std::string>& ComboBox::items() const {
@@ -327,6 +540,7 @@ void ComboBox::set_selected_index(std::size_t index) {
         selected_index_.reset();
     }
     mark_dirty();
+    notify_selection_changed();
 }
 
 std::optional<std::size_t> ComboBox::selected_index() const {
@@ -340,6 +554,67 @@ std::string ComboBox::selected_text() const {
     return items_[*selected_index_];
 }
 
+void ComboBox::open_dropdown() {
+    dropdown_open_ = !items_.empty();
+    mark_dirty();
+}
+
+void ComboBox::close_dropdown() {
+    dropdown_open_ = false;
+    mark_dirty();
+}
+
+void ComboBox::toggle_dropdown() {
+    if (dropdown_open_) {
+        close_dropdown();
+        return;
+    }
+
+    open_dropdown();
+}
+
+bool ComboBox::is_dropdown_open() const {
+    return dropdown_open_;
+}
+
+bool ComboBox::select_next() {
+    if (items_.empty()) {
+        return false;
+    }
+
+    const std::size_t next = selected_index_ ? min_value(*selected_index_ + 1U, items_.size() - 1U) : 0U;
+    if (selected_index_ && *selected_index_ == next) {
+        return false;
+    }
+
+    set_selected_index(next);
+    return true;
+}
+
+bool ComboBox::select_previous() {
+    if (items_.empty()) {
+        return false;
+    }
+
+    const std::size_t previous = selected_index_ ? (*selected_index_ == 0U ? 0U : *selected_index_ - 1U) : 0U;
+    if (selected_index_ && *selected_index_ == previous) {
+        return false;
+    }
+
+    set_selected_index(previous);
+    return true;
+}
+
+void ComboBox::set_on_selection_changed(SelectionChangedHandler handler) {
+    on_selection_changed_ = std::move(handler);
+}
+
+void ComboBox::notify_selection_changed() {
+    if (on_selection_changed_) {
+        on_selection_changed_(selected_index_, selected_text());
+    }
+}
+
 Slider::Slider() : StyledElement("slider") {
     set_focusable(true);
 }
@@ -347,17 +622,66 @@ Slider::Slider() : StyledElement("slider") {
 void Slider::set_range(float min_value, float max_value) {
     min_ = min_value;
     max_ = max_value >= min_value ? max_value : min_value;
-    value_ = std::clamp(value_, min_, max_);
+    value_ = clamp_value(value_, min_, max_);
     mark_dirty();
 }
 
 void Slider::set_value(float value) {
-    value_ = std::clamp(value, min_, max_);
+    const float clamped = clamp_value(value, min_, max_);
+    if (std::abs(clamped - value_) <= 0.0001F) {
+        return;
+    }
+
+    value_ = clamped;
     mark_dirty();
+
+    if (on_value_changed_) {
+        on_value_changed_(value_);
+    }
 }
 
 float Slider::value() const {
     return value_;
+}
+
+float Slider::min_value() const {
+    return min_;
+}
+
+float Slider::max_value() const {
+    return max_;
+}
+
+void Slider::set_step(float step) {
+    step_ = step > 0.0F ? step : 1.0F;
+}
+
+float Slider::step() const {
+    return step_;
+}
+
+float Slider::normalized_value() const {
+    const float range = max_ - min_;
+    if (range <= 0.0001F) {
+        return 0.0F;
+    }
+
+    return (value_ - min_) / range;
+}
+
+void Slider::set_value_from_ratio(float ratio) {
+    const float clamped_ratio = clamp_value(ratio, 0.0F, 1.0F);
+    set_value(min_ + (max_ - min_) * clamped_ratio);
+}
+
+bool Slider::step_by(float delta_steps) {
+    const float previous = value_;
+    set_value(value_ + delta_steps * step_);
+    return std::abs(previous - value_) > 0.0001F;
+}
+
+void Slider::set_on_value_changed(ValueChangedHandler handler) {
+    on_value_changed_ = std::move(handler);
 }
 
 Card::Card() : StyledElement("card") {}

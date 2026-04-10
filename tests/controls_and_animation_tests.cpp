@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "dcompframe/animation/animation_manager.h"
+#include "dcompframe/binding/observable.h"
 #include "dcompframe/controls/controls.h"
 #include "dcompframe/controls/style.h"
 
@@ -62,6 +63,68 @@ TEST(ControlsTests, ComboBoxStoresItemsAndSelectedText) {
     combo_box.set_selected_index(42U);
     EXPECT_FALSE(combo_box.selected_index().has_value());
     EXPECT_TRUE(combo_box.selected_text().empty());
+}
+
+TEST(ControlsTests, TextBoxSupportsEditingSelectionAndTwoWayBinding) {
+    TextBox text_box;
+    Observable<std::string> title {"Alpha"};
+
+    text_box.bind_text(title);
+    text_box.move_caret_end();
+    EXPECT_TRUE(text_box.insert_text(" Beta"));
+    EXPECT_EQ(text_box.text(), "Alpha Beta");
+    EXPECT_EQ(title.get(), "Alpha Beta");
+
+    text_box.set_selection(6, 10);
+    EXPECT_TRUE(text_box.has_selection());
+    EXPECT_TRUE(text_box.insert_text("Gamma"));
+    EXPECT_EQ(text_box.text(), "Alpha Gamma");
+    EXPECT_EQ(text_box.caret_position(), 11U);
+
+    text_box.move_caret_left();
+    EXPECT_TRUE(text_box.backspace());
+    EXPECT_EQ(text_box.text(), "Alpha Gama");
+
+    text_box.select_all();
+    EXPECT_TRUE(text_box.has_selection());
+    text_box.clear_selection();
+    EXPECT_FALSE(text_box.has_selection());
+}
+
+TEST(ControlsTests, CheckBoxComboBoxAndSliderSupportInteractiveStateChanges) {
+    CheckBox check_box;
+    ComboBox combo_box;
+    Slider slider;
+
+    bool latest_checked = false;
+    std::string latest_combo;
+    float latest_value = 0.0F;
+
+    check_box.set_on_checked_changed([&latest_checked](bool checked) { latest_checked = checked; });
+    combo_box.set_items({"Overview", "Diagnostics", "Preview"});
+    combo_box.set_on_selection_changed([&latest_combo](std::optional<std::size_t>, const std::string& value) { latest_combo = value; });
+    slider.set_range(0.0F, 100.0F);
+    slider.set_step(10.0F);
+    slider.set_on_value_changed([&latest_value](float value) { latest_value = value; });
+
+    EXPECT_TRUE(check_box.toggle());
+    EXPECT_TRUE(latest_checked);
+
+    combo_box.open_dropdown();
+    EXPECT_TRUE(combo_box.is_dropdown_open());
+    EXPECT_TRUE(combo_box.select_next());
+    EXPECT_EQ(combo_box.selected_text(), "Overview");
+    EXPECT_EQ(latest_combo, "Overview");
+    EXPECT_TRUE(combo_box.select_next());
+    EXPECT_EQ(combo_box.selected_text(), "Diagnostics");
+    combo_box.close_dropdown();
+    EXPECT_FALSE(combo_box.is_dropdown_open());
+
+    slider.set_value_from_ratio(0.5F);
+    EXPECT_FLOAT_EQ(slider.value(), 50.0F);
+    EXPECT_TRUE(slider.step_by(1.0F));
+    EXPECT_FLOAT_EQ(slider.value(), 60.0F);
+    EXPECT_FLOAT_EQ(latest_value, 60.0F);
 }
 
 TEST(ControlsTests, TextAlignmentDefaultsToCenterExceptRichTextBox) {

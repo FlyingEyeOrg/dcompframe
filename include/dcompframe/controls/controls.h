@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
@@ -102,6 +103,8 @@ private:
 
 class TextBox : public StyledElement {
 public:
+    using TextChangedHandler = std::function<void(const std::string&)>;
+
     TextBox();
 
     void set_text(std::string text);
@@ -112,20 +115,43 @@ public:
 
     void set_selection(std::size_t start, std::size_t end);
     [[nodiscard]] std::pair<std::size_t, std::size_t> selection() const;
+    [[nodiscard]] bool has_selection() const;
+    void clear_selection();
+    void select_all();
+
+    void set_caret_position(std::size_t position, bool extend_selection = false);
+    [[nodiscard]] std::size_t caret_position() const;
+    void move_caret_left(bool extend_selection = false);
+    void move_caret_right(bool extend_selection = false);
+    void move_caret_home(bool extend_selection = false);
+    void move_caret_end(bool extend_selection = false);
+
+    bool insert_text(std::string text);
+    bool backspace();
+    bool delete_forward();
 
     void set_composition_text(std::string text);
     [[nodiscard]] const std::string& composition_text() const;
     void commit_composition();
 
     void bind_text(Observable<std::string>& observable);
+    void set_on_text_changed(TextChangedHandler handler);
 
 private:
+    void replace_selection_with(const std::string& replacement);
+    void clamp_selection();
+    void notify_text_changed();
+
     std::string text_;
     std::string placeholder_;
     std::size_t selection_start_ = 0;
     std::size_t selection_end_ = 0;
+    std::size_t caret_position_ = 0;
     std::string composition_text_;
     int text_binding_id_ = 0;
+    Observable<std::string>* bound_text_ = nullptr;
+    bool updating_from_binding_ = false;
+    TextChangedHandler on_text_changed_ {};
 };
 
 class RichTextBox : public StyledElement {
@@ -180,17 +206,24 @@ private:
 
 class CheckBox : public StyledElement {
 public:
+    using CheckedChangedHandler = std::function<void(bool)>;
+
     CheckBox();
 
     void set_checked(bool checked);
     [[nodiscard]] bool checked() const;
+    bool toggle();
+    void set_on_checked_changed(CheckedChangedHandler handler);
 
 private:
     bool checked_ = false;
+    CheckedChangedHandler on_checked_changed_ {};
 };
 
 class ComboBox : public StyledElement {
 public:
+    using SelectionChangedHandler = std::function<void(std::optional<std::size_t>, const std::string&)>;
+
     ComboBox();
 
     void set_items(std::vector<std::string> items);
@@ -199,24 +232,47 @@ public:
     void set_selected_index(std::size_t index);
     [[nodiscard]] std::optional<std::size_t> selected_index() const;
     [[nodiscard]] std::string selected_text() const;
+    void open_dropdown();
+    void close_dropdown();
+    void toggle_dropdown();
+    [[nodiscard]] bool is_dropdown_open() const;
+    bool select_next();
+    bool select_previous();
+    void set_on_selection_changed(SelectionChangedHandler handler);
 
 private:
+    void notify_selection_changed();
+
     std::vector<std::string> items_;
     std::optional<std::size_t> selected_index_ {};
+    bool dropdown_open_ = false;
+    SelectionChangedHandler on_selection_changed_ {};
 };
 
 class Slider : public StyledElement {
 public:
+    using ValueChangedHandler = std::function<void(float)>;
+
     Slider();
 
     void set_range(float min_value, float max_value);
     void set_value(float value);
     [[nodiscard]] float value() const;
+    [[nodiscard]] float min_value() const;
+    [[nodiscard]] float max_value() const;
+    void set_step(float step);
+    [[nodiscard]] float step() const;
+    [[nodiscard]] float normalized_value() const;
+    void set_value_from_ratio(float ratio);
+    bool step_by(float delta_steps);
+    void set_on_value_changed(ValueChangedHandler handler);
 
 private:
     float min_ = 0.0F;
     float max_ = 100.0F;
     float value_ = 0.0F;
+    float step_ = 1.0F;
+    ValueChangedHandler on_value_changed_ {};
 };
 
 class Card : public StyledElement {

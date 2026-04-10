@@ -18,24 +18,42 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
     }
 
     if (self != nullptr) {
+        LRESULT handler_result = 0;
         switch (msg) {
         case WM_SIZE:
             self->on_size_changed(LOWORD(lparam), HIWORD(lparam));
+            if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
+                return handler_result;
+            }
             return 0;
         case WM_DPICHANGED:
             self->apply_dpi(LOWORD(wparam));
+            if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
+                return handler_result;
+            }
             return 0;
         case WM_MOUSEMOVE:
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
+        case WM_LBUTTONDBLCLK:
+        case WM_CHAR:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SETFOCUS:
+        case WM_KILLFOCUS:
+        case WM_TIMER:
             self->request_render();
-            return 0;
+            if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
+                return handler_result;
+            }
+            break;
         case WM_CLOSE:
             DestroyWindow(hwnd);
             return 0;
         case WM_DESTROY:
             return 0;
         case WM_NCDESTROY: {
+            self->on_destroyed();
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
             const int remained = --g_window_count;
             if (remained <= 0) {
@@ -135,6 +153,13 @@ void WindowHost::apply_dpi(unsigned int dpi) {
     needs_redraw_ = true;
 }
 
+void WindowHost::on_destroyed() {
+    hwnd_ = nullptr;
+    created_ = false;
+    visible_ = false;
+    needs_redraw_ = false;
+}
+
 void WindowHost::set_window_state(WindowState state) {
     if (state_ == state) {
         return;
@@ -169,6 +194,10 @@ void WindowHost::set_visible(bool visible) {
     if (hwnd_ != nullptr) {
         ShowWindow(hwnd_, visible ? SW_SHOW : SW_HIDE);
     }
+}
+
+void WindowHost::set_message_handler(MessageHandler handler) {
+    message_handler_ = std::move(handler);
 }
 
 int WindowHost::run_message_loop(const std::function<bool()>& render_callback, int max_iterations) {
@@ -259,6 +288,14 @@ bool WindowHost::is_visible() const {
 
 HWND WindowHost::hwnd() const {
     return hwnd_;
+}
+
+bool WindowHost::dispatch_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result) {
+    if (!message_handler_) {
+        return false;
+    }
+
+    return message_handler_(msg, wparam, lparam, result);
 }
 
 }  // namespace dcompframe

@@ -141,4 +141,16 @@ TEST(WindowHostTests, DestroySingleWindowDoesNotQuitWhenOtherWindowAlive) {
     second.destroy();
 }
 
+TEST(WindowHostTests, DestroyNotificationClearsInternalState) {
+    WindowHost host;
+
+    ASSERT_TRUE(host.create(L"DestroyStateHost", 320, 240));
+    EXPECT_TRUE(host.is_created());
+
+    host.on_destroyed();
+    EXPECT_FALSE(host.is_created());
+    EXPECT_FALSE(host.is_visible());
+    EXPECT_EQ(host.hwnd(), nullptr);
+}
+
 }  // namespace dcompframe::tests
