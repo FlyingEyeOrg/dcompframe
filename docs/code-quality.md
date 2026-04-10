@@ -156,3 +156,15 @@
   - 修复：demo 接入 `GridPanel` 根容器并按窗口尺寸实时 `arrange()`；移除 `ScrollViewer` focusable；补齐 `ScrollViewer`/`ListView`/`ItemsControl` thumb 命中和拖拽；为 `RichTextBox` 增加内部滚动、上下行导航、caret 可见性同步与选区裁剪。
   - 测试覆盖：全量 `43/43` 通过，demo 目标构建通过。
   - 结果：通过。行为更符合桌面 UI 预期，未发现新增编译、测试或所有权问题。
+
+## 本轮补充三（2026-04-10）
+
+- 检查项：TextBox 光标与占位符裁剪、ComboBox 展开内容、右侧预览布局冲突、全局滚轮滚动、白底与字体一致性。
+- 修复结果：
+  - TextBox：输入文本区改为更合理内边距，caret 高度按文本度量下限 14 收口。
+  - ComboBox：每次展开时重置下拉滚动偏移，消除历史偏移导致的展开错位。
+  - 右侧布局：重分配 card preview 内 Tab/Expander/Progress/Loading/Popup 区域，避免互相覆盖。
+  - 页面滚动：在未命中内层滚动容器时，滚轮作用于页面级偏移，支持整体向下扩展。
+  - 视觉：背景统一纯白，字体族切换为 `Microsoft YaHei UI`，输入字号调整为 14。
+- 测试结果：`ctest --preset vs2022-x64-debug-tests`，`45/45` 通过。
+- 限制项：本地 `dcompframe_demo.exe` 仍被占用，且当前策略禁止强制结束进程命令，demo 目标重链接需在进程释放后执行。

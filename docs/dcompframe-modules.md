@@ -111,6 +111,9 @@
 	- `ListView` 与 `ItemsControl` 均支持内部滚动、视口裁剪与轻量滚动条；`ItemsControl` 默认以类 `StackPanel` 的纵向列表方式渲染。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。
+	- 页面级滚轮偏移新增兜底路径：当未命中内层滚动容器时，滚轮作用于窗口主内容偏移，支持向下扩展布局内容。
+	- 文本输入样式收口：`TextBox` 输入区内边距与 caret 高度统一，修复占位符裁剪和光标高度异常。
+	- 视觉统一：背景清屏改为纯白，字体族统一为 `Microsoft YaHei UI`，字号向 Element Plus 14px 体系靠齐。
 	- `RichTextBox` 采用内部滚动偏移 + 视口裁剪，长文本选择与 caret 绘制不会越出富文本框边界。
 	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。
 	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。

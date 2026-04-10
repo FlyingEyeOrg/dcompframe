@@ -130,6 +130,7 @@ private:
     int hovered_combo_index_ = -1;
     int button_click_count_ = 0;
     float combo_box_scroll_offset_ = 0.0F;
+    float page_scroll_offset_ = 0.0F;
     std::size_t focused_control_index_ = 0;
     std::optional<std::size_t> pressed_combo_index_ {};
     unsigned long long caret_blink_seed_ = 0;

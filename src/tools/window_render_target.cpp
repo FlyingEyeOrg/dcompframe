@@ -204,7 +204,12 @@ D2D1_RECT_F compute_vertical_thumb(const D2D1_RECT_F& viewport, float total_heig
     return D2D1::RectF(viewport.right - width, thumb_top, viewport.right, thumb_top + thumb_height);
 }
 
-OverlayLayout compute_layout(float width, float height, const WindowRenderTarget::InteractiveControls& controls, float combo_box_scroll_offset) {
+OverlayLayout compute_layout(
+    float width,
+    float height,
+    const WindowRenderTarget::InteractiveControls& controls,
+    float combo_box_scroll_offset,
+    float page_scroll_offset) {
     OverlayLayout layout;
     const float outer_margin_x = clamp_value(width * 0.008F, 6.0F, 14.0F);
     const float outer_margin_y = clamp_value(height * 0.010F, 6.0F, 14.0F);
@@ -215,7 +220,7 @@ OverlayLayout compute_layout(float width, float height, const WindowRenderTarget
 
     const float inner_left = layout.card.left + 24.0F;
     const float inner_right = layout.card.right - 24.0F;
-    const float top = layout.card.top + 104.0F;
+    const float top = layout.card.top + 104.0F - page_scroll_offset;
     const float column_gap = 20.0F;
     const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
@@ -226,18 +231,17 @@ OverlayLayout compute_layout(float width, float height, const WindowRenderTarget
     const float max_scroll_section_height = max_value(136.0F, card_height - min_upper_content_height - 108.0F);
     const float scroll_section_height = clamp_value(card_height * 0.22F, 136.0F, min_value(240.0F, max_scroll_section_height));
 
-    layout.footer = D2D1::RectF(inner_left, layout.card.bottom - 42.0F, inner_right, layout.card.bottom - 16.0F);
-    layout.scroll_viewer = D2D1::RectF(inner_left, layout.footer.top - scroll_section_height, inner_right, layout.footer.top - 12.0F);
+    const float upper_bottom = layout.card.bottom - 280.0F - page_scroll_offset;
+    layout.scroll_viewer_label = D2D1::RectF(inner_left, upper_bottom + 18.0F, inner_right, upper_bottom + 18.0F + label_height);
+    layout.scroll_viewer = D2D1::RectF(inner_left, layout.scroll_viewer_label.bottom + 8.0F, inner_right, layout.scroll_viewer_label.bottom + 8.0F + scroll_section_height);
+    layout.footer = D2D1::RectF(inner_left, layout.scroll_viewer.bottom + 12.0F, inner_right, layout.scroll_viewer.bottom + 38.0F);
     layout.scroll_viewport = inset_rect(layout.scroll_viewer, 12.0F, 12.0F);
-    layout.scroll_viewer_label = D2D1::RectF(inner_left, layout.scroll_viewer.top - label_height - 8.0F, inner_right, layout.scroll_viewer.top - 8.0F);
-
-    const float upper_bottom = layout.scroll_viewer_label.top - 18.0F;
     const float right_column_height = max_value(240.0F, upper_bottom - top);
     const float fixed_right_spacing = (label_height + 6.0F) * 4.0F + control_gap * 4.0F;
     const float right_body_height = max_value(180.0F, right_column_height - fixed_right_spacing);
-    const float text_block_height = right_body_height * 0.14F;
-    const float image_height = right_body_height * 0.22F;
-    const float preview_card_height = right_body_height * 0.28F;
+    const float text_block_height = right_body_height * 0.12F;
+    const float image_height = right_body_height * 0.18F;
+    const float preview_card_height = right_body_height * 0.44F;
     const float remaining_list_height = max_value(120.0F, right_body_height - text_block_height - image_height - preview_card_height);
     const float list_view_height = remaining_list_height * 0.54F;
     const float items_control_height = remaining_list_height - list_view_height;
@@ -249,7 +253,7 @@ OverlayLayout compute_layout(float width, float height, const WindowRenderTarget
     layout.text_box_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
     left_cursor += label_height + 6.0F;
     layout.text_box = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + control_height);
-    layout.text_box_text = inset_rect(layout.text_box, 16.0F, 12.0F);
+    layout.text_box_text = inset_rect(layout.text_box, 14.0F, 8.0F);
     left_cursor += control_height + control_gap;
 
     layout.rich_text_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
@@ -304,13 +308,15 @@ OverlayLayout compute_layout(float width, float height, const WindowRenderTarget
     right_cursor += image_height + control_gap;
 
     layout.card_preview = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + preview_card_height);
-    layout.tab_control = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.top + 34.0F, layout.card_preview.right - 10.0F, layout.card_preview.top + 62.0F);
+    layout.tab_control = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.top + 34.0F, layout.card_preview.right - 10.0F, layout.card_preview.top + 64.0F);
     layout.expander_header = D2D1::RectF(layout.card_preview.left + 10.0F, layout.tab_control.bottom + 8.0F, layout.card_preview.right - 10.0F, layout.tab_control.bottom + 34.0F);
-    layout.expander_body = D2D1::RectF(layout.card_preview.left + 14.0F, layout.expander_header.bottom + 4.0F, layout.card_preview.right - 14.0F, layout.expander_header.bottom + 34.0F);
-    layout.progress_label = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.bottom - 42.0F, layout.card_preview.left + 86.0F, layout.card_preview.bottom - 22.0F);
-    layout.progress_bar = D2D1::RectF(layout.card_preview.left + 88.0F, layout.card_preview.bottom - 40.0F, layout.card_preview.right - 12.0F, layout.card_preview.bottom - 24.0F);
-    layout.loading_badge = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.bottom - 20.0F, layout.card_preview.left + 132.0F, layout.card_preview.bottom - 6.0F);
-    layout.popup_preview = D2D1::RectF(layout.card_preview.right - 112.0F, layout.card_preview.bottom - 66.0F, layout.card_preview.right - 10.0F, layout.card_preview.bottom - 6.0F);
+    const float reserved_bottom = 78.0F;
+    const float expander_body_bottom = max_value(layout.expander_header.bottom + 8.0F, layout.card_preview.bottom - reserved_bottom);
+    layout.expander_body = D2D1::RectF(layout.card_preview.left + 14.0F, layout.expander_header.bottom + 4.0F, layout.card_preview.right - 14.0F, expander_body_bottom);
+    layout.progress_label = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.bottom - 64.0F, layout.card_preview.left + 86.0F, layout.card_preview.bottom - 44.0F);
+    layout.progress_bar = D2D1::RectF(layout.card_preview.left + 88.0F, layout.card_preview.bottom - 62.0F, layout.card_preview.right - 12.0F, layout.card_preview.bottom - 46.0F);
+    layout.loading_badge = D2D1::RectF(layout.card_preview.left + 10.0F, layout.card_preview.bottom - 38.0F, layout.card_preview.left + 170.0F, layout.card_preview.bottom - 12.0F);
+    layout.popup_preview = D2D1::RectF(layout.card_preview.right - 180.0F, layout.card_preview.bottom - 44.0F, layout.card_preview.right - 10.0F, layout.card_preview.bottom - 12.0F);
     right_cursor += preview_card_height + control_gap;
 
     layout.list_view_label = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + label_height);
@@ -736,13 +742,13 @@ void draw_text_box_editor(
         focused ? 2.0F : 1.0F,
         4.0F);
 
-    const D2D1_RECT_F text_rect = inset_rect(rect, 16.0F, 12.0F);
+    const D2D1_RECT_F text_rect = inset_rect(rect, 14.0F, 8.0F);
     const std::wstring wide_text = utf8_to_wstring(text_box.text());
     const bool use_placeholder = wide_text.empty();
     const std::wstring display_text = use_placeholder ? utf8_to_wstring(text_box.placeholder()) : wide_text;
 
     IDWriteTextLayout* layout = nullptr;
-    if (!create_text_layout(dwrite_factory, input_format, display_text, rect_width(text_rect), rect_height(text_rect), &layout)) {
+    if (!create_text_layout(dwrite_factory, input_format, display_text, rect_width(text_rect), max_value(24.0F, rect_height(text_rect)), &layout)) {
         return;
     }
 
@@ -789,8 +795,8 @@ void draw_text_box_editor(
         FLOAT caret_y = text_rect.top;
         DWRITE_HIT_TEST_METRICS caret_metrics {};
         if (SUCCEEDED(layout->HitTestTextPosition(static_cast<UINT32>(text_box.caret_position()), FALSE, &caret_x, &caret_y, &caret_metrics))) {
-            const float caret_top = clamp_value(text_rect.top + caret_y, text_rect.top + 3.0F, text_rect.bottom - 8.0F);
-            const float caret_bottom = clamp_value(caret_top + max_value(18.0F, caret_metrics.height), caret_top + 8.0F, text_rect.bottom - 3.0F);
+            const float caret_top = clamp_value(text_rect.top + caret_y, text_rect.top + 2.0F, text_rect.bottom - 8.0F);
+            const float caret_bottom = clamp_value(caret_top + max_value(14.0F, caret_metrics.height), caret_top + 6.0F, text_rect.bottom - 2.0F);
             draw_editor_caret(context, brush, text_rect.left + caret_x, caret_top, caret_bottom);
         }
     }
@@ -866,7 +872,7 @@ void draw_rich_text_panel(
         DWRITE_HIT_TEST_METRICS caret_metrics {};
         if (SUCCEEDED(layout->HitTestTextPosition(static_cast<UINT32>(rich_text_box.caret_position()), FALSE, &caret_x, &caret_y, &caret_metrics))) {
             const float caret_top = text_rect.top - rich_text_box.scroll_offset() + caret_y;
-            const float caret_bottom = caret_top + max_value(18.0F, caret_metrics.height);
+            const float caret_bottom = caret_top + max_value(14.0F, caret_metrics.height);
             draw_editor_caret(context, brush, text_rect.left + caret_x, caret_top, caret_bottom);
         }
     }
@@ -954,13 +960,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         const float height = size.height > 0.0F ? size.height : 720.0F;
 
         // Background tone responds to current window size so resize has immediate visual feedback.
-        const float size_ratio = clamp_value((width + height) / 2600.0F, 0.4F, 1.8F);
-        const float clear_color[4] {
-            0.05F + 0.03F * size_ratio,
-            0.08F + 0.05F * size_ratio,
-            0.14F + 0.04F * size_ratio,
-            1.0F,
-        };
+        const float clear_color[4] {1.0F, 1.0F, 1.0F, 1.0F};
         d3d_context_->OMSetRenderTargets(1, &render_target_view_, nullptr);
         d3d_context_->ClearRenderTargetView(render_target_view_, clear_color);
 
@@ -977,7 +977,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         const float pointer_x = static_cast<float>(cursor_point.x);
         const float pointer_y = static_cast<float>(cursor_point.y);
         const std::vector<std::wstring> items = overlay_scene_.items;
-        const OverlayLayout layout = compute_layout(width, height, interactive_controls_, combo_box_scroll_offset_);
+        const OverlayLayout layout = compute_layout(width, height, interactive_controls_, combo_box_scroll_offset_, page_scroll_offset_);
         const HitResult hovered = pointer_inside ? hit_test(layout, pointer_x, pointer_y) : HitResult {};
         button_hovered_ = hovered.target == HitTarget::PrimaryButton;
         text_box_hovered_ = hovered.target == HitTarget::TextBox;
@@ -1242,16 +1242,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                                 d2d_brush_,
                                 item_text_format_,
                                 utf8_to_wstring(interactive_controls_.popup->title()),
-                                D2D1::RectF(layout.popup_preview.left + 6.0F, layout.popup_preview.top + 3.0F, layout.popup_preview.right - 6.0F, layout.popup_preview.top + 20.0F),
+                                D2D1::RectF(layout.popup_preview.left + 6.0F, layout.popup_preview.top + 2.0F, layout.popup_preview.right - 6.0F, layout.popup_preview.bottom - 2.0F),
                                 D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
-                            draw_wrapped_text(
-                                d2d_context_,
-                                d2d_brush_,
-                                dwrite_factory_,
-                                helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_,
-                                utf8_to_wstring(interactive_controls_.popup->body()),
-                                D2D1::RectF(layout.popup_preview.left + 6.0F, layout.popup_preview.top + 20.0F, layout.popup_preview.right - 6.0F, layout.popup_preview.bottom - 4.0F),
-                                D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
                         } else {
                             draw_text_line(
                                 d2d_context_,
@@ -1476,7 +1468,7 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
     }
 
     const auto size = window_host_->client_size();
-    const OverlayLayout layout = compute_layout(size.width > 0.0F ? size.width : 1280.0F, size.height > 0.0F ? size.height : 720.0F, interactive_controls_, combo_box_scroll_offset_);
+    const OverlayLayout layout = compute_layout(size.width > 0.0F ? size.width : 1280.0F, size.height > 0.0F ? size.height : 720.0F, interactive_controls_, combo_box_scroll_offset_, page_scroll_offset_);
     const auto update_focus = [&](std::size_t index) {
         focused_control_index_ = min_value(index, kInteractiveFocusCount - 1U);
         sync_focus_state();
@@ -1508,6 +1500,11 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
 
         const float total_height = compute_combo_dropdown_total_height(interactive_controls_.combo_box->items().size(), 36.0F);
         return clamp_value(candidate, 0.0F, max_value(0.0F, total_height - rect_height(layout.combo_dropdown_viewport)));
+    };
+    const auto clamp_page_offset = [&](float candidate) {
+        const float viewport_height = max_value(1.0F, layout.card.bottom - (layout.card.top + 104.0F) - 16.0F);
+        const float virtual_height = max_value(viewport_height, viewport_height + 320.0F);
+        return clamp_value(candidate, 0.0F, max_value(0.0F, virtual_height - viewport_height));
     };
     const auto ensure_combo_selection_visible = [&]() {
         if (interactive_controls_.combo_box == nullptr || !interactive_controls_.combo_box->selected_index().has_value()) {
@@ -1801,7 +1798,7 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             update_focus(kComboBoxFocusIndex);
             interactive_controls_.combo_box->toggle_dropdown();
             if (interactive_controls_.combo_box->is_dropdown_open()) {
-                ensure_combo_selection_visible();
+                combo_box_scroll_offset_ = 0.0F;
             }
             combo_box_pressed_ = true;
             break;
@@ -1922,6 +1919,13 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         if (interactive_controls_.items_control != nullptr && point_in_rect(layout.items_control, x, y)) {
             const float delta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wparam)) / static_cast<float>(WHEEL_DELTA);
             interactive_controls_.items_control->set_scroll_offset(clamp_value(interactive_controls_.items_control->scroll_offset() - delta * 32.0F, 0.0F, clamp_items_control_offset()));
+            window_host_->request_render();
+            result = 0;
+            return true;
+        }
+        if (point_in_rect(layout.card, x, y)) {
+            const float delta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wparam)) / static_cast<float>(WHEEL_DELTA);
+            page_scroll_offset_ = clamp_page_offset(page_scroll_offset_ - delta * 36.0F);
             window_host_->request_render();
             result = 0;
             return true;
@@ -2108,7 +2112,7 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             if (wparam == VK_SPACE || wparam == VK_RETURN) {
                 interactive_controls_.combo_box->toggle_dropdown();
                 if (interactive_controls_.combo_box->is_dropdown_open()) {
-                    ensure_combo_selection_visible();
+                    combo_box_scroll_offset_ = 0.0F;
                 }
                 window_host_->request_render();
                 result = 0;
@@ -2474,12 +2478,12 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
             item_text_format_ = nullptr;
         } else {
             const HRESULT format_hr = dwrite_factory_->CreateTextFormat(
-                L"Microsoft YaHei",
+                L"Microsoft YaHei UI",
                 nullptr,
                 DWRITE_FONT_WEIGHT_SEMI_BOLD,
                 DWRITE_FONT_STYLE_NORMAL,
                 DWRITE_FONT_STRETCH_NORMAL,
-                20.0F,
+                18.0F,
                 L"en-us",
                 &text_format_);
             if (FAILED(format_hr) || text_format_ == nullptr) {
@@ -2490,7 +2494,7 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
             }
 
             const HRESULT item_format_hr = dwrite_factory_->CreateTextFormat(
-                L"Microsoft YaHei",
+                L"Microsoft YaHei UI",
                 nullptr,
                 DWRITE_FONT_WEIGHT_NORMAL,
                 DWRITE_FONT_STYLE_NORMAL,
@@ -2507,12 +2511,12 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
             }
 
             const HRESULT helper_format_hr = dwrite_factory_->CreateTextFormat(
-                L"Microsoft YaHei",
+                L"Microsoft YaHei UI",
                 nullptr,
                 DWRITE_FONT_WEIGHT_NORMAL,
                 DWRITE_FONT_STYLE_NORMAL,
                 DWRITE_FONT_STRETCH_NORMAL,
-                13.0F,
+                14.0F,
                 L"en-us",
                 &helper_text_format_);
             if (FAILED(helper_format_hr) || helper_text_format_ == nullptr) {
@@ -2524,12 +2528,12 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
             }
 
             const HRESULT input_format_hr = dwrite_factory_->CreateTextFormat(
-                L"Microsoft YaHei",
+                L"Microsoft YaHei UI",
                 nullptr,
                 DWRITE_FONT_WEIGHT_NORMAL,
                 DWRITE_FONT_STYLE_NORMAL,
                 DWRITE_FONT_STRETCH_NORMAL,
-                18.0F,
+                14.0F,
                 L"en-us",
                 &input_text_format_);
             if (FAILED(input_format_hr) || input_text_format_ == nullptr) {

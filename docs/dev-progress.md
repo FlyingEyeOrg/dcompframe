@@ -2,6 +2,15 @@
 
 ## 已完成
 
+- 2026-04-10（UI 体验修复：输入、下拉、布局与视觉一致性）
+  - 修复 `TextBox` 光标高度异常与占位符文本裁剪：统一输入字体尺寸并调整文本内边距与 caret 高度。
+  - 修复 `ComboBox` 展开内容异常：下拉展开时重置内部滚动偏移，避免历史偏移造成“展开即错位”。
+  - 修复右侧内容错乱：重分配预览卡片、Tab/Expander/Progress/Loading/Popup 区域，避免互相覆盖。
+  - 新增页面级滚动偏移处理：在非内层滚动命中时，窗口主区域可滚动，支持继续向下扩展布局。
+  - 背景改为纯白底，符合 Element Plus 页面基调。
+  - 字体对齐 Element Plus：切换 `Microsoft YaHei UI`，并统一正文/输入字号到 14 体系。
+  - 验证：`ctest --preset vs2022-x64-debug-tests` 结果 `45/45` 全通过。
+
 - 2026-04-10（按 UI 规范补齐控件并全量接入 demo）
   - 依据 `docs/ui-requirements/ui-framework-design-spec.md` 完成控件族补齐：`Label`、`Progress`、`Loading`、`TabControl`、`Popup`、`Expander`。
   - `controls.h` 聚合头导出新增控件，`WindowRenderTarget::InteractiveControls` 完成新增控件接线。
