@@ -88,8 +88,19 @@ TEST(RenderManagerTests, CommitRequiresInitBindingAndDirtyFlag) {
     EXPECT_EQ(manager.total_commit_count(), 1);
 }
 
-TEST(WindowHostTests, DefaultConfigIncludesNoRedirectionBitmap) {
+TEST(WindowHostTests, DefaultConfigPreservesTaskbarWindowWithoutNoRedirectionBitmap) {
     WindowHost host;
+
+    EXPECT_NE(host.config().ex_style & WS_EX_APPWINDOW, 0UL);
+    EXPECT_EQ(host.config().ex_style & WS_EX_NOREDIRECTIONBITMAP, 0UL);
+}
+
+TEST(WindowHostTests, ExplicitConfigCanStillEnableNoRedirectionBitmap) {
+    WindowHost host(WindowConfig {
+        .style = WS_OVERLAPPEDWINDOW,
+        .ex_style = WS_EX_APPWINDOW | WS_EX_NOREDIRECTIONBITMAP,
+        .dpi_scale = 1.0F,
+    });
 
     EXPECT_NE(host.config().ex_style & WS_EX_NOREDIRECTIONBITMAP, 0UL);
 }

@@ -101,6 +101,14 @@ POINT point_from_rect(const Rect& rect, float x_offset, float y_offset) {
     return point;
 }
 
+LPARAM client_to_screen_lparam(HWND hwnd, LONG x, LONG y) {
+    POINT point {x, y};
+    if (hwnd != nullptr) {
+        ClientToScreen(hwnd, &point);
+    }
+    return MAKELPARAM(point.x, point.y);
+}
+
 POINT compute_combo_dropdown_point(const ComboBox& combo_box) {
     const Rect bounds = combo_box.bounds();
     return point_from_rect(bounds, bounds.width * 0.5F, bounds.height + 22.0F);
@@ -183,6 +191,66 @@ TEST(IntegrationTests, WindowRenderAnimationAndInputFlow) {
     const int rendered = host.run_message_loop([&target] { return target.render_frame(true); }, 3);
     EXPECT_GE(rendered, 1);
     EXPECT_GE(render_manager.total_commit_count(), 1);
+
+    host.destroy();
+}
+
+TEST(IntegrationTests, WindowRenderTargetReturnsSystemCaptionAndResizeHitTests) {
+    RenderManager render_manager;
+    ASSERT_TRUE(render_manager.initialize(true));
+
+    WindowHost host;
+    ASSERT_TRUE(host.create(L"ChromeStyleCaptionHost", 960, 720));
+    host.set_visible(true);
+
+    WindowRenderTarget target(&render_manager, &host);
+
+    auto button = std::make_shared<Button>("Create");
+    auto text_box = std::make_shared<TextBox>();
+    auto check_box = std::make_shared<CheckBox>();
+    auto combo_box = std::make_shared<ComboBox>();
+    auto slider = std::make_shared<Slider>();
+
+    combo_box->set_items({"One", "Two", "Three"});
+    combo_box->set_selected_index(0);
+    slider->set_range(0.0F, 100.0F);
+    slider->set_value(50.0F);
+
+    target.set_interactive_controls(WindowRenderTarget::InteractiveControls {
+        .primary_button = button,
+        .text_box = text_box,
+        .check_box = check_box,
+        .combo_box = combo_box,
+        .slider = slider,
+    });
+
+    ASSERT_TRUE(target.initialize());
+
+    const Size size = host.client_size();
+    LRESULT result = 0;
+
+    EXPECT_TRUE(target.handle_window_message(
+        WM_NCHITTEST,
+        0,
+        client_to_screen_lparam(host.hwnd(), static_cast<LONG>(size.width - 69.0F), 24),
+        result));
+    EXPECT_EQ(result, HTMAXBUTTON);
+
+    result = 0;
+    EXPECT_TRUE(target.handle_window_message(
+        WM_NCHITTEST,
+        0,
+        client_to_screen_lparam(host.hwnd(), 180, 24),
+        result));
+    EXPECT_EQ(result, HTCAPTION);
+
+    result = 0;
+    EXPECT_TRUE(target.handle_window_message(
+        WM_NCHITTEST,
+        0,
+        client_to_screen_lparam(host.hwnd(), static_cast<LONG>(size.width - 2.0F), static_cast<LONG>(size.height * 0.5F)),
+        result));
+    EXPECT_EQ(result, HTRIGHT);
 
     host.destroy();
 }

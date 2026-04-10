@@ -83,42 +83,59 @@ protected:
     }
 
 private:
+    static dcompframe::Thickness make_insets(float horizontal, float vertical) {
+        return dcompframe::Thickness {.left = horizontal, .top = vertical, .right = horizontal, .bottom = vertical};
+    }
+
+    void reserve_label_slot(const std::shared_ptr<dcompframe::UIElement>& element, float top = 24.0F, float bottom = 4.0F) {
+        element->set_margin(dcompframe::Thickness {.left = 0.0F, .top = top, .right = 0.0F, .bottom = bottom});
+    }
+
     void configure_panels() {
         page_->set_margin(dcompframe::Thickness {.left = 24.0F, .top = 72.0F, .right = 24.0F, .bottom = 24.0F});
-        page_->set_row_gap(18.0F);
+        page_->set_padding(make_insets(18.0F, 16.0F));
+        page_->set_row_gap(22.0F);
 
+        hero_row_->set_padding(make_insets(14.0F, 14.0F));
         hero_row_->set_column_gap(20.0F);
-        hero_row_->set_row_gap(20.0F);
+        hero_row_->set_row_gap(24.0F);
         hero_row_->set_wrap(dcompframe::FlexWrap::Wrap);
         hero_row_->set_align_items(dcompframe::FlexAlignItems::Stretch);
 
-        form_column_->set_row_gap(14.0F);
+        form_column_->set_padding(make_insets(16.0F, 14.0F));
+        form_column_->set_row_gap(18.0F);
         form_column_->set_flex_grow(1.0F);
         form_column_->set_flex_basis(420.0F);
         form_column_->set_min_size(dcompframe::Size {.width = 420.0F, .height = 0.0F});
 
         options_row_->set_column_gap(14.0F);
+        options_row_->set_row_gap(14.0F);
         options_row_->set_wrap(dcompframe::FlexWrap::Wrap);
 
         switches_row_->set_column_gap(14.0F);
+        switches_row_->set_row_gap(12.0F);
         switches_row_->set_wrap(dcompframe::FlexWrap::Wrap);
         switches_row_->set_align_items(dcompframe::FlexAlignItems::Center);
 
         action_row_->set_column_gap(12.0F);
+        action_row_->set_row_gap(12.0F);
         action_row_->set_wrap(dcompframe::FlexWrap::Wrap);
         action_row_->set_align_items(dcompframe::FlexAlignItems::Center);
 
-        preview_column_->set_row_gap(14.0F);
+        preview_column_->set_padding(make_insets(16.0F, 14.0F));
+        preview_column_->set_row_gap(18.0F);
         preview_column_->set_flex_grow(1.0F);
         preview_column_->set_flex_basis(420.0F);
         preview_column_->set_min_size(dcompframe::Size {.width = 420.0F, .height = 0.0F});
 
         status_row_->set_column_gap(14.0F);
+        status_row_->set_row_gap(12.0F);
         status_row_->set_wrap(dcompframe::FlexWrap::Wrap);
         status_row_->set_align_items(dcompframe::FlexAlignItems::Center);
 
+        collections_row_->set_padding(make_insets(14.0F, 14.0F));
         collections_row_->set_column_gap(20.0F);
-        collections_row_->set_row_gap(20.0F);
+        collections_row_->set_row_gap(24.0F);
         collections_row_->set_wrap(dcompframe::FlexWrap::Wrap);
 
         list_view_->set_flex_grow(1.0F);
@@ -126,13 +143,15 @@ private:
         items_control_->set_flex_grow(1.0F);
         items_control_->set_flex_basis(340.0F);
 
-        scroll_viewer_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
-        log_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+        scroll_viewer_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 184.0F});
+        log_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 212.0F});
     }
 
     void configure_controls() {
         text_box_->set_placeholder("输入标题，观察 Flex 布局与事件日志联动");
         text_box_->set_text(fmt::format("Flexbox Demo Window {}", id()));
+        text_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 46.0F});
+        reserve_label_slot(text_box_);
 
         rich_text_box_->set_rich_text(
             "此 Demo 现在只保留 Flexbox 主线。\n"
@@ -142,28 +161,36 @@ private:
             "- 鼠标事件统一经过 hit-test 与 capture/target/bubble。"
         );
         rich_text_box_->set_flex_grow(1.0F);
+        rich_text_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 208.0F});
         rich_text_box_->set_min_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+        reserve_label_slot(rich_text_box_);
 
         check_box_->set_checked(true);
         check_box_->set_flex_grow(1.0F);
         check_box_->set_flex_basis(176.0F);
+        check_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 46.0F});
 
         toggle_switch_->set_checked(true);
         toggle_switch_->set_desired_size(dcompframe::Size {.width = 92.0F, .height = 40.0F});
+        reserve_label_slot(toggle_switch_);
 
         combo_box_->set_items({"row", "column", "wrap", "grow", "space-evenly", "align-content"});
         combo_box_->set_selected_index(4);
         combo_box_->set_flex_grow(1.0F);
         combo_box_->set_flex_basis(176.0F);
+        combo_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 46.0F});
+        reserve_label_slot(combo_box_);
 
         radio_group_->set_items({"Design", "Runtime", "Routing"});
         radio_group_->set_selected_index(0);
         radio_group_->set_desired_size(dcompframe::Size {.width = 320.0F, .height = 44.0F});
+        reserve_label_slot(radio_group_);
 
         slider_->set_range(0.0F, 100.0F);
         slider_->set_step(5.0F);
         slider_->set_value(65.0F);
-        slider_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 44.0F});
+        slider_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 48.0F});
+        reserve_label_slot(slider_);
 
         primary_button_->set_text("新建窗口");
         primary_button_->set_desired_size(dcompframe::Size {.width = 148.0F, .height = 40.0F});
@@ -178,13 +205,15 @@ private:
         text_block_->set_text(
             "右侧列不再把 Tab/Progress/Popup/Expander 塞进一张卡片里，而是让它们作为独立控件并列在 Flex 树中。"
         );
-        text_block_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 64.0F});
+        text_block_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 88.0F});
+        reserve_label_slot(text_block_);
 
         label_->set_text("规范: 新增布局与示例只允许使用 Flexbox");
         label_->set_desired_size(dcompframe::Size {.width = 260.0F, .height = 32.0F});
 
         image_->set_source("demo://flexbox-preview");
-        image_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
+        image_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 176.0F});
+        reserve_label_slot(image_);
 
         card_->set_title("Independent Card");
         card_->set_body(
@@ -192,11 +221,11 @@ private:
         );
         card_->set_icon("flex");
         card_->set_tags({"flex-only", "stable-bounds", "element-plus"});
-        card_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 144.0F});
+        card_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
 
         tab_control_->set_tabs({"Overview", "Layout", "Route", "API"});
         tab_control_->set_selected_index(1);
-        tab_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 140.0F});
+        tab_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
 
         expander_->set_header("布局与架构约束");
         expander_->set_content_text(
@@ -205,18 +234,18 @@ private:
             "3. 标题栏进入自定义非客户区路径。"
         );
         expander_->set_expanded(true);
-        expander_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 116.0F});
+        expander_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 132.0F});
 
         progress_->set_range(0.0F, 100.0F);
         progress_->set_value(65.0F);
         progress_->set_flex_grow(1.0F);
         progress_->set_flex_basis(260.0F);
-        progress_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 42.0F});
+        progress_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 46.0F});
 
         loading_->set_active(true);
         loading_->set_overlay_mode(false);
         loading_->set_text("Flexbox layout active");
-        loading_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 40.0F});
+        loading_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 42.0F});
 
         popup_->set_title("Popup Notes");
         popup_->set_body(
@@ -224,14 +253,15 @@ private:
         );
         popup_->set_modal(true);
         popup_->set_open(true);
-        popup_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 54.0F});
+        popup_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 64.0F});
 
         list_view_->set_groups({
             dcompframe::ListGroup {.name = "Flex Core", .items = {"direction", "wrap", "basis", "grow", "padding"}},
             dcompframe::ListGroup {.name = "Window", .items = {"title bar", "DWM", "hit test", "DPI"}},
         });
         list_view_->set_selected_index(0);
-        list_view_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+        list_view_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 220.0F});
+        reserve_label_slot(list_view_);
 
         items_control_->set_items({
             "ToggleSwitch / RadioGroup / Badge / Divider 已补入项目",
@@ -241,7 +271,8 @@ private:
             "Demo 中每个控件都有独立边界并可单独调试",
         });
         items_control_->set_item_spacing(6.0F);
-        items_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+        items_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 220.0F});
+        reserve_label_slot(items_control_);
 
         auto scroll_content = std::make_shared<dcompframe::ItemsControl>();
         scroll_content->set_items({
@@ -254,6 +285,7 @@ private:
         });
         scroll_content->set_item_spacing(6.0F);
         scroll_viewer_->set_content(scroll_content);
+        reserve_label_slot(scroll_viewer_);
 
         log_box_->set_lines({
             "[flex] demo initialized",
@@ -262,6 +294,7 @@ private:
         });
         log_box_->set_max_lines(200);
         log_box_->set_flex_grow(1.0F);
+        reserve_label_slot(log_box_);
 
         combo_box_->set_on_selection_changed([this](std::optional<std::size_t> index, const std::string& value) {
             log_box_->append_line(fmt::format("[combo] index={} value={}", index ? static_cast<int>(*index) : -1, value));

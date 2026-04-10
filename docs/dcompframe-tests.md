@@ -10,59 +10,61 @@
 2. `RenderManagerTests.ResourceManagerAndRecoveryWorkflows`
 3. `RenderManagerTests.CommitRequiresInitBindingAndDirtyFlag`
 4. `RenderManagerTests.BackendRegistryAndCommandBatchingWork`
-5. `WindowHostTests.DefaultConfigIncludesNoRedirectionBitmap`
-6. `WindowHostTests.ResizeAndDpiChangeTriggerRedraw`
-7. `WindowHostTests.StateTransitionsAreTracked`
-8. `WindowHostTests.CreateMessageLoopAndDestroy`
-9. `WindowHostTests.MessageLoopExitsWhenQuitPosted`
-10. `WindowHostTests.DestroySingleWindowDoesNotQuitWhenOtherWindowAlive`
-11. `WindowHostTests.DestroyNotificationClearsInternalState`
-12. `WindowTests.SkeletonWindowInitializesWithoutDemoControls`
-13. `ApplicationTests.InitializeDoesNotCreateWindowUntilRequested`
-14. `UIElementTests.VisualTreeAddAndRemoveChild`
-15. `UIElementTests.EventDispatchSupportsCaptureTargetAndBubble`
-16. `UIElementTests.HitTestFindsDeepestVisibleDescendant`
-17. `UIElementTests.DirtyAndFocusFlagsPropagateCorrectly`
-18. `FlexPanelTests.ColumnArrangeRespectsGapAndStretch`
-19. `FlexPanelTests.HorizontalWrapMovesOverflowItemsToNextLine`
-20. `FlexPanelTests.ArrangePreservesParentOffsetAndRespectsMarginAndPadding`
-21. `LayoutPanelsTests.NestedPanelsArrangeChildrenRecursively`
-22. `FlexPanelTests.FlexGrowConsumesRemainingVerticalSpace`
-23. `FlexPanelTests.RowLayoutDistributesGrowBasisAndGap`
-24. `FlexPanelTests.WrapMovesOverflowItemsToNextLine`
-25. `FlexPanelTests.OrderAndMinMaxConstraintsProduceStableBounds`
-26. `InputManagerTests.HitTestRoutingDispatchesCaptureTargetAndBubble`
-27. `FlexPanelTests.MeasureAggregatesWrappedRowsUsingLargestCrossContribution`
-28. `InputManagerTests.FocusDoubleClickAndDragAreHandled`
-29. `ControlsTests.ThemeResolvesAndButtonClickStateWorks`
-30. `ControlsTests.CardStoresMetadataAndAction`
-31. `ControlsTests.ComboBoxStoresItemsAndSelectedText`
-32. `ControlsTests.ItemsControlStoresItemsSelectionAndVisibleRange`
-33. `ControlsTests.TextBoxSupportsEditingSelectionAndTwoWayBinding`
-34. `ControlsTests.RichTextBoxSupportsEditingSelectionAndCaretMovement`
-35. `ControlsTests.ListViewAndItemsControlTrackScrollOffsets`
-36. `ControlsTests.CheckBoxComboBoxAndSliderSupportInteractiveStateChanges`
-37. `ControlsTests.TextAlignmentDefaultsToCenterExceptRichTextBox`
-38. `ControlsTests.AdditionalControlsSupportCoreStateTransitions`
-39. `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`
-40. `ControlsTests.PanelDefaultsToTransparentBackgroundAndBorder`
-41. `AnimationTests.PropertyAnimationUpdatesElementAndCompletes`
-42. `AnimationTests.PositionAnimationChangesBounds`
-43. `LayoutManagerTests.FlexStrategyAppliesSequentialBounds`
-44. `WindowRenderTargetTests.InitializeAndPresentFrames`
-45. `ThemeTests.BuiltinPalettesWork`
-46. `BindingTests.CardAndTextBoxBindingsUpdateState`
-47. `ControlExtensionTests.AdditionalControlsStoreAndExposeState`
-48. `TextBoxTests.CompositionAndSelectionWorkflow`
-49. `ConfigTests.JsonConfigCanBeLoaded`
-50. `DiagnosticsTests.ExportReportAndMetricsWork`
-51. `IntegrationTests.WindowRenderAnimationAndInputFlow`
-52. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
-53. `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`
-54. `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`
-55. `ReliabilityTests.SoakBaselineLoopMaintainsConsistency`
-56. `ReliabilityTests.ResourcePeakPatrolStaysBoundedAfterReleaseCycles`
-57. `ReliabilityTests.FaultInjectionCoversDeviceLostConfigMissingAndCorruptJson`
+5. `WindowHostTests.DefaultConfigPreservesTaskbarWindowWithoutNoRedirectionBitmap`
+6. `WindowHostTests.ExplicitConfigCanStillEnableNoRedirectionBitmap`
+7. `WindowHostTests.ResizeAndDpiChangeTriggerRedraw`
+8. `WindowHostTests.StateTransitionsAreTracked`
+9. `WindowHostTests.CreateMessageLoopAndDestroy`
+10. `WindowHostTests.MessageLoopExitsWhenQuitPosted`
+11. `WindowHostTests.DestroySingleWindowDoesNotQuitWhenOtherWindowAlive`
+12. `WindowHostTests.DestroyNotificationClearsInternalState`
+13. `WindowTests.SkeletonWindowInitializesWithoutDemoControls`
+14. `ApplicationTests.InitializeDoesNotCreateWindowUntilRequested`
+15. `UIElementTests.VisualTreeAddAndRemoveChild`
+16. `UIElementTests.EventDispatchSupportsCaptureTargetAndBubble`
+17. `UIElementTests.HitTestFindsDeepestVisibleDescendant`
+18. `UIElementTests.DirtyAndFocusFlagsPropagateCorrectly`
+19. `FlexPanelTests.ColumnArrangeRespectsGapAndStretch`
+20. `FlexPanelTests.HorizontalWrapMovesOverflowItemsToNextLine`
+21. `FlexPanelTests.ArrangePreservesParentOffsetAndRespectsMarginAndPadding`
+22. `LayoutPanelsTests.NestedPanelsArrangeChildrenRecursively`
+23. `FlexPanelTests.FlexGrowConsumesRemainingVerticalSpace`
+24. `FlexPanelTests.RowLayoutDistributesGrowBasisAndGap`
+25. `FlexPanelTests.WrapMovesOverflowItemsToNextLine`
+26. `FlexPanelTests.OrderAndMinMaxConstraintsProduceStableBounds`
+27. `InputManagerTests.HitTestRoutingDispatchesCaptureTargetAndBubble`
+28. `FlexPanelTests.MeasureAggregatesWrappedRowsUsingLargestCrossContribution`
+29. `InputManagerTests.FocusDoubleClickAndDragAreHandled`
+30. `ControlsTests.ThemeResolvesAndButtonClickStateWorks`
+31. `ControlsTests.CardStoresMetadataAndAction`
+32. `ControlsTests.ComboBoxStoresItemsAndSelectedText`
+33. `ControlsTests.ItemsControlStoresItemsSelectionAndVisibleRange`
+34. `ControlsTests.TextBoxSupportsEditingSelectionAndTwoWayBinding`
+35. `ControlsTests.RichTextBoxSupportsEditingSelectionAndCaretMovement`
+36. `ControlsTests.ListViewAndItemsControlTrackScrollOffsets`
+37. `ControlsTests.CheckBoxComboBoxAndSliderSupportInteractiveStateChanges`
+38. `ControlsTests.TextAlignmentDefaultsToCenterExceptRichTextBox`
+39. `ControlsTests.AdditionalControlsSupportCoreStateTransitions`
+40. `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`
+41. `ControlsTests.PanelDefaultsToTransparentBackgroundAndBorder`
+42. `AnimationTests.PropertyAnimationUpdatesElementAndCompletes`
+43. `AnimationTests.PositionAnimationChangesBounds`
+44. `LayoutManagerTests.FlexStrategyAppliesSequentialBounds`
+45. `WindowRenderTargetTests.InitializeAndPresentFrames`
+46. `ThemeTests.BuiltinPalettesWork`
+47. `BindingTests.CardAndTextBoxBindingsUpdateState`
+48. `ControlExtensionTests.AdditionalControlsStoreAndExposeState`
+49. `TextBoxTests.CompositionAndSelectionWorkflow`
+50. `ConfigTests.JsonConfigCanBeLoaded`
+51. `DiagnosticsTests.ExportReportAndMetricsWork`
+52. `IntegrationTests.WindowRenderAnimationAndInputFlow`
+53. `IntegrationTests.WindowRenderTargetReturnsSystemCaptionAndResizeHitTests`
+54. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
+55. `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`
+56. `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`
+57. `ReliabilityTests.SoakBaselineLoopMaintainsConsistency`
+58. `ReliabilityTests.ResourcePeakPatrolStaysBoundedAfterReleaseCycles`
+59. `ReliabilityTests.FaultInjectionCoversDeviceLostConfigMissingAndCorruptJson`
 
 ## 覆盖点
 
@@ -86,11 +88,23 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：57/57 通过
+- 结果：59/59 通过
 - 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
-- 本次回归重点：验证 Flex-only 几何、真实控件 bounds 驱动命中、自定义标题栏相关渲染改动未破坏既有交互。
+- 本次回归重点：验证 Flex-only 几何、真实控件 bounds 驱动命中、自定义标题栏系统 hit-test 语义，以及默认 DWM 兼容窗口配置未破坏既有交互。
+
+## 本轮补充十二（2026-04-11）
+
+- 新增用例：
+	- `WindowHostTests.DefaultConfigPreservesTaskbarWindowWithoutNoRedirectionBitmap`
+	- `WindowHostTests.ExplicitConfigCanStillEnableNoRedirectionBitmap`
+	- `IntegrationTests.WindowRenderTargetReturnsSystemCaptionAndResizeHitTests`
+- 覆盖目标：
+	- 锁定默认窗口扩展样式已回到 DWM 兼容路径。
+	- 保留 `WS_EX_NOREDIRECTIONBITMAP` 的显式启用能力。
+	- 锁定自定义标题栏的 `HTMAXBUTTON/HTCAPTION/HTRIGHT` 命中结果，避免 Snap、拖拽和 resize 行为再次退化。
+- 最新结果：`ctest --preset vs2022-x64-debug-tests`，`59/59` 通过。
 - 后端回归：`RenderManagerTests.BackendRegistryAndCommandBatchingWork` 已按当前实现收口为 3 个显式后端（`Simulated` / `DirectX` / `DirectX12` 预留）。
 - 文本编辑回归：`RichTextBox` 的 `move_caret_left() + backspace()` 语义已与 `TextBox` 保持一致，当前测试按“删除光标左侧字符”校验。
 - 本次交互回归重点：验证 `ItemsControl`、`ScrollViewer` 内容模型、TextBox 标准 Win32 输入链路、ComboBox overlay 布局不回流。

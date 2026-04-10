@@ -51,9 +51,100 @@ constexpr UINT_PTR kCaretTimerId = 1;
 constexpr float kCaptionHeight = 48.0F;
 constexpr float kCaptionButtonWidth = 46.0F;
 
+#ifndef WM_NCUAHDRAWCAPTION
+#define WM_NCUAHDRAWCAPTION 0x00AE
+#endif
+
+#ifndef WM_NCUAHDRAWFRAME
+#define WM_NCUAHDRAWFRAME 0x00AF
+#endif
+
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
+
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+#define DWMWA_WINDOW_CORNER_PREFERENCE 33
+#endif
+
+constexpr int kDwmWindowCornerPreferenceRound = 2;
+
+struct ElementPalette {
+    D2D1_COLOR_F window_background;
+    D2D1_COLOR_F title_background;
+    D2D1_COLOR_F title_separator;
+    D2D1_COLOR_F surface;
+    D2D1_COLOR_F surface_alt;
+    D2D1_COLOR_F surface_hover;
+    D2D1_COLOR_F surface_active;
+    D2D1_COLOR_F border;
+    D2D1_COLOR_F border_hover;
+    D2D1_COLOR_F border_focus;
+    D2D1_COLOR_F primary;
+    D2D1_COLOR_F primary_hover;
+    D2D1_COLOR_F primary_pressed;
+    D2D1_COLOR_F primary_soft;
+    D2D1_COLOR_F primary_soft_hover;
+    D2D1_COLOR_F primary_soft_active;
+    D2D1_COLOR_F text_primary;
+    D2D1_COLOR_F text_secondary;
+    D2D1_COLOR_F text_inverse;
+    D2D1_COLOR_F success_background;
+    D2D1_COLOR_F success_text;
+    D2D1_COLOR_F warning_background;
+    D2D1_COLOR_F warning_text;
+    D2D1_COLOR_F danger_background;
+    D2D1_COLOR_F danger_text;
+    D2D1_COLOR_F scrollbar_track;
+    D2D1_COLOR_F scrollbar_thumb;
+    D2D1_COLOR_F scrollbar_thumb_hover;
+};
+
+const ElementPalette& element_palette() {
+    static const ElementPalette palette {
+        D2D1::ColorF(0.97F, 0.98F, 0.99F, 1.0F),
+        D2D1::ColorF(0.98F, 0.99F, 1.0F, 0.98F),
+        D2D1::ColorF(0.88F, 0.91F, 0.95F, 1.0F),
+        D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F),
+        D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F),
+        D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F),
+        D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F),
+        D2D1::ColorF(0.86F, 0.89F, 0.94F, 1.0F),
+        D2D1::ColorF(0.76F, 0.81F, 0.89F, 1.0F),
+        D2D1::ColorF(0.25F, 0.48F, 0.95F, 1.0F),
+        D2D1::ColorF(0.25F, 0.48F, 0.95F, 1.0F),
+        D2D1::ColorF(0.16F, 0.42F, 0.87F, 1.0F),
+        D2D1::ColorF(0.13F, 0.35F, 0.74F, 1.0F),
+        D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F),
+        D2D1::ColorF(0.90F, 0.94F, 1.0F, 1.0F),
+        D2D1::ColorF(0.84F, 0.90F, 1.0F, 1.0F),
+        D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F),
+        D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F),
+        D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F),
+        D2D1::ColorF(0.93F, 0.97F, 0.94F, 1.0F),
+        D2D1::ColorF(0.22F, 0.56F, 0.28F, 1.0F),
+        D2D1::ColorF(1.0F, 0.96F, 0.88F, 1.0F),
+        D2D1::ColorF(0.77F, 0.48F, 0.06F, 1.0F),
+        D2D1::ColorF(1.0F, 0.93F, 0.93F, 1.0F),
+        D2D1::ColorF(0.82F, 0.17F, 0.17F, 1.0F),
+        D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F),
+        D2D1::ColorF(0.72F, 0.77F, 0.86F, 1.0F),
+        D2D1::ColorF(0.52F, 0.61F, 0.79F, 1.0F),
+    };
+    return palette;
+}
+
+unsigned int current_window_dpi(HWND hwnd) {
+    return hwnd != nullptr ? GetDpiForWindow(hwnd) : GetDpiForSystem();
+}
+
+int resize_frame_thickness_x(unsigned int dpi) {
+    return GetSystemMetricsForDpi(SM_CXSIZEFRAME, dpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+}
+
+int resize_frame_thickness_y(unsigned int dpi) {
+    return GetSystemMetricsForDpi(SM_CYSIZEFRAME, dpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+}
 
 enum class HitTarget {
     None,
@@ -787,44 +878,47 @@ void draw_wrapped_text(
 }
 
 void draw_checkbox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, bool checked) {
+    const auto& palette = element_palette();
     const float cx = rect.left + 28.0F; // Center of the checkbox
     const float cy = (rect.top + rect.bottom) / 2.0F;
     const D2D1_RECT_F box = D2D1::RectF(cx - 10.0F, cy - 10.0F, cx + 10.0F, cy + 10.0F);
 
     if (checked) {
-        brush->SetColor(D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F));
+        brush->SetColor(palette.primary);
         context->FillRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush);
 
-        brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+        brush->SetColor(palette.text_inverse);
         context->DrawLine(D2D1::Point2F(box.left + 5.0F, box.top + 10.0F), D2D1::Point2F(box.left + 9.0F, box.bottom - 6.0F), brush, 2.0F);
         context->DrawLine(D2D1::Point2F(box.left + 9.0F, box.bottom - 6.0F), D2D1::Point2F(box.right - 4.0F, box.top + 5.0F), brush, 2.0F);
     } else {
-        brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+        brush->SetColor(palette.surface);
         context->FillRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush);
-        brush->SetColor(D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F));
+        brush->SetColor(palette.border);
         context->DrawRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush, 1.0F);
     }
 }
 
 void draw_combobox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect) {
+    const auto& palette = element_palette();
     const float center_x = rect.right - 28.0F;
     const float center_y = (rect.top + rect.bottom) * 0.5F;
-    brush->SetColor(D2D1::ColorF(0.57F, 0.60F, 0.65F, 1.0F));
+    brush->SetColor(palette.text_secondary);
     context->DrawLine(D2D1::Point2F(center_x - 6.0F, center_y - 3.0F), D2D1::Point2F(center_x, center_y + 3.0F), brush, 2.0F);
     context->DrawLine(D2D1::Point2F(center_x, center_y + 3.0F), D2D1::Point2F(center_x + 6.0F, center_y - 3.0F), brush, 2.0F);
 }
 
 void draw_slider_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, float value) {
+    const auto& palette = element_palette();
     const float track_left = rect.left + 18.0F;
     const float track_right = rect.right - 18.0F;
     const float center_y = (rect.top + rect.bottom) * 0.5F;
     const float thumb_x = track_left + (track_right - track_left) * clamp_value(value, 0.0F, 1.0F);
 
-    brush->SetColor(D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F));
+    brush->SetColor(palette.surface_active);
     context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(track_right, center_y), brush, 6.0F);
-    brush->SetColor(D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F));
+    brush->SetColor(palette.primary);
     context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(thumb_x, center_y), brush, 6.0F);
-    brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+    brush->SetColor(palette.text_inverse);
     context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(thumb_x, center_y), 8.0F, 8.0F), brush);
 }
 
@@ -841,34 +935,36 @@ void draw_scrollviewer_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* 
 }
 
 D2D1_COLOR_F badge_fill_color(BadgeTone tone) {
+    const auto& palette = element_palette();
     switch (tone) {
     case BadgeTone::Primary:
-        return D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F);
+        return palette.primary_soft;
     case BadgeTone::Success:
-        return D2D1::ColorF(0.91F, 0.97F, 0.92F, 1.0F);
+        return palette.success_background;
     case BadgeTone::Warning:
-        return D2D1::ColorF(1.0F, 0.96F, 0.88F, 1.0F);
+        return palette.warning_background;
     case BadgeTone::Danger:
-        return D2D1::ColorF(1.0F, 0.92F, 0.92F, 1.0F);
+        return palette.danger_background;
     case BadgeTone::Neutral:
     default:
-        return D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F);
+        return palette.surface_active;
     }
 }
 
 D2D1_COLOR_F badge_text_color(BadgeTone tone) {
+    const auto& palette = element_palette();
     switch (tone) {
     case BadgeTone::Primary:
-        return D2D1::ColorF(0.21F, 0.53F, 0.93F, 1.0F);
+        return palette.primary;
     case BadgeTone::Success:
-        return D2D1::ColorF(0.22F, 0.56F, 0.28F, 1.0F);
+        return palette.success_text;
     case BadgeTone::Warning:
-        return D2D1::ColorF(0.77F, 0.48F, 0.06F, 1.0F);
+        return palette.warning_text;
     case BadgeTone::Danger:
-        return D2D1::ColorF(0.80F, 0.22F, 0.22F, 1.0F);
+        return palette.danger_text;
     case BadgeTone::Neutral:
     default:
-        return D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F);
+        return palette.text_secondary;
     }
 }
 
@@ -885,9 +981,11 @@ void draw_caption_button(
         return;
     }
 
+    const auto& palette = element_palette();
+
     const D2D1_COLOR_F fill = destructive
-        ? (pressed ? D2D1::ColorF(0.90F, 0.18F, 0.18F, 1.0F) : (hovered ? D2D1::ColorF(0.96F, 0.30F, 0.30F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)))
-        : (pressed ? D2D1::ColorF(0.88F, 0.90F, 0.94F, 1.0F) : (hovered ? D2D1::ColorF(0.94F, 0.96F, 0.99F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)));
+        ? (pressed ? palette.danger_text : (hovered ? D2D1::ColorF(0.96F, 0.30F, 0.30F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)))
+        : (pressed ? palette.surface_active : (hovered ? palette.surface_hover : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)));
     if (fill.a > 0.0F) {
         fill_rounded_rect(context, brush, inset_rect(rect, 4.0F, 6.0F), fill, 8.0F);
     }
@@ -897,7 +995,7 @@ void draw_caption_button(
         format,
         glyph,
         rect,
-        destructive && hovered ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.30F, 0.33F, 0.37F, 1.0F),
+        destructive && hovered ? palette.text_inverse : palette.text_secondary,
         DWRITE_TEXT_ALIGNMENT_CENTER);
 }
 
@@ -914,21 +1012,23 @@ void draw_toggle_switch_control(
     }
     (void)format;
 
+    const auto& palette = element_palette();
+
     const D2D1_RECT_F track = inset_rect(rect, 6.0F, 6.0F);
     fill_rounded_rect(
         context,
         brush,
         track,
-        checked ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered ? D2D1::ColorF(0.84F, 0.87F, 0.92F, 1.0F) : D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F)),
+        checked ? palette.primary : (hovered ? palette.primary_soft_hover : palette.surface_active),
         rect_height(track) * 0.5F);
     if (focused) {
-        stroke_rounded_rect(context, brush, inset_rect(track, -2.0F, -2.0F), D2D1::ColorF(0.75F, 0.84F, 1.0F, 1.0F), 2.0F, rect_height(track) * 0.5F);
+        stroke_rounded_rect(context, brush, inset_rect(track, -2.0F, -2.0F), palette.border_focus, 2.0F, rect_height(track) * 0.5F);
     }
 
     const float thumb_radius = max_value(8.0F, rect_height(track) * 0.5F - 3.0F);
     const float thumb_center_x = checked ? track.right - thumb_radius - 4.0F : track.left + thumb_radius + 4.0F;
     const float thumb_center_y = (track.top + track.bottom) * 0.5F;
-    brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+    brush->SetColor(palette.text_inverse);
     context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(thumb_center_x, thumb_center_y), thumb_radius, thumb_radius), brush);
 }
 
@@ -944,12 +1044,14 @@ void draw_radio_group_control(
         return;
     }
 
-    fill_rounded_rect(context, brush, layout.radio_group, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 10.0F);
+    const auto& palette = element_palette();
+
+    fill_rounded_rect(context, brush, layout.radio_group, palette.surface_alt, 10.0F);
     stroke_rounded_rect(
         context,
         brush,
         layout.radio_group,
-        focused ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F),
+        focused ? palette.border_focus : palette.border,
         focused ? 2.0F : 1.0F,
         10.0F);
 
@@ -962,7 +1064,7 @@ void draw_radio_group_control(
             context,
             brush,
             item_rect,
-            active ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered_index == static_cast<int>(index) ? D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)),
+            active ? palette.primary : (hovered_index == static_cast<int>(index) ? palette.primary_soft_hover : palette.surface),
             8.0F);
         draw_text_line(
             context,
@@ -970,7 +1072,7 @@ void draw_radio_group_control(
             format,
             utf8_to_wstring(items[index]),
             item_rect,
-            active ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F),
+            active ? palette.text_inverse : palette.text_secondary,
             DWRITE_TEXT_ALIGNMENT_CENTER);
     }
 }
@@ -998,7 +1100,9 @@ void draw_divider_control(
         return;
     }
 
-    brush->SetColor(D2D1::ColorF(0.90F, 0.92F, 0.95F, 1.0F));
+    const auto& palette = element_palette();
+
+    brush->SetColor(palette.border);
     if (divider.orientation() == DividerOrientation::Vertical) {
         const float center_x = (rect.left + rect.right) * 0.5F;
         context->DrawLine(D2D1::Point2F(center_x, rect.top), D2D1::Point2F(center_x, rect.bottom), brush, 1.0F);
@@ -1013,8 +1117,12 @@ void apply_dwm_frame(HWND hwnd) {
         return;
     }
 
+    const DWMNCRENDERINGPOLICY policy = DWMNCRP_ENABLED;
+    DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
     const BOOL dark_mode = FALSE;
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
+    const int corner_preference = kDwmWindowCornerPreferenceRound;
+    DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corner_preference, sizeof(corner_preference));
     const MARGINS margins {0, 0, 1, 0};
     DwmExtendFrameIntoClientArea(hwnd, &margins);
 }
@@ -1024,20 +1132,21 @@ void draw_image_placeholder(
     ID2D1SolidColorBrush* brush,
     IDWriteTextFormat* format,
     const D2D1_RECT_F& rect) {
-    fill_rounded_rect(context, brush, rect, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 6.0F);
-    stroke_rounded_rect(context, brush, rect, D2D1::ColorF(0.90F, 0.92F, 0.95F, 1.0F), 1.0F, 6.0F);
+    const auto& palette = element_palette();
+    fill_rounded_rect(context, brush, rect, palette.surface_alt, 10.0F);
+    stroke_rounded_rect(context, brush, rect, palette.border, 1.0F, 10.0F);
 
     const D2D1_RECT_F image_box = D2D1::RectF(rect.left + 16.0F, rect.top + 14.0F, rect.left + 92.0F, rect.bottom - 14.0F);
-    brush->SetColor(D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F));
+    brush->SetColor(palette.primary_soft);
     context->FillRoundedRectangle(D2D1::RoundedRect(image_box, 6.0F, 6.0F), brush);
-    brush->SetColor(D2D1::ColorF(0.75F, 0.84F, 0.95F, 1.0F));
+    brush->SetColor(palette.border_hover);
     context->DrawLine(D2D1::Point2F(image_box.left + 10.0F, image_box.bottom - 14.0F), D2D1::Point2F(image_box.left + 28.0F, image_box.top + 28.0F), brush, 2.0F);
     context->DrawLine(D2D1::Point2F(image_box.left + 28.0F, image_box.top + 28.0F), D2D1::Point2F(image_box.left + 44.0F, image_box.bottom - 24.0F), brush, 2.0F);
     context->DrawLine(D2D1::Point2F(image_box.left + 44.0F, image_box.bottom - 24.0F), D2D1::Point2F(image_box.right - 10.0F, image_box.top + 20.0F), brush, 2.0F);
     context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(image_box.right - 18.0F, image_box.top + 18.0F), 5.0F, 5.0F), brush);
 
-    draw_text_line(context, brush, format, L"Image 控件示例", D2D1::RectF(image_box.right + 16.0F, rect.top + 16.0F, rect.right - 16.0F, rect.top + 38.0F), D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
-    draw_text_line(context, brush, format, L"Element Plus 风格图片区块", D2D1::RectF(image_box.right + 16.0F, rect.top + 42.0F, rect.right - 16.0F, rect.top + 64.0F), D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+    draw_text_line(context, brush, format, L"Image 控件示例", D2D1::RectF(image_box.right + 16.0F, rect.top + 16.0F, rect.right - 16.0F, rect.top + 38.0F), palette.text_primary);
+    draw_text_line(context, brush, format, L"Element Plus 风格图片区块", D2D1::RectF(image_box.right + 16.0F, rect.top + 42.0F, rect.right - 16.0F, rect.top + 64.0F), palette.text_secondary);
 }
 
 void fill_rounded_rect(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, const D2D1_COLOR_F& color, float radius = 12.0F) {
@@ -1082,14 +1191,15 @@ void draw_text_box_editor(
     bool hovered,
     bool focused,
     bool caret_visible) {
-    fill_rounded_rect(context, brush, rect, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+    const auto& palette = element_palette();
+    fill_rounded_rect(context, brush, rect, palette.surface, 8.0F);
     stroke_rounded_rect(
         context,
         brush,
         rect,
-        focused ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)),
+        focused ? palette.border_focus : (hovered ? palette.border_hover : palette.border),
         focused ? 2.0F : 1.0F,
-        4.0F);
+        8.0F);
 
     const D2D1_RECT_F text_rect = inset_rect(rect, 14.0F, 8.0F);
     const std::wstring wide_text = utf8_to_wstring(text_box.text());
@@ -1122,7 +1232,7 @@ void draw_text_box_editor(
                     metrics.data(),
                     actual_count,
                     &actual_count))) {
-                brush->SetColor(D2D1::ColorF(0.12F, 0.62F, 0.95F, 0.38F));
+                brush->SetColor(D2D1::ColorF(palette.primary.r, palette.primary.g, palette.primary.b, 0.22F));
                 for (UINT32 index = 0; index < actual_count; ++index) {
                     const auto& metric = metrics[index];
                     const D2D1_RECT_F selection_rect = D2D1::RectF(
@@ -1136,7 +1246,7 @@ void draw_text_box_editor(
         }
     }
 
-    brush->SetColor(use_placeholder ? D2D1::ColorF(0.64F, 0.67F, 0.72F, 1.0F) : D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+    brush->SetColor(use_placeholder ? palette.text_secondary : palette.text_primary);
     context->DrawTextLayout(D2D1::Point2F(text_rect.left, text_rect.top), layout, brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
     if (focused && caret_visible) {
@@ -1163,14 +1273,15 @@ void draw_rich_text_panel(
     bool hovered,
     bool focused,
     bool caret_visible) {
-    fill_rounded_rect(context, brush, rect, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+    const auto& palette = element_palette();
+    fill_rounded_rect(context, brush, rect, palette.surface, 10.0F);
     stroke_rounded_rect(
         context,
         brush,
         rect,
-        focused ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)),
+        focused ? palette.border_focus : (hovered ? palette.border_hover : palette.border),
         focused ? 2.0F : 1.0F,
-        4.0F);
+        10.0F);
 
     const D2D1_RECT_F text_rect = inset_rect(rect, 14.0F, 12.0F);
     const std::wstring wide_text = utf8_to_wstring(rich_text_box.rich_text());
@@ -1203,7 +1314,7 @@ void draw_rich_text_panel(
                     metrics.data(),
                     actual_count,
                     &actual_count))) {
-                brush->SetColor(D2D1::ColorF(0.12F, 0.62F, 0.95F, 0.22F));
+                brush->SetColor(D2D1::ColorF(palette.primary.r, palette.primary.g, palette.primary.b, 0.18F));
                 for (UINT32 index = 0; index < actual_count; ++index) {
                     const auto& metric = metrics[index];
                     context->FillRectangle(D2D1::RectF(metric.left, metric.top, metric.left + metric.width, metric.top + metric.height), brush);
@@ -1212,7 +1323,7 @@ void draw_rich_text_panel(
         }
     }
 
-    brush->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+    brush->SetColor(palette.text_primary);
     context->DrawTextLayout(D2D1::Point2F(text_rect.left, text_rect.top - rich_text_box.scroll_offset()), layout, brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
     if (focused && caret_visible) {
@@ -1318,8 +1429,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         const auto size = window_host_->client_size();
         const float width = size.width > 0.0F ? size.width : 1280.0F;
         const float height = size.height > 0.0F ? size.height : 720.0F;
+        const auto& palette = element_palette();
 
-        const float clear_color[4] {0.97F, 0.98F, 1.0F, 1.0F};
+        const float clear_color[4] {palette.window_background.r, palette.window_background.g, palette.window_background.b, palette.window_background.a};
         d3d_context_->OMSetRenderTargets(1, &render_target_view_, nullptr);
         d3d_context_->ClearRenderTargetView(render_target_view_, clear_color);
 
@@ -1370,17 +1482,17 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 ? layout.card
                 : D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F);
             if (interactive_mode_enabled_) {
-                fill_rounded_rect(d2d_context_, d2d_brush_, card_rect, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 0.0F);
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.title_band, D2D1::ColorF(0.99F, 0.99F, 1.0F, 0.96F), 0.0F);
-                d2d_brush_->SetColor(D2D1::ColorF(0.88F, 0.91F, 0.95F, 1.0F));
+                fill_rounded_rect(d2d_context_, d2d_brush_, card_rect, palette.window_background, 0.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.title_band, palette.title_background, 0.0F);
+                d2d_brush_->SetColor(palette.title_separator);
                 d2d_context_->DrawLine(
                     D2D1::Point2F(layout.title_band.left, layout.title_band.bottom - 0.5F),
                     D2D1::Point2F(layout.title_band.right, layout.title_band.bottom - 0.5F),
                     d2d_brush_,
                     1.0F);
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.caption_icon, D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F), 7.0F);
-                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"F", layout.caption_icon, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), DWRITE_TEXT_ALIGNMENT_CENTER);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.caption_icon, palette.primary, 10.0F);
+                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"F", layout.caption_icon, palette.text_inverse, DWRITE_TEXT_ALIGNMENT_CENTER);
                 draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_minimize, L"-", caption_minimize_hovered, false);
                 draw_caption_button(
                     d2d_context_,
@@ -1399,14 +1511,14 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 d2d_context_->DrawRoundedRectangle(card, d2d_brush_, 1.0F);
             }
 
-            d2d_brush_->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+            d2d_brush_->SetColor(palette.text_primary);
             if (text_format_ != nullptr) {
                 const std::wstring title = interactive_mode_enabled_ ? L"DCompFrame Interactive Demo" : overlay_scene_.title;
                 const D2D1_RECT_F title_rect = interactive_mode_enabled_
                     ? layout.title
                     : D2D1::RectF(width * 0.13F, height * 0.14F, width * 0.85F, height * 0.22F);
                 if (interactive_mode_enabled_) {
-                    draw_text_line(d2d_context_, d2d_brush_, text_format_, title, title_rect, D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, text_format_, title, title_rect, palette.text_primary);
                 } else {
                     draw_centered_text(d2d_context_, d2d_brush_, text_format_, title, title_rect);
                 }
@@ -1418,7 +1530,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     item_text_format_,
                     L"Flex-only layout | custom caption | DWM-preserved window behavior",
                     layout.subtitle,
-                    D2D1::ColorF(0.48F, 0.50F, 0.54F, 1.0F));
+                        palette.text_secondary);
             }
 
             d2d_context_->PushAxisAlignedClip(layout.content_clip, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -1426,18 +1538,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             if (interactive_mode_enabled_ && interactive_controls_.text_box != nullptr && interactive_controls_.check_box != nullptr
                 && interactive_controls_.combo_box != nullptr && interactive_controls_.slider != nullptr
                 && interactive_controls_.primary_button != nullptr) {
-                D2D1_COLOR_F button_color = D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F);
+                D2D1_COLOR_F button_color = palette.primary;
                 if (button_pressed_) {
-                    button_color = D2D1::ColorF(0.20F, 0.49F, 0.80F, 1.0F);
+                    button_color = palette.primary_pressed;
                 } else if (button_hovered_) {
-                    button_color = D2D1::ColorF(0.47F, 0.73F, 1.0F, 1.0F);
+                    button_color = palette.primary_hover;
                 }
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.button, button_color, 4.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.button, button_color, 10.0F);
                 if (focused_control_index_ == kPrimaryButtonFocusIndex) {
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, inset_rect(layout.button, -2.0F, -2.0F), D2D1::ColorF(0.75F, 0.84F, 1.0F, 1.0F), 2.0F, 4.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, inset_rect(layout.button, -2.0F, -2.0F), palette.border_focus, 2.0F, 10.0F);
                 }
                 if (item_text_format_ != nullptr) {
-                    d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+                    d2d_brush_->SetColor(palette.text_inverse);
                     draw_centered_text(
                         d2d_context_,
                         d2d_brush_,
@@ -1446,7 +1558,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         layout.button);
                 }
 
-                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"TextBox", layout.text_box_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"TextBox", layout.text_box_label, palette.text_secondary);
 
                 draw_text_box_editor(
                     d2d_context_,
@@ -1460,7 +1572,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     ((GetTickCount64() - caret_blink_seed_) / 500ULL) % 2ULL == 0ULL);
 
                 if (interactive_controls_.rich_text_box != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"RichTextBox", layout.rich_text_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"RichTextBox", layout.rich_text_label, palette.text_secondary);
                     draw_rich_text_panel(
                         d2d_context_,
                         d2d_brush_,
@@ -1473,8 +1585,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         ((GetTickCount64() - caret_blink_seed_) / 500ULL) % 2ULL == 0ULL);
                 }
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, focused_control_index_ == kCheckBoxFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (check_box_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kCheckBoxFocusIndex ? 2.0F : 1.0F, 4.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, palette.surface, 10.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, focused_control_index_ == kCheckBoxFocusIndex ? palette.border_focus : (check_box_hovered_ ? palette.border_hover : palette.border), focused_control_index_ == kCheckBoxFocusIndex ? 2.0F : 1.0F, 10.0F);
                 draw_checkbox_glyph(d2d_context_, d2d_brush_, layout.check_box, interactive_controls_.check_box->checked());
                 draw_text_line(
                     d2d_context_,
@@ -1482,10 +1594,10 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     item_text_format_,
                     interactive_controls_.check_box->checked() ? L"启用 Element Plus 表单增强行为" : L"关闭 Element Plus 表单增强行为",
                     D2D1::RectF(layout.check_box.left + 50.0F, layout.check_box.top, layout.check_box.right - 16.0F, layout.check_box.bottom),
-                    D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                    palette.text_primary);
 
                 if (interactive_controls_.toggle_switch != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ToggleSwitch", layout.toggle_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ToggleSwitch", layout.toggle_label, palette.text_secondary);
                     draw_toggle_switch_control(
                         d2d_context_,
                         d2d_brush_,
@@ -1496,9 +1608,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         focused_control_index_ == kToggleSwitchFocusIndex);
                 }
 
-                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ComboBox", layout.combo_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, focused_control_index_ == kComboBoxFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (combo_box_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kComboBoxFocusIndex ? 2.0F : 1.0F, 4.0F);
+                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ComboBox", layout.combo_label, palette.text_secondary);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, palette.surface, 8.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, focused_control_index_ == kComboBoxFocusIndex ? palette.border_focus : (combo_box_hovered_ ? palette.border_hover : palette.border), focused_control_index_ == kComboBoxFocusIndex ? 2.0F : 1.0F, 8.0F);
                 draw_combobox_glyph(d2d_context_, d2d_brush_, layout.combo_box);
                 draw_text_line(
                     d2d_context_,
@@ -1506,10 +1618,10 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     item_text_format_,
                     utf8_to_wstring(interactive_controls_.combo_box->selected_text()),
                     D2D1::RectF(layout.combo_box.left + 14.0F, layout.combo_box.top, layout.combo_box.right - 42.0F, layout.combo_box.bottom),
-                    D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                    palette.text_primary);
 
                 if (interactive_controls_.radio_group != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"RadioGroup", layout.radio_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"RadioGroup", layout.radio_label, palette.text_secondary);
                     draw_radio_group_control(
                         d2d_context_,
                         d2d_brush_,
@@ -1520,24 +1632,24 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         focused_control_index_ == kRadioGroupFocusIndex);
                 }
 
-                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Slider", layout.slider_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.slider, D2D1::ColorF(0.99F, 0.99F, 1.0F, 1.0F), 8.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.slider, focused_control_index_ == kSliderFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (slider_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kSliderFocusIndex ? 2.0F : 1.0F, 8.0F);
+                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Slider", layout.slider_label, palette.text_secondary);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.slider, palette.surface_alt, 10.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.slider, focused_control_index_ == kSliderFocusIndex ? palette.border_focus : (slider_hovered_ ? palette.border_hover : palette.border), focused_control_index_ == kSliderFocusIndex ? 2.0F : 1.0F, 10.0F);
                 draw_slider_glyph(d2d_context_, d2d_brush_, layout.slider_track, interactive_controls_.slider->normalized_value());
-                fill_rounded_rect(d2d_context_, d2d_brush_, D2D1::RectF(layout.slider.right - 58.0F, layout.slider.top + 6.0F, layout.slider.right - 10.0F, layout.slider.bottom - 6.0F), D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F), 12.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, D2D1::RectF(layout.slider.right - 58.0F, layout.slider.top + 6.0F, layout.slider.right - 10.0F, layout.slider.bottom - 6.0F), palette.primary_soft, 12.0F);
                 draw_text_line(
                     d2d_context_,
                     d2d_brush_,
                     item_text_format_,
                     utf8_to_wstring(std::to_string(static_cast<int>(interactive_controls_.slider->value())) + "%"),
                     D2D1::RectF(layout.slider.right - 58.0F, layout.slider.top + 4.0F, layout.slider.right - 10.0F, layout.slider.bottom - 4.0F),
-                    D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F),
+                    palette.primary,
                     DWRITE_TEXT_ALIGNMENT_CENTER);
 
                 if (interactive_controls_.text_block != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"TextBlock", layout.text_block_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
-                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.text_block, D2D1::ColorF(0.99F, 0.99F, 1.0F, 1.0F), 4.0F);
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.text_block, D2D1::ColorF(0.91F, 0.92F, 0.94F, 1.0F), 1.0F, 4.0F);
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"TextBlock", layout.text_block_label, palette.text_secondary);
+                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.text_block, palette.surface_alt, 10.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.text_block, palette.border, 1.0F, 10.0F);
                     draw_wrapped_text(
                         d2d_context_,
                         d2d_brush_,
@@ -1545,16 +1657,16 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_,
                         utf8_to_wstring(interactive_controls_.text_block->text()),
                         inset_rect(layout.text_block, 12.0F, 10.0F),
-                        D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                        palette.text_primary);
                     if (interactive_controls_.label != nullptr) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.label_chip, D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F), 11.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.label_chip, palette.primary_soft, 12.0F);
                         draw_text_line(
                             d2d_context_,
                             d2d_brush_,
                             item_text_format_,
                             utf8_to_wstring(interactive_controls_.label->text()),
                             layout.label_chip,
-                            D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F),
+                            palette.primary,
                             DWRITE_TEXT_ALIGNMENT_CENTER);
                     }
                     if (interactive_controls_.badge != nullptr) {
@@ -1566,18 +1678,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     draw_divider_control(d2d_context_, d2d_brush_, *interactive_controls_.divider, layout.divider);
                 }
 
-                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Image", layout.image_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Image", layout.image_label, palette.text_secondary);
                 draw_image_placeholder(d2d_context_, d2d_brush_, item_text_format_, layout.image);
 
                 if (interactive_controls_.card != nullptr) {
-                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.card_preview, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 8.0F);
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.card_preview, D2D1::ColorF(0.89F, 0.92F, 0.96F, 1.0F), 1.0F, 8.0F);
-                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.preview_header, D2D1::ColorF(0.97F, 0.98F, 1.0F, 1.0F), 8.0F);
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(interactive_controls_.card->title()), D2D1::RectF(layout.preview_header.left + 12.0F, layout.preview_header.top + 8.0F, layout.preview_header.right - 12.0F, layout.preview_header.top + 28.0F), D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
-                    draw_wrapped_text(d2d_context_, d2d_brush_, dwrite_factory_, helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_, utf8_to_wstring(interactive_controls_.card->body()), D2D1::RectF(layout.preview_header.left + 12.0F, layout.preview_header.top + 28.0F, layout.preview_header.right - 12.0F, layout.preview_header.bottom - 8.0F), D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.card_preview, palette.surface, 14.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.card_preview, palette.border, 1.0F, 14.0F);
+                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.preview_header, palette.surface_alt, 12.0F);
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(interactive_controls_.card->title()), D2D1::RectF(layout.preview_header.left + 12.0F, layout.preview_header.top + 8.0F, layout.preview_header.right - 12.0F, layout.preview_header.top + 28.0F), palette.text_primary);
+                    draw_wrapped_text(d2d_context_, d2d_brush_, dwrite_factory_, helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_, utf8_to_wstring(interactive_controls_.card->body()), D2D1::RectF(layout.preview_header.left + 12.0F, layout.preview_header.top + 28.0F, layout.preview_header.right - 12.0F, layout.preview_header.bottom - 8.0F), palette.text_secondary);
 
                     if (interactive_controls_.tab_control != nullptr && !interactive_controls_.tab_control->tabs().empty()) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.tab_control, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 6.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.tab_control, palette.surface_alt, 12.0F);
                         const float tab_width = rect_width(layout.tab_control) / static_cast<float>(interactive_controls_.tab_control->tabs().size());
                         for (std::size_t tab_index = 0; tab_index < interactive_controls_.tab_control->tabs().size(); ++tab_index) {
                             const D2D1_RECT_F tab_rect = D2D1::RectF(
@@ -1591,15 +1703,15 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                                 d2d_context_,
                                 d2d_brush_,
                                 inset_rect(tab_rect, 2.0F, 2.0F),
-                                selected ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F),
-                                4.0F);
+                                selected ? palette.primary : (hovered.target == HitTarget::TabControl ? palette.primary_soft_hover : palette.surface),
+                                10.0F);
                             draw_text_line(
                                 d2d_context_,
                                 d2d_brush_,
                                 item_text_format_,
                                 utf8_to_wstring(interactive_controls_.tab_control->tabs()[tab_index]),
                                 tab_rect,
-                                selected ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F),
+                                selected ? palette.text_inverse : palette.text_secondary,
                                 DWRITE_TEXT_ALIGNMENT_CENTER);
                         }
 
@@ -1611,9 +1723,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                             helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_,
                             utf8_to_wstring(selected_tab.empty() ? "TabControl 示例" : std::string("当前页签: ") + selected_tab + "，用于演示切换后的正文与动画联动。"),
                             layout.tab_body,
-                            D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
+                            palette.text_secondary);
 
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.animation_demo, D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F), 6.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.animation_demo, palette.primary_soft, 8.0F);
                         const bool animation_active = (interactive_controls_.loading != nullptr && interactive_controls_.loading->active())
                             || (interactive_controls_.progress != nullptr && interactive_controls_.progress->is_indeterminate());
                         const float animation_phase = animation_active ? static_cast<float>((GetTickCount64() % 1800ULL)) / 1800.0F : 0.0F;
@@ -1623,7 +1735,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                             d2d_context_,
                             d2d_brush_,
                             D2D1::RectF(pulse_left, layout.animation_demo.top + 3.0F, pulse_left + pulse_width, layout.animation_demo.bottom - 3.0F),
-                            D2D1::ColorF(0.25F, 0.62F, 1.0F, 0.82F),
+                            D2D1::ColorF(palette.primary.r, palette.primary.g, palette.primary.b, 0.82F),
                             5.0F);
                         draw_text_line(
                             d2d_context_,
@@ -1631,20 +1743,20 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                             item_text_format_,
                             L"Animation Demo",
                             D2D1::RectF(layout.animation_demo.left + 10.0F, layout.animation_demo.top, layout.animation_demo.right - 10.0F, layout.animation_demo.bottom),
-                            D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                            palette.text_primary);
                     }
 
                     if (interactive_controls_.expander != nullptr) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.expander_header, D2D1::ColorF(0.96F, 0.97F, 0.99F, 1.0F), 4.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.expander_header, palette.surface_alt, 10.0F);
                         draw_text_line(
                             d2d_context_,
                             d2d_brush_,
                             item_text_format_,
                             utf8_to_wstring(std::string(interactive_controls_.expander->expanded() ? "▼ " : "▶ ") + interactive_controls_.expander->header()),
                             D2D1::RectF(layout.expander_header.left + 8.0F, layout.expander_header.top, layout.expander_header.right - 8.0F, layout.expander_header.bottom),
-                            D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
+                            palette.text_secondary);
                         if (interactive_controls_.expander->expanded()) {
-                            fill_rounded_rect(d2d_context_, d2d_brush_, layout.expander_body, D2D1::ColorF(0.99F, 0.99F, 1.0F, 1.0F), 6.0F);
+                            fill_rounded_rect(d2d_context_, d2d_brush_, layout.expander_body, palette.surface, 10.0F);
                             draw_wrapped_text(
                                 d2d_context_,
                                 d2d_brush_,
@@ -1652,7 +1764,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                                 helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_,
                                 utf8_to_wstring(interactive_controls_.expander->content_text()),
                                 inset_rect(layout.expander_body, 8.0F, 8.0F),
-                                D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                                palette.text_secondary);
                         }
                     }
 
@@ -1716,9 +1828,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 }
 
                 if (interactive_controls_.list_view != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ListView", layout.list_view_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ListView", layout.list_view_label, palette.text_secondary);
                     if (rect_has_area(layout.list_view_scrollbar)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.list_view_scrollbar, focused_scroll_target_ == DragScrollTarget::ListView ? D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.list_view_scrollbar, palette.scrollbar_track, 4.0F);
                     }
                     const float item_height = 28.0F;
                     const float scroll_offset = interactive_controls_.list_view->scroll_offset();
@@ -1730,20 +1842,20 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         const D2D1_RECT_F item_rect = D2D1::RectF(layout.list_viewport.left, item_top, content_right, item_top + item_height - 3.0F);
                         const bool selected = interactive_controls_.list_view->selected_index() && *interactive_controls_.list_view->selected_index() == index;
                         if (selected) {
-                            fill_rounded_rect(d2d_context_, d2d_brush_, item_rect, D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F), 4.0F);
+                            fill_rounded_rect(d2d_context_, d2d_brush_, item_rect, palette.primary_soft, 8.0F);
                         }
-                        draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(interactive_controls_.list_view->items()[index]), D2D1::RectF(item_rect.left + 8.0F, item_rect.top, item_rect.right - 8.0F, item_rect.bottom), selected ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                        draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(interactive_controls_.list_view->items()[index]), D2D1::RectF(item_rect.left + 8.0F, item_rect.top, item_rect.right - 8.0F, item_rect.bottom), selected ? palette.primary : palette.text_primary);
                     }
                     d2d_context_->PopAxisAlignedClip();
                     if (rect_has_area(layout.list_view_thumb)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.list_view_thumb, focused_scroll_target_ == DragScrollTarget::ListView ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (list_view_hovered_ ? D2D1::ColorF(0.62F, 0.66F, 0.74F, 1.0F) : D2D1::ColorF(0.78F, 0.80F, 0.84F, 1.0F)), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.list_view_thumb, focused_scroll_target_ == DragScrollTarget::ListView ? palette.primary : (list_view_hovered_ ? palette.scrollbar_thumb_hover : palette.scrollbar_thumb), 4.0F);
                     }
                 }
 
                 if (interactive_controls_.items_control != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ItemsControl", layout.items_control_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ItemsControl", layout.items_control_label, palette.text_secondary);
                     if (rect_has_area(layout.items_control_scrollbar)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.items_control_scrollbar, focused_scroll_target_ == DragScrollTarget::ItemsControl ? D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.items_control_scrollbar, palette.scrollbar_track, 4.0F);
                     }
                     const float item_height = 28.0F;
                     const float stride = item_height + interactive_controls_.items_control->item_spacing();
@@ -1756,19 +1868,19 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         const float item_top = layout.items_control_viewport.top + static_cast<float>(index) * stride - scroll_offset;
                         const D2D1_RECT_F tag_rect = D2D1::RectF(layout.items_control_viewport.left, item_top, content_right, item_top + item_height);
                         const bool selected = interactive_controls_.items_control->selected_index() && *interactive_controls_.items_control->selected_index() == index;
-                        fill_rounded_rect(d2d_context_, d2d_brush_, tag_rect, selected ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F), 6.0F);
-                        draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(item), D2D1::RectF(tag_rect.left + 10.0F, tag_rect.top, tag_rect.right - 10.0F, tag_rect.bottom), selected ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
+                        fill_rounded_rect(d2d_context_, d2d_brush_, tag_rect, selected ? palette.primary : palette.surface_active, 10.0F);
+                        draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(item), D2D1::RectF(tag_rect.left + 10.0F, tag_rect.top, tag_rect.right - 10.0F, tag_rect.bottom), selected ? palette.text_inverse : palette.text_secondary);
                     }
                     d2d_context_->PopAxisAlignedClip();
                     if (rect_has_area(layout.items_control_thumb)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.items_control_thumb, focused_scroll_target_ == DragScrollTarget::ItemsControl ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (items_control_hovered_ ? D2D1::ColorF(0.62F, 0.66F, 0.74F, 1.0F) : D2D1::ColorF(0.78F, 0.80F, 0.84F, 1.0F)), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.items_control_thumb, focused_scroll_target_ == DragScrollTarget::ItemsControl ? palette.primary : (items_control_hovered_ ? palette.scrollbar_thumb_hover : palette.scrollbar_thumb), 4.0F);
                     }
                 }
 
                 if (interactive_controls_.scroll_viewer != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ScrollViewer", layout.scroll_viewer_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ScrollViewer", layout.scroll_viewer_label, palette.text_secondary);
                     if (rect_has_area(layout.scroll_viewer_scrollbar)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer_scrollbar, focused_scroll_target_ == DragScrollTarget::ScrollViewer ? D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer_scrollbar, palette.scrollbar_track, 4.0F);
                     }
 
                     d2d_context_->PushAxisAlignedClip(layout.scroll_viewport, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -1782,21 +1894,21 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                             const float item_top = layout.scroll_viewport.top + static_cast<float>(index) * stride - scroll_offset;
                             const D2D1_RECT_F item_rect = D2D1::RectF(layout.scroll_viewport.left + 4.0F, item_top, content_right, item_top + item_height);
                             const bool selected = content->selected_index() && *content->selected_index() == index;
-                            fill_rounded_rect(d2d_context_, d2d_brush_, item_rect, selected ? D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F) : D2D1::ColorF(0.99F, 0.99F, 1.0F, 1.0F), 4.0F);
-                            stroke_rounded_rect(d2d_context_, d2d_brush_, item_rect, D2D1::ColorF(0.94F, 0.95F, 0.97F, 1.0F), 1.0F, 4.0F);
-                            draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(content->items()[index]), D2D1::RectF(item_rect.left + 10.0F, item_rect.top, item_rect.right - 10.0F, item_rect.bottom), D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                            fill_rounded_rect(d2d_context_, d2d_brush_, item_rect, selected ? palette.primary_soft : palette.surface, 8.0F);
+                            stroke_rounded_rect(d2d_context_, d2d_brush_, item_rect, palette.border, 1.0F, 8.0F);
+                            draw_text_line(d2d_context_, d2d_brush_, item_text_format_, utf8_to_wstring(content->items()[index]), D2D1::RectF(item_rect.left + 10.0F, item_rect.top, item_rect.right - 10.0F, item_rect.bottom), palette.text_primary);
                         }
                     }
                     d2d_context_->PopAxisAlignedClip();
                     if (rect_has_area(layout.scroll_viewer_thumb)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer_thumb, focused_scroll_target_ == DragScrollTarget::ScrollViewer ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (scroll_viewer_hovered_ ? D2D1::ColorF(0.62F, 0.66F, 0.74F, 1.0F) : D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F)), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer_thumb, focused_scroll_target_ == DragScrollTarget::ScrollViewer ? palette.primary : (scroll_viewer_hovered_ ? palette.scrollbar_thumb_hover : palette.scrollbar_thumb), 4.0F);
                     }
                 }
 
                 if (interactive_controls_.log_box != nullptr) {
-                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"LogBox", layout.footer_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"LogBox", layout.footer_label, palette.text_secondary);
                     if (rect_has_area(layout.footer_scrollbar)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer_scrollbar, focused_scroll_target_ == DragScrollTarget::LogBox ? D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer_scrollbar, palette.scrollbar_track, 4.0F);
                     }
                     const float line_height = 20.0F;
                     const float line_stride = 24.0F;
@@ -1809,11 +1921,11 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     for (std::size_t index = begin; index < end; ++index) {
                         const float line_top = layout.footer_viewport.top + static_cast<float>(index) * line_stride - scroll_offset;
                         const D2D1_RECT_F line_rect = D2D1::RectF(layout.footer_viewport.left, line_top, content_right, line_top + line_height);
-                        draw_text_line(d2d_context_, d2d_brush_, helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_, utf8_to_wstring(interactive_controls_.log_box->lines()[index]), line_rect, D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
+                        draw_text_line(d2d_context_, d2d_brush_, helper_text_format_ != nullptr ? helper_text_format_ : item_text_format_, utf8_to_wstring(interactive_controls_.log_box->lines()[index]), line_rect, palette.text_secondary);
                     }
                     d2d_context_->PopAxisAlignedClip();
                     if (rect_has_area(layout.footer_thumb)) {
-                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer_thumb, focused_scroll_target_ == DragScrollTarget::LogBox ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (log_box_hovered_ ? D2D1::ColorF(0.62F, 0.66F, 0.74F, 1.0F) : D2D1::ColorF(0.78F, 0.80F, 0.84F, 1.0F)), 3.0F);
+                        fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer_thumb, focused_scroll_target_ == DragScrollTarget::LogBox ? palette.primary : (log_box_hovered_ ? palette.scrollbar_thumb_hover : palette.scrollbar_thumb), 4.0F);
                     }
                 }
             } else {
@@ -1857,15 +1969,15 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             d2d_context_->PopAxisAlignedClip();
 
             if (interactive_mode_enabled_ && interactive_controls_.combo_box != nullptr && interactive_controls_.combo_box->is_dropdown_open()) {
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 6.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(0.82F, 0.87F, 0.95F, 1.0F), 1.0F, 6.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, palette.surface, 12.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, palette.border_hover, 1.0F, 12.0F);
                 if (rect_has_area(layout.combo_dropdown_scrollbar)) {
                     fill_rounded_rect(
                         d2d_context_,
                         d2d_brush_,
                         layout.combo_dropdown_scrollbar,
-                        focused_scroll_target_ == DragScrollTarget::ComboBox ? D2D1::ColorF(0.88F, 0.94F, 1.0F, 1.0F) : D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F),
-                        3.0F);
+                        palette.scrollbar_track,
+                        4.0F);
                 }
                 d2d_context_->PushAxisAlignedClip(layout.combo_dropdown_viewport, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
                 for (std::size_t index = 0; index < layout.combo_items.size(); ++index) {
@@ -1880,15 +1992,15 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         d2d_context_,
                         d2d_brush_,
                         item_rect,
-                        selected ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 0.12F) : (item_hovered ? D2D1::ColorF(0.94F, 0.97F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)),
-                        4.0F);
+                        selected ? palette.primary_soft : (item_hovered ? palette.primary_soft_hover : palette.surface),
+                        8.0F);
                     draw_text_line(
                         d2d_context_,
                         d2d_brush_,
                         item_text_format_,
                         utf8_to_wstring(interactive_controls_.combo_box->items()[index]),
                         D2D1::RectF(item_rect.left + 10.0F, item_rect.top, item_rect.right - 28.0F, item_rect.bottom),
-                        selected ? D2D1::ColorF(0.21F, 0.53F, 0.93F, 1.0F) : D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                        selected ? palette.primary : palette.text_primary);
                 }
                 d2d_context_->PopAxisAlignedClip();
                 if (rect_has_area(layout.combo_dropdown_thumb)) {
@@ -1896,8 +2008,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         d2d_context_,
                         d2d_brush_,
                         layout.combo_dropdown_thumb,
-                        focused_scroll_target_ == DragScrollTarget::ComboBox ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F),
-                        3.0F);
+                        focused_scroll_target_ == DragScrollTarget::ComboBox ? palette.primary : palette.scrollbar_thumb,
+                        4.0F);
                 }
             }
 
@@ -2285,9 +2397,28 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         apply_dwm_frame(window_host_->hwnd());
         window_host_->request_render();
         return false;
-    case WM_NCCALCSIZE:
+    case WM_NCACTIVATE:
+        apply_dwm_frame(window_host_->hwnd());
+        window_host_->request_render();
+        result = TRUE;
+        return true;
+    case WM_NCUAHDRAWCAPTION:
+    case WM_NCUAHDRAWFRAME:
         result = 0;
         return true;
+    case WM_NCMOUSEMOVE:
+    case WM_NCMOUSELEAVE: {
+        LRESULT dwm_result = 0;
+        DwmDefWindowProc(window_host_->hwnd(), msg, wparam, lparam, &dwm_result);
+        window_host_->request_render();
+        return false;
+    }
+    case WM_NCCALCSIZE:
+        if (wparam == TRUE) {
+            result = 0;
+            return true;
+        }
+        return false;
     case WM_NCHITTEST: {
         LRESULT dwm_result = 0;
         if (DwmDefWindowProc(window_host_->hwnd(), msg, wparam, lparam, &dwm_result)) {
@@ -2303,17 +2434,31 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         const float x = static_cast<float>(client_point.x);
         const float y = static_cast<float>(client_point.y);
 
-        if (point_in_rect(layout.caption_minimize, x, y) || point_in_rect(layout.caption_maximize, x, y) || point_in_rect(layout.caption_close, x, y)) {
-            result = HTCLIENT;
+        if (point_in_rect(layout.caption_close, x, y)) {
+            result = HTCLOSE;
+            return true;
+        }
+        if (point_in_rect(layout.caption_maximize, x, y)) {
+            result = HTMAXBUTTON;
+            return true;
+        }
+        if (point_in_rect(layout.caption_minimize, x, y)) {
+            result = HTMINBUTTON;
+            return true;
+        }
+        if (point_in_rect(layout.caption_icon, x, y)) {
+            result = HTSYSMENU;
             return true;
         }
 
         if (window_host_->window_state() != WindowState::Maximized && window_host_->window_state() != WindowState::Fullscreen) {
-            const float resize_border = max_value(6.0F, 8.0F * window_host_->config().dpi_scale);
-            const bool on_left = x >= 0.0F && x < resize_border;
-            const bool on_right = x <= size.width && x > size.width - resize_border;
-            const bool on_top = y >= 0.0F && y < resize_border;
-            const bool on_bottom = y <= size.height && y > size.height - resize_border;
+            const unsigned int dpi = current_window_dpi(window_host_->hwnd());
+            const float resize_border_x = static_cast<float>(resize_frame_thickness_x(dpi));
+            const float resize_border_y = static_cast<float>(resize_frame_thickness_y(dpi));
+            const bool on_left = x >= 0.0F && x < resize_border_x;
+            const bool on_right = x <= size.width && x > size.width - resize_border_x;
+            const bool on_top = y >= 0.0F && y < resize_border_y;
+            const bool on_bottom = y <= size.height && y > size.height - resize_border_y;
 
             if (on_top && on_left) {
                 result = HTTOPLEFT;

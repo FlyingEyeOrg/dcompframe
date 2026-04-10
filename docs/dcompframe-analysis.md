@@ -1,5 +1,12 @@
 # 2026-04-10 分析补记
 
+## DWM 兼容默认路径与 Demo 重叠根因（2026-04-11）
+
+- 这轮窗口回归的根因，不是“标题栏画得不够像 Chrome”，而是系统非客户区语义被接管后没有完整保住：默认窗口扩展样式过于激进，自定义 caption 按钮也没有回到系统 hit-test 结果。
+- 调整后，默认窗口回到 `WS_EX_APPWINDOW`，自定义标题栏仍保留，但 caption 按钮返回 `HTMINBUTTON/HTMAXBUTTON/HTCLOSE`，拖拽区返回 `HTCAPTION`，边缘 resize 依据系统 frame metrics 计算，行为已经更接近 Chromium 在 Windows 上的 CustomFrame 处理思路。
+- Demo 重叠的根因也已经明确：标签文本是画在控件边界之外的，而旧 Demo 没有给这些标签留出布局空间，所以视觉上像“Flex 算错了”，其实是 demo 设计把渲染占位漏掉了。
+- 这也是为什么本轮修复落在 `demo/main.cpp` 的 margin/padding/固定高度，而不是继续去改 `FlexPanel` 主轴分配算法。
+
 ## Flex-only + Custom Caption 分析（2026-04-10）
 
 - 本轮真正解决的不是“再修一次 demo 重叠”，而是把两个根因一起拆掉：
@@ -37,7 +44,7 @@
 - 驱动级故障注入（真实 GPU reset）仍需补充，目前以集成循环压测替代。
 - 命令缓冲与渲染线程目前为基础设施阶段，尚未引入真实异步管线性能优化。
 - 开发阶段已移除渲染兜底路径，D2D 初始化/绘制失败会直接失败；需持续跟进环境兼容数据。
-- 当前交互为 demo overlay 级命中测试，尚未与完整 UIElement 命中树统一；后续可收敛到统一输入命中模型。
+- 当前仍有一部分 demo 视觉由 render target 直接绘制 token 驱动，而不是完全走 `Theme` 管线；后续若继续扩展样式系统，需要把这套 token 正式沉到统一主题入口。
 
 ## 建议
 

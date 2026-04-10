@@ -18,7 +18,7 @@ enum class WindowState {
 
 struct WindowConfig {
     DWORD style = WS_OVERLAPPEDWINDOW;
-    DWORD ex_style = WS_EX_NOREDIRECTIONBITMAP | WS_EX_APPWINDOW;
+    DWORD ex_style = WS_EX_APPWINDOW;
     float dpi_scale = 1.0F;
 };
 

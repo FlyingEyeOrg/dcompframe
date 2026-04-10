@@ -2,6 +2,16 @@
 
 ## 已完成
 
+- 2026-04-11（DWM 兼容窗口语义 + Demo 标签占位修复 + Element Plus 第二轮收口）
+  - `WindowHost` 默认扩展样式切回 `WS_EX_APPWINDOW`，把 `WS_EX_NOREDIRECTIONBITMAP` 收敛为显式可选项，优先保留 DWM 阴影、系统 resize 边框和更稳定的自定义标题栏行为。
+  - `WindowRenderTarget` 的 caption hit-test 调整为更接近 Chromium/Chrome 的 Windows 语义：caption 按钮返回 `HTMINBUTTON/HTMAXBUTTON/HTCLOSE`，标题区返回 `HTCAPTION`，边框 resize 厚度改为读取系统 frame metrics。
+  - 补齐 `WM_NCACTIVATE`、`WM_NCMOUSEMOVE`、`WM_NCMOUSELEAVE`、`WM_NCUAHDRAWCAPTION`、`WM_NCUAHDRAWFRAME` 协同处理，避免系统旧标题栏覆盖自绘 caption。
+  - Demo 重叠问题完成定性：根因是带标签控件的标签文本绘制在控件边界之外，但原 Demo 没有为这些标签预留布局空间；这属于 Demo 设计与渲染占位问题，不是 Flex 主算法回归。
+  - `demo/main.cpp` 为所有带标签的控件增加固定高度、顶部标签预留、容器 padding 与更稳定的区块间距，避免缩放时标签侵入相邻控件。
+  - 自定义标题栏、表单区、卡片区、列表区和滚动条统一切到更接近 Element Plus 的浅色 token：主色、边框、圆角、hover/focus 状态进一步收口。
+  - 新增回归：默认窗口扩展样式测试、显式启用 `WS_EX_NOREDIRECTIONBITMAP` 测试、自定义标题栏 caption/resize hit-test 集成测试。
+  - 验证：`cmake --build --preset vs2022-x64-debug`、`ctest --preset vs2022-x64-debug-tests` 通过，结果 `59/59`。
+
 - 2026-04-10（Flex-only 收口 + 自定义 DWM 标题栏 + 常用控件补齐）
   - 彻底移除旧布局代码：`GridPanel` / `StackPanel` 头文件与实现已从主库和构建目标删除，`LayoutManager` 收敛为 Flex-only。
   - `FlexPanel` 补齐 `padding`、`min/max size`、`space-evenly`、更稳定的 wrap/line 分配逻辑，布局边界直接驱动 render/hit-test。
@@ -254,6 +264,7 @@
 - 阶段 4（动画与效果）：核心能力完成。
 - 阶段 5（稳定性、测试与文档）：已达到首版交付标准。
 - 阶段 6（Element Plus 交互收口与 demo 完整示例）：已完成当前轮需求收口。
+- 阶段 7（DWM 兼容自定义标题栏与 Demo 视觉细节收口）：已完成当前轮回归与样式收口。
 
 ## 后续待办
 

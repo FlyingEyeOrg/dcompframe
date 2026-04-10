@@ -75,8 +75,9 @@
 
 ## 8. DWM 兼容与后端策略
 
-- 主路径：`WS_EX_NOREDIRECTIONBITMAP + DirectComposition + DX11`。
+- 主路径：`WS_EX_APPWINDOW + DirectComposition + DX11 + 自定义 DWM caption`。
 - `RenderManager` 对 `DirectX` 与 `Simulated` 后端采用显式选择，不做隐式自动切换。
+- `WS_EX_NOREDIRECTIONBITMAP` 保留为特定宿主场景的显式可选项，不再作为默认窗口扩展样式。
 - DComp 探测使用 `IDCompositionDevice` 接口，避免探测误失败导致透明窗口误判。
 - demo 启动策略：首选后端失败时直接显式失败，保证问题可观测。
 
@@ -111,7 +112,14 @@
 
 - 窗口标题栏走自定义 non-client 路径，但继续保留 DWM 的阴影、Snap、Resize 和系统 frame 行为。
 - `WindowRenderTarget` 负责 caption 区视觉和 caption 按钮命中；`WindowHost` 负责 DPI 感知窗口创建、frame 刷新和窗口状态切换。
+- caption 按钮命中结果优先返回系统 `HTMINBUTTON/HTMAXBUTTON/HTCLOSE` 语义，而不是只停留在 client hit-test，保证 Windows 11 Snap Layout 和系统 caption 行为不回退。
 - `WM_NCCALCSIZE` / `WM_NCHITTEST` / `WM_DPICHANGED` 必须按官方 Win32/DWM 语义处理，避免出现高 DPI、最大化和 frame 刷新错误。
+
+## 10.2 Demo 标签占位决策
+
+- Demo 中的字段标签由渲染层绘制，但空间必须由布局参数显式预留。
+- 带标签控件统一通过固定高度 + 顶部 margin/padding 预留标签区，避免“标签画在控件外，但布局没有给空间”的视觉重叠。
+- 因此本轮重叠问题判定为 Demo 设计与渲染占位耦合问题，不是 `FlexPanel` 主轴/换行算法错误。
 
 ## 11. UI 需求基线约束
 

@@ -19,12 +19,13 @@
 职责：管理窗口生命周期、消息循环与渲染调度。
 
 - `create/destroy`：创建或销毁窗口资源。
-- 默认扩展样式包含 `WS_EX_NOREDIRECTIONBITMAP`。
+- 默认扩展样式为 `WS_EX_APPWINDOW`；`WS_EX_NOREDIRECTIONBITMAP` 保留为显式可选配置。
 - `run_message_loop`：处理消息并调度渲染回调。
 - `on_size_changed`：更新客户区并触发重绘。
 - `apply_dpi`：基于 96 DPI 基线更新缩放并触发重绘。
 - `set_window_state`：支持 Normal/Minimized/Maximized/Fullscreen。
 - 鼠标移动与按键消息会触发重绘请求，保证交互可见状态实时刷新。
+- 自定义标题栏场景下转发 `WM_NCACTIVATE`、`WM_NCMOUSEMOVE`、`WM_NCMOUSELEAVE` 与 `WM_NCUAHDRAW*`，避免系统旧 frame 叠加到自绘 caption 上。
 
 ## Application / Window
 
@@ -119,7 +120,9 @@
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
 	- 当前 caption 区由 render target 直接绘制，并通过 `WM_NCCALCSIZE/WM_NCHITTEST` 与 `WindowHost` 协同保留 DWM frame 特性。
+	- caption 按钮在 hit-test 时返回系统非客户区代码，最大化按钮区域可继续交由系统提供 Snap/窗口管理行为。
 	- 控件渲染与命中以真实控件 bounds 为主，不再依赖 preview card 内部派生几何作为主布局来源。
+	- Demo 中带标签控件的标签空间通过控件 margin 显式预留，避免标签文本跨出控件边界后侵占相邻视觉区。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
 	- demo 主内容区按纵向分区重排：标题区固定，表单区、列表区、滚动区依次堆叠，避免页面滚动内容覆盖标题。
 	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件，并在顶层顺序重绘以避免被遮挡。

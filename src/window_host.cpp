@@ -9,6 +9,14 @@ namespace {
 
 std::atomic<int> g_window_count = 0;
 
+#ifndef WM_NCUAHDRAWCAPTION
+#define WM_NCUAHDRAWCAPTION 0x00AE
+#endif
+
+#ifndef WM_NCUAHDRAWFRAME
+#define WM_NCUAHDRAWFRAME 0x00AF
+#endif
+
 LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     auto* self = reinterpret_cast<WindowHost*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     if (msg == WM_NCCREATE) {
@@ -22,10 +30,14 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
         switch (msg) {
         case WM_NCCALCSIZE:
         case WM_NCHITTEST:
+        case WM_NCACTIVATE:
+        case WM_NCMOUSEMOVE:
         case WM_NCLBUTTONDBLCLK:
         case WM_NCMOUSELEAVE:
         case WM_DWMCOMPOSITIONCHANGED:
         case WM_ACTIVATE:
+        case WM_NCUAHDRAWCAPTION:
+        case WM_NCUAHDRAWFRAME:
             if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
                 return handler_result;
             }

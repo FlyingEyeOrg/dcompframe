@@ -16,7 +16,7 @@
 
 ## 4. Windows 约束优先
 
-- 默认遵循 `WS_EX_NOREDIRECTIONBITMAP`。
+- 默认窗口优先遵循 DWM 兼容路径（`WS_EX_APPWINDOW` + 自定义 caption）；`WS_EX_NOREDIRECTIONBITMAP` 只作为显式可选配置保留。
 - DPI 计算采用 96 作为基线。
 - DirectX 初始化路径遵循 D3D11 + DXGI + DComp 的接口契约。
 
@@ -50,7 +50,7 @@
 
 - 开发阶段采用 Fail-Fast，不保留自动回退、静默降级与兜底渲染路径。
 - 后端选择必须显式（DirectX/Simulated），框架不进行隐式切换。
-- 在 `WS_EX_NOREDIRECTIONBITMAP` 场景必须使用正确 DComp 接口探测，避免透明窗口误判。
+- 在 `WS_EX_NOREDIRECTIONBITMAP` 场景必须使用正确 DComp 接口探测，避免透明窗口误判；但该场景不能再挤占默认自定义标题栏窗口的 DWM 能力优先级。
 - D2D 初始化失败与运行时绘制失败均直接返回错误并记录诊断，避免不确定行为。
 - 交互可见性原则：hover/press/toggle 等状态必须由窗口消息触发重绘并落到渲染层。
 
@@ -167,7 +167,7 @@
 ## 31. Flexbox Only 原则
 
 - 后续新增页面布局统一优先使用 `FlexPanel`，二维页面通过嵌套 flex 容器表达。
-- `GridPanel` 仅视为 legacy compatibility，不再作为新界面布局首选。
+- `GridPanel` / `StackPanel` 已从主库主路径移除，不再作为新界面布局入口。
 
 ## 32. 元素树事件路由原则
 
@@ -179,6 +179,12 @@
 - 自定义标题栏不是单纯的绘制问题，必须同时覆盖 `WM_NCCALCSIZE`、`WM_NCHITTEST`、`WM_DPICHANGED` 和 frame 刷新路径。
 - caption 区视觉、caption 按钮命中和系统窗口状态切换必须保持一致，不能只做“看起来像标题栏”的半实现。
 - DWM 能力优先保留：阴影、Snap、最大化/还原、resize hit-test 不能因自定义 caption 被破坏。
+- 自定义 caption 的按钮区域应尽量返回系统非客户区 hit-test 结果，避免丢失 Windows 原生窗口管理行为。
+
+## 35. 标签占位原则
+
+- 如果控件标题由渲染层画在控件主体之外，则布局层必须显式预留这部分高度。
+- Demo 中出现的标签压住相邻控件问题应优先视为布局占位设计问题，而不是直接归咎于 Flex 算法。
 
 ## 34. 真实边界驱动原则
 
