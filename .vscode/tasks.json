@@ -166,6 +166,10 @@
       "label": "Run Demo x64 Debug",
       "type": "shell",
       "command": "${workspaceFolder}\\build\\vs2022-x64\\Debug\\dcompframe_demo.exe",
+      "dependsOn": [
+        "Build Demo x64 Debug"
+      ],
+      "dependsOrder": "sequence",
       "problemMatcher": [],
       "group": {
         "kind": "none",
@@ -182,12 +186,20 @@
       "label": "Run Demo x64 Release",
       "type": "shell",
       "command": "${workspaceFolder}\\build\\vs2022-x64\\Release\\dcompframe_demo.exe",
+      "dependsOn": [
+        "Build Demo x64 Release"
+      ],
+      "dependsOrder": "sequence",
       "problemMatcher": []
     },
     {
       "label": "Run Demo x86 Debug",
       "type": "shell",
       "command": "${workspaceFolder}\\build\\vs2022-x86\\Debug\\dcompframe_demo.exe",
+      "dependsOn": [
+        "Build Demo x86 Debug"
+      ],
+      "dependsOrder": "sequence",
       "problemMatcher": []
     },
     {
