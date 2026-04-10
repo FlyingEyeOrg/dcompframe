@@ -71,7 +71,7 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：43/43 通过
+- 结果：46/46 通过
 - 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
@@ -112,3 +112,11 @@
 	- `ScrollViewer` / `ListView` / `ItemsControl` 滚动条轨道点击跳转。
 	- demo 纵向分区布局调整后，右侧预览区与底部滚动区交互不互相遮挡。
 - 最新结果：`ctest --preset vs2022-x64-debug-tests --output-on-failure`，`46/46` 通过。
+
+## 本轮补充四（2026-04-10）
+
+- 回归目标：
+	- Application/Window 从 demo 迁移到主项目后的构建稳定性。
+	- 滚动条轨道/滑块聚焦态与 LogBox 滚动链路。
+	- Preview 区重排后 Tab/Expander/Progress/Loading 交互不回归。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`46/46` 通过。

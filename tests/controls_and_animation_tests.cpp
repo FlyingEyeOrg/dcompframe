@@ -205,6 +205,7 @@ TEST(ControlsTests, AdditionalControlsSupportCoreStateTransitions) {
     Label label("状态标签");
     Progress progress;
     Loading loading;
+    LogBox log_box;
     TabControl tab_control;
     Popup popup;
     Expander expander;
@@ -224,6 +225,16 @@ TEST(ControlsTests, AdditionalControlsSupportCoreStateTransitions) {
     EXPECT_TRUE(loading.active());
     EXPECT_TRUE(loading.overlay_mode());
     EXPECT_EQ(loading.text(), "加载数据中...");
+
+    log_box.set_max_lines(3);
+    log_box.append_line("line-1");
+    log_box.append_line("line-2");
+    log_box.append_line("line-3");
+    log_box.append_line("line-4");
+    ASSERT_EQ(log_box.lines().size(), 3U);
+    EXPECT_EQ(log_box.lines().front(), "line-2");
+    log_box.set_auto_scroll(false);
+    EXPECT_FALSE(log_box.auto_scroll());
 
     tab_control.set_tabs({"概览", "交互", "诊断"});
     ASSERT_TRUE(tab_control.selected_index().has_value());

@@ -120,3 +120,17 @@
 - demo 页面采用“标题区固定 + 内容区滚动”的纵向分区策略，而不是让整张卡片在统一裁剪区内混合滚动。
 - 右侧预览卡片内部采用紧凑排布，优先保证 `TabControl`、动画示例、`Expander` 和状态控件在 960x720 级别窗口中全部可见。
 - 列表型控件从右侧窄列中抽离为独立列表分区，以提高 `ListView` 与 `ItemsControl` 的有效可视高度。
+
+## 13. Application/Window 归位决策
+
+- `Application` 和 `Window` 不再放在 demo 源文件中，迁移到主库：
+	- 头文件：`include/dcompframe/application.h`
+	- 实现：`src/application.cpp`
+- `demo/main.cpp` 仅作为最小入口，调用主库 `Application`。
+
+## 14. 连续渲染节流决策
+
+- `WindowRenderTarget::needs_continuous_rendering()` 仅在动画型状态启用：
+	- `Loading.active == true`
+	- `Progress.is_indeterminate == true`
+- 不再因为 `TabControl` 存在而持续渲染，减少空转帧和交互卡顿。

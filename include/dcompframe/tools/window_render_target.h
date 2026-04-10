@@ -21,9 +21,11 @@ namespace dcompframe {
 
 enum class DragScrollTarget {
     None,
+    ComboBox,
     ScrollViewer,
     ListView,
     ItemsControl,
+    LogBox,
 };
 
 class WindowRenderTarget {
@@ -48,6 +50,7 @@ public:
         std::shared_ptr<Image> image;
         std::shared_ptr<Progress> progress;
         std::shared_ptr<Loading> loading;
+        std::shared_ptr<LogBox> log_box;
         std::shared_ptr<TabControl> tab_control;
         std::shared_ptr<Popup> popup;
         std::shared_ptr<Expander> expander;
@@ -63,6 +66,7 @@ public:
     bool initialize();
     bool render_frame(bool has_dirty_changes = true);
     bool handle_window_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result);
+    [[nodiscard]] bool needs_continuous_rendering() const;
 
     [[nodiscard]] bool is_ready() const;
     [[nodiscard]] int presented_frames() const;
@@ -126,6 +130,7 @@ private:
     bool scroll_viewer_hovered_ = false;
     bool list_view_hovered_ = false;
     bool items_control_hovered_ = false;
+    bool log_box_hovered_ = false;
     int hovered_item_index_ = -1;
     int hovered_combo_index_ = -1;
     int button_click_count_ = 0;
@@ -135,6 +140,7 @@ private:
     std::optional<std::size_t> pressed_combo_index_ {};
     unsigned long long caret_blink_seed_ = 0;
     DragScrollTarget drag_scroll_target_ = DragScrollTarget::None;
+    DragScrollTarget focused_scroll_target_ = DragScrollTarget::None;
     float drag_scroll_anchor_y_ = 0.0F;
     float drag_scroll_origin_offset_ = 0.0F;
 };

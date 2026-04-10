@@ -94,7 +94,15 @@ TextVerticalAlignment StyledElement::text_vertical_alignment() const {
     return text_vertical_alignment_;
 }
 
-Panel::Panel() : StyledElement("panel") {}
+Panel::Panel() : StyledElement("panel") {
+    set_style(Style {
+        .background = {0, 0, 0, 0},
+        .foreground = {230, 230, 230, 255},
+        .border = {0, 0, 0, 0},
+        .border_thickness = 0.0F,
+        .corner_radius = 0.0F,
+    });
+}
 
 void Panel::arrange(const Size& available_size) {
     set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
@@ -219,6 +227,83 @@ void Loading::set_text(std::string text) {
 
 const std::string& Loading::text() const {
     return text_;
+}
+
+LogBox::LogBox() : StyledElement("log_box") {
+    set_focusable(true);
+    set_text_alignment(TextHorizontalAlignment::Left, TextVerticalAlignment::Top);
+}
+
+void LogBox::set_lines(std::vector<std::string> lines) {
+    lines_ = std::move(lines);
+    trim_to_max_lines();
+    if (auto_scroll_) {
+        scroll_offset_ = max_value(0.0F, static_cast<float>(lines_.size()) * 24.0F);
+    }
+    mark_dirty();
+}
+
+const std::vector<std::string>& LogBox::lines() const {
+    return lines_;
+}
+
+void LogBox::append_line(std::string line) {
+    lines_.push_back(std::move(line));
+    trim_to_max_lines();
+    if (auto_scroll_) {
+        scroll_offset_ = max_value(0.0F, static_cast<float>(lines_.size()) * 24.0F);
+    }
+    mark_dirty();
+}
+
+void LogBox::clear() {
+    lines_.clear();
+    scroll_offset_ = 0.0F;
+    mark_dirty();
+}
+
+void LogBox::set_auto_scroll(bool auto_scroll) {
+    auto_scroll_ = auto_scroll;
+    if (auto_scroll_) {
+        scroll_offset_ = max_value(0.0F, static_cast<float>(lines_.size()) * 24.0F);
+    }
+    mark_dirty();
+}
+
+bool LogBox::auto_scroll() const {
+    return auto_scroll_;
+}
+
+void LogBox::set_max_lines(std::size_t max_lines) {
+    max_lines_ = max_value<std::size_t>(1U, max_lines);
+    trim_to_max_lines();
+    mark_dirty();
+}
+
+std::size_t LogBox::max_lines() const {
+    return max_lines_;
+}
+
+void LogBox::set_scroll_offset(float scroll_offset) {
+    scroll_offset_ = max_value(0.0F, scroll_offset);
+    mark_dirty();
+}
+
+float LogBox::scroll_offset() const {
+    return scroll_offset_;
+}
+
+void LogBox::scroll_by(float delta) {
+    set_scroll_offset(scroll_offset_ + delta);
+}
+
+void LogBox::trim_to_max_lines() {
+    if (lines_.size() <= max_lines_) {
+        return;
+    }
+
+    const auto erase_count = static_cast<std::ptrdiff_t>(lines_.size() - max_lines_);
+    lines_.erase(lines_.begin(), lines_.begin() + erase_count);
 }
 
 TabControl::TabControl() : StyledElement("tab_control") {

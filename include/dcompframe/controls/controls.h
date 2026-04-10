@@ -9,6 +9,7 @@
 #include "dcompframe/controls/button.h"
 #include "dcompframe/controls/progress.h"
 #include "dcompframe/controls/loading.h"
+#include "dcompframe/controls/log_box.h"
 #include "dcompframe/controls/tab_control.h"
 #include "dcompframe/controls/popup.h"
 #include "dcompframe/controls/expander.h"

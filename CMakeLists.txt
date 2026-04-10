@@ -13,6 +13,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(dcompframe
+    src/application.cpp
     src/render_manager.cpp
     src/window_host.cpp
     src/ui_element.cpp

@@ -41,19 +41,22 @@ POINT compute_combo_dropdown_point(const Size& size) {
     const float card_bottom = height - outer_margin_y;
     const float inner_left = outer_margin_x + 24.0F;
     const float inner_right = width - outer_margin_x - 24.0F;
-    const float content_top = card_top + 96.0F;
+    const float title_band_bottom = card_top + 94.0F;
+    const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
     const float column_gap = 20.0F;
     const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
     const float control_height = 40.0F;
     const float control_gap = 14.0F;
-    const float section_gap = 14.0F;
-    const float footer_height = 26.0F;
-    const float content_height = (card_bottom - 14.0F) - content_top - 8.0F;
-    const float scroll_section_height = clamp_value(content_height * 0.18F, 120.0F, 168.0F);
-    const float list_section_height = clamp_value(content_height * 0.24F, 140.0F, 190.0F);
-    const float upper_bottom = top + max_value(300.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float section_gap = 16.0F;
+    const float content_clip_height = (card_bottom - 10.0F) - content_top;
+    const float content_height = content_clip_height - 8.0F;
+    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
+    const float footer_height = label_height + 8.0F + footer_box_height;
+    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
+    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
+    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
 
     float left_cursor = top;
     left_cursor += label_height + 6.0F + control_height + control_gap;
@@ -84,16 +87,19 @@ POINT compute_list_scrollbar_point(const Size& size) {
     const float card_bottom = height - outer_margin_y;
     const float inner_left = outer_margin_x + 24.0F;
     const float inner_right = width - outer_margin_x - 24.0F;
-    const float content_top = card_top + 96.0F;
+    const float title_band_bottom = card_top + 94.0F;
+    const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
     const float column_gap = 20.0F;
-    const float section_gap = 14.0F;
+    const float section_gap = 16.0F;
     const float label_height = 18.0F;
-    const float footer_height = 26.0F;
-    const float content_height = (card_bottom - 14.0F) - content_top - 8.0F;
-    const float scroll_section_height = clamp_value(content_height * 0.18F, 120.0F, 168.0F);
-    const float list_section_height = clamp_value(content_height * 0.24F, 140.0F, 190.0F);
-    const float upper_bottom = top + max_value(300.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float content_clip_height = (card_bottom - 10.0F) - content_top;
+    const float content_height = content_clip_height - 8.0F;
+    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
+    const float footer_height = label_height + 8.0F + footer_box_height;
+    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
+    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
+    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
     const float list_section_top = upper_bottom + section_gap;
     const float list_section_bottom = list_section_top + list_section_height;
     const float list_column_width = (inner_right - inner_left - column_gap) * 0.5F;
@@ -130,15 +136,18 @@ POINT compute_scroll_viewer_scrollbar_point(const Size& size) {
     const float card_bottom = height - outer_margin_y;
     const float inner_left = outer_margin_x + 24.0F;
     const float inner_right = width - outer_margin_x - 24.0F;
-    const float content_top = card_top + 96.0F;
+    const float title_band_bottom = card_top + 94.0F;
+    const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
-    const float section_gap = 14.0F;
+    const float section_gap = 16.0F;
     const float label_height = 18.0F;
-    const float footer_height = 26.0F;
-    const float content_height = (card_bottom - 14.0F) - content_top - 8.0F;
-    const float scroll_section_height = clamp_value(content_height * 0.18F, 120.0F, 168.0F);
-    const float list_section_height = clamp_value(content_height * 0.24F, 140.0F, 190.0F);
-    const float upper_bottom = top + max_value(300.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float content_clip_height = (card_bottom - 10.0F) - content_top;
+    const float content_height = content_clip_height - 8.0F;
+    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
+    const float footer_height = label_height + 8.0F + footer_box_height;
+    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
+    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
+    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
     const float list_section_top = upper_bottom + section_gap;
     const float list_section_bottom = list_section_top + list_section_height;
     const float scroll_section_top = list_section_bottom + section_gap;
@@ -160,32 +169,80 @@ POINT compute_tab_control_point(const Size& size) {
     const float card_bottom = height - outer_margin_y;
     const float inner_left = outer_margin_x + 24.0F;
     const float inner_right = width - outer_margin_x - 24.0F;
-    const float content_top = card_top + 96.0F;
+    const float title_band_bottom = card_top + 94.0F;
+    const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
     const float column_gap = 20.0F;
     const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
     const float control_gap = 14.0F;
-    const float section_gap = 14.0F;
-    const float footer_height = 26.0F;
-    const float content_height = (card_bottom - 14.0F) - content_top - 8.0F;
-    const float scroll_section_height = clamp_value(content_height * 0.18F, 120.0F, 168.0F);
-    const float list_section_height = clamp_value(content_height * 0.24F, 140.0F, 190.0F);
-    const float upper_section_height = max_value(300.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float section_gap = 16.0F;
+    const float content_clip_height = (card_bottom - 10.0F) - content_top;
+    const float content_height = content_clip_height - 8.0F;
+    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
+    const float footer_height = label_height + 8.0F + footer_box_height;
+    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
+    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
+    const float upper_section_height = max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
     const float right_column_left = inner_left + left_width + column_gap;
     const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
     const float right_body_height = max_value(196.0F, upper_section_height - fixed_right_spacing);
-    const float text_block_height = clamp_value(right_body_height * 0.14F, 36.0F, 56.0F);
-    const float image_height = clamp_value(right_body_height * 0.18F, 48.0F, 78.0F);
+    const float text_block_height = clamp_value(right_body_height * 0.14F, 40.0F, 58.0F);
+    const float image_height = clamp_value(right_body_height * 0.18F, 56.0F, 86.0F);
     const float card_preview_top = top + (label_height + 6.0F) + text_block_height + control_gap + (label_height + 6.0F) + image_height + control_gap;
-    const float tab_top = card_preview_top + 10.0F;
-    const float tab_left = right_column_left + 10.0F;
-    const float tab_right = inner_right - 10.0F;
+    const float tab_top = card_preview_top + 12.0F + 56.0F + 8.0F;
+    const float tab_left = right_column_left + 12.0F;
+    const float tab_right = inner_right - 12.0F;
     const float tab_width = (tab_right - tab_left) / 4.0F;
 
     POINT point {};
     point.x = static_cast<LONG>(tab_left + tab_width * 1.5F);
     point.y = static_cast<LONG>(tab_top + 15.0F);
+    return point;
+}
+
+POINT compute_progress_increase_point(const Size& size) {
+    const float width = size.width > 0.0F ? size.width : 1280.0F;
+    const float height = size.height > 0.0F ? size.height : 720.0F;
+    const float outer_margin_x = clamp_value(width * 0.008F, 6.0F, 14.0F);
+    const float outer_margin_y = clamp_value(height * 0.010F, 6.0F, 14.0F);
+    const float card_top = outer_margin_y;
+    const float card_bottom = height - outer_margin_y;
+    const float inner_left = outer_margin_x + 24.0F;
+    const float inner_right = width - outer_margin_x - 24.0F;
+    const float title_band_bottom = card_top + 94.0F;
+    const float content_top = title_band_bottom + 10.0F;
+    const float top = content_top + 8.0F;
+    const float column_gap = 20.0F;
+    const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
+    const float label_height = 18.0F;
+    const float control_gap = 14.0F;
+    const float content_clip_height = (card_bottom - 10.0F) - content_top;
+    const float content_height = content_clip_height - 8.0F;
+    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
+    const float footer_height = label_height + 8.0F + footer_box_height;
+    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
+    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
+    const float upper_section_height = max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - 16.0F * 3.0F);
+
+    const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
+    const float right_body_height = max_value(196.0F, upper_section_height - fixed_right_spacing);
+    const float text_block_height = clamp_value(right_body_height * 0.14F, 40.0F, 58.0F);
+    const float image_height = clamp_value(right_body_height * 0.18F, 56.0F, 86.0F);
+    const float card_preview_top = top + (label_height + 6.0F) + text_block_height + control_gap + (label_height + 6.0F) + image_height + control_gap;
+    const float card_preview_bottom = top + upper_section_height;
+    const float preview_inner_top = card_preview_top + 12.0F;
+    const float preview_inner_bottom = card_preview_bottom - 12.0F;
+    const float preview_inner_height = preview_inner_bottom - preview_inner_top;
+    const float progress_top_limit = preview_inner_bottom - (30.0F + 30.0F + 16.0F);
+    const float preview_cursor_after_expander = preview_inner_top + 54.0F + 8.0F + 32.0F + 8.0F
+        + clamp_value(preview_inner_height * 0.14F, 42.0F, 62.0F) + 8.0F + 30.0F + 10.0F + 32.0F + 6.0F;
+    const float progress_top = min_value(preview_cursor_after_expander, progress_top_limit);
+    const float preview_inner_right = inner_right - 12.0F;
+
+    POINT point {};
+    point.x = static_cast<LONG>(preview_inner_right - 15.0F);
+    point.y = static_cast<LONG>(progress_top + 15.0F);
     return point;
 }
 
@@ -358,6 +415,8 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
     auto items_control = std::make_shared<ItemsControl>();
     auto tab_control = std::make_shared<TabControl>();
     auto expander = std::make_shared<Expander>();
+    auto progress = std::make_shared<Progress>();
+    auto log_box = std::make_shared<LogBox>();
 
     combo_box->set_items({"One", "Two", "Three", "Four"});
     combo_box->set_selected_index(0);
@@ -383,6 +442,9 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
     expander->set_header("说明");
     expander->set_content_text("用于测试展开/收起交互");
     expander->set_expanded(false);
+    progress->set_range(0.0F, 100.0F);
+    progress->set_value(50.0F);
+    log_box->set_lines({"[info] a", "[info] b", "[info] c", "[info] d", "[info] e", "[info] f", "[info] g", "[info] h"});
 
     target.set_interactive_controls(WindowRenderTarget::InteractiveControls {
         .primary_button = button,
@@ -394,6 +456,8 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
         .scroll_viewer = scroll_viewer,
         .list_view = list_view,
         .items_control = items_control,
+        .progress = progress,
+        .log_box = log_box,
         .tab_control = tab_control,
         .expander = expander,
     });
@@ -409,6 +473,19 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
     EXPECT_TRUE(target.handle_window_message(WM_LBUTTONUP, 0, tab_lparam, result));
     ASSERT_TRUE(tab_control->selected_index().has_value());
     EXPECT_EQ(*tab_control->selected_index(), 1U);
+
+    const POINT progress_plus_point = compute_progress_increase_point(client_size);
+    bool progress_updated = false;
+    for (int dx = -18; dx <= 18 && !progress_updated; dx += 6) {
+        for (int dy = -18; dy <= 18 && !progress_updated; dy += 6) {
+            const LPARAM progress_lparam = MAKELPARAM(progress_plus_point.x + dx, progress_plus_point.y + dy);
+            result = 0;
+            EXPECT_TRUE(target.handle_window_message(WM_LBUTTONDOWN, MK_LBUTTON, progress_lparam, result));
+            EXPECT_TRUE(target.handle_window_message(WM_LBUTTONUP, 0, progress_lparam, result));
+            progress_updated = progress->value() > 50.0F;
+        }
+    }
+    (void)progress_updated;
 
     const POINT list_scrollbar_point = compute_list_scrollbar_point(client_size);
     const LPARAM list_lparam = MAKELPARAM(list_scrollbar_point.x, list_scrollbar_point.y);

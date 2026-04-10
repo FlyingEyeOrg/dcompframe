@@ -2,6 +2,20 @@
 
 ## 已完成
 
+- 2026-04-10（按用户 12 项清单收口：布局/性能/控件/迁移）
+  - 布局容器：`Panel` 默认样式改为透明背景 + 无边框。
+  - 性能：`WindowRenderTarget::needs_continuous_rendering()` 仅在 `Loading active` 或 `Progress indeterminate` 时返回 true，移除仅 `TabControl` 即持续重绘的路径；渲染中移除 `overlay_scene_.items` 每帧拷贝。
+  - Tab/预览区错乱：重写右侧 preview 纵向分配，`TabControl`、`tab body`、动画条、`Expander`、`Progress +/-`、`Loading`、`Popup` 分区不再重叠。
+  - Progress 控件：确认并保留 `+/-` 按钮交互，点击后同步更新 `Progress` 与 `Loading`，并写入日志。
+  - Loading 控件：在 demo 中保持接线与状态联动展示。
+  - 滚动条聚焦态：`ScrollViewer`、`ListView`、`ItemsControl`、`LogBox` 轨道/滑块点击后高亮；`ComboBox` dropdown 新增轨道与滑块命中及聚焦态。
+  - Expander 占位：收起时 body 高度为 0，不占正文布局；展开时按剩余空间占位。
+  - 日志框：`LogBox` 已纳入 demo 交互接线与渲染（含滚动条）。
+  - Slider 视觉：轨道改为更接近 Element Plus 的横向布局，值显示改为右侧 badge，去除拥挤的左右端标签。
+  - 标题区分层：标题带与内容区采用不同背景色，提高可读性。
+  - 架构迁移：将 demo 内 `Application`/`Window` 迁移到主项目：新增 `include/dcompframe/application.h`、`src/application.cpp`，`demo/main.cpp` 仅保留入口调用。
+  - 构建测试：x64 Debug 构建通过，`ctest --preset vs2022-x64-debug-tests` 全部通过（`46/46`）。
+
 - 2026-04-10（demo 布局与交互收口：纵向分区、Tab、滚动条、动画示例）
   - 将 demo 主内容区重排为纵向堆叠式分区：标题区与内容滚动区解耦，滚动时不再覆盖标题。
   - 右侧预览卡片压缩内部布局，确保 `TabControl`、动画条、`Expander`、`Progress`、`Loading` 在常见窗口尺寸下可稳定展示。

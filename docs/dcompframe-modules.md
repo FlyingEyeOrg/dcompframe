@@ -26,6 +26,13 @@
 - `set_window_state`：支持 Normal/Minimized/Maximized/Fullscreen。
 - 鼠标移动与按键消息会触发重绘请求，保证交互可见状态实时刷新。
 
+## Application / Window
+
+职责：承载 demo 运行期窗口管理与业务控件接线，避免 demo 入口文件承载框架实现。
+
+- `Application`：配置加载、渲染管理器初始化、窗口创建、消息循环驱动与诊断导出。
+- `Window`：单窗口控件实例化、事件绑定、`WindowRenderTarget` 交互接线。
+
 ## UIElement / LayoutManager
 
 职责：维护视觉树、可视属性与脏标记，提供基础布局策略。
@@ -111,6 +118,9 @@
 	- `ScrollViewer` 通过 `ItemsControl::visible_range()` 仅绘制 viewport 内可见项，并绘制轻量滚动 thumb。
 	- `ListView` 与 `ItemsControl` 均支持内部滚动、视口裁剪与轻量滚动条；`ItemsControl` 默认以类 `StackPanel` 的纵向列表方式渲染。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 三类滚动条除 thumb 拖拽外，新增轨道点击跳转语义。
+	- `LogBox` 滚动条接入轨道点击、thumb 拖拽与聚焦态视觉。
+	- `ComboBox` dropdown 新增滚动条轨道/滑块命中与聚焦态。
+	- `Panel` 默认样式透明无边框，保持布局容器语义。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `TabControl` 新增鼠标点击切换，demo 预览卡片增加动画条与当前 tab 正文说明，避免“有控件无示例”。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。
