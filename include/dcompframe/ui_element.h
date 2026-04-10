@@ -15,6 +15,13 @@ enum class LayoutStrategy {
     Grid
 };
 
+enum class LayoutAxisAlignment {
+    Start,
+    Center,
+    End,
+    Stretch
+};
+
 struct Thickness {
     float left = 0.0F;
     float top = 0.0F;
@@ -39,6 +46,7 @@ public:
     explicit UIElement(std::string name = "");
     virtual ~UIElement() = default;
 
+    virtual Size measure(const Size& available_size);
     virtual void arrange(const Size& available_size);
 
     bool add_child(const Ptr& child);
@@ -53,6 +61,12 @@ public:
 
     void set_desired_size(const Size& desired_size);
     [[nodiscard]] Size desired_size() const;
+    [[nodiscard]] Size measured_size() const;
+
+    void set_flex_grow(float flex_grow);
+    [[nodiscard]] float flex_grow() const;
+    void set_flex_shrink(float flex_shrink);
+    [[nodiscard]] float flex_shrink() const;
 
     void set_opacity(float opacity);
     [[nodiscard]] float opacity() const;
@@ -83,6 +97,8 @@ public:
 protected:
     void handle_event(InputEvent& event, EventPhase phase) const;
     void mark_dirty();
+    void set_measured_size(const Size& measured_size);
+    [[nodiscard]] Size clamp_size_to_available(const Size& proposed_size, const Size& available_size) const;
 
 private:
     std::string name_;
@@ -90,11 +106,14 @@ private:
     std::vector<Ptr> children_;
     Rect bounds_ {};
     Size desired_size_ {};
+    Size measured_size_ {};
     Rect clip_rect_ {};
     Thickness margin_ {};
     Point translation_ {};
     Point scale_ {1.0F, 1.0F};
     float rotation_deg_ = 0.0F;
+    float flex_grow_ = 0.0F;
+    float flex_shrink_ = 1.0F;
     float opacity_ = 1.0F;
     bool focusable_ = false;
     bool focused_ = false;

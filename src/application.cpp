@@ -83,6 +83,8 @@ void Window::arrange_content(const Size& client_size) {
 
     if (root_ != nullptr) {
         root_->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = client_size.width, .height = client_size.height});
+        root_->measure(client_size);
+        root_->arrange(client_size);
     }
 }
 

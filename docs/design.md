@@ -165,3 +165,11 @@
 
 - 参考 WPF 的 panel 设计，父容器在分配子元素布局槽位后，应由子容器继续执行自己的布局逻辑。
 - demo 层不应承担“逐层手工 arrange 所有嵌套 panel”这种职责；这属于布局系统本身应提供的能力。
+
+## 20. Measure 与 Flex 设计决策
+
+- 参考 WPF `MeasureOverride/ArrangeOverride` 与 Chromium FlexLayout 的主轴/交叉轴模型，布局系统必须先做内容测量，再做最终分配。
+- `UIElement` 默认提供 intrinsic size；显式 `desired_size` 只作为优先尺寸提示，而不是唯一布局来源。
+- `StackPanel` 作为 flex 容器负责：主轴累计尺寸、剩余空间 grow、受限空间 shrink、交叉轴 stretch/start/center/end。
+- `GridPanel` 负责按子元素内容贡献计算 track size，不能继续固定按平均切格子处理所有场景。
+- 示例窗口只负责声明布局树，不允许再引入 demo 专用的高度分区公式主导布局系统行为。

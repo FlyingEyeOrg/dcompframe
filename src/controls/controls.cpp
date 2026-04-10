@@ -105,10 +105,35 @@ Panel::Panel() : StyledElement("panel") {
 }
 
 void Panel::arrange(const Size& available_size) {
-    set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+    const Rect current_bounds = bounds();
+    set_bounds(Rect {.x = current_bounds.x, .y = current_bounds.y, .width = available_size.width, .height = available_size.height});
     for (const auto& child : children()) {
-        child->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+        const Thickness margin = child->margin();
+        const Size child_available {
+            .width = max_value(0.0F, available_size.width - margin.left - margin.right),
+            .height = max_value(0.0F, available_size.height - margin.top - margin.bottom),
+        };
+        child->measure(child_available);
+        child->set_bounds(Rect {
+            .x = margin.left,
+            .y = margin.top,
+            .width = child_available.width,
+            .height = child_available.height,
+        });
+        child->arrange(child_available);
     }
+}
+
+Size Panel::measure(const Size& available_size) {
+    Size panel_size = UIElement::measure(available_size);
+    for (const auto& child : children()) {
+        const Thickness margin = child->margin();
+        const Size child_size = child->measure(available_size);
+        panel_size.width = max_value(panel_size.width, margin.left + child_size.width + margin.right);
+        panel_size.height = max_value(panel_size.height, margin.top + child_size.height + margin.bottom);
+    }
+    set_measured_size(clamp_size_to_available(panel_size, available_size));
+    return measured_size();
 }
 
 Label::Label(std::string text) : StyledElement("label"), text_(std::move(text)) {}

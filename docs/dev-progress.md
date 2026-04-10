@@ -2,6 +2,15 @@
 
 ## 已完成
 
+- 2026-04-10（布局系统重构为 measure/arrange + flex）
+  - `UIElement` 新增 `measure()`、测量缓存、intrinsic size 和 `flex_grow/flex_shrink`，元素不再只依赖外部手工 `desired_size`。
+  - `StackPanel` 改为主轴/交叉轴语义布局：支持内容测量、剩余空间 grow、空间不足 shrink，以及横向 wrap。
+  - `GridPanel` 改为根据子元素测量结果计算列宽和行高，再在 arrange 阶段分配剩余空间。
+  - `Panel` 增加基于子元素的测量逻辑，`Window` 默认直接驱动 root `measure + arrange`。
+  - 旧 demo 的 section 比例公式整体移除，`demo/main.cpp` 替换为布局验证窗口，仅使用 `Panel`、`StackPanel`、`GridPanel` 组织示例控件。
+  - 新增/更新布局测试与集成测试，验证 flex 分配、内容驱动 grid 和滚动条命中。
+  - 验证：命令行 `cmake --build --preset vs2022-x64-debug --target dcompframe_demo dcompframe_tests` 通过，`ctest --preset vs2022-x64-debug-tests --output-on-failure` 结果 `54/54` 通过。
+
 - 2026-04-10（递归 Arrange 布局优化）
   - 参考 WPF Measure/Arrange 语义，把 `UIElement` 扩展为支持递归 `arrange`，由父容器分配布局槽位后，子容器自动继续布局其 children。
   - `StackPanel` / `GridPanel` 改为在设置子元素 bounds 后立即递归 `arrange` 子容器，不再依赖 demo 侧手工逐层调用。

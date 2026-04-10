@@ -61,25 +61,29 @@ TEST(GridPanelTests, ArrangeSplitsCellsAndAppliesPlacement) {
     auto top_left = std::make_shared<UIElement>("top_left");
     auto bottom_right = std::make_shared<UIElement>("bottom_right");
 
+    top_left->set_desired_size(Size {.width = 80.0F, .height = 30.0F});
+    bottom_right->set_desired_size(Size {.width = 90.0F, .height = 40.0F});
+
     ASSERT_TRUE(grid->add_child(top_left));
     ASSERT_TRUE(grid->add_child(bottom_right));
 
     grid->set_grid_position(top_left, GridPanel::Cell {.row = 0, .col = 0, .row_span = 1, .col_span = 1});
     grid->set_grid_position(bottom_right, GridPanel::Cell {.row = 1, .col = 1, .row_span = 1, .col_span = 1});
 
+    grid->measure(Size {.width = 200.0F, .height = 100.0F});
     grid->arrange(Size {.width = 200.0F, .height = 100.0F});
 
     const auto tl = top_left->bounds();
     EXPECT_FLOAT_EQ(tl.x, 0.0F);
     EXPECT_FLOAT_EQ(tl.y, 0.0F);
-    EXPECT_FLOAT_EQ(tl.width, 100.0F);
-    EXPECT_FLOAT_EQ(tl.height, 50.0F);
+    EXPECT_FLOAT_EQ(tl.width, 95.0F);
+    EXPECT_FLOAT_EQ(tl.height, 45.0F);
 
     const auto br = bottom_right->bounds();
-    EXPECT_FLOAT_EQ(br.x, 100.0F);
-    EXPECT_FLOAT_EQ(br.y, 50.0F);
-    EXPECT_FLOAT_EQ(br.width, 100.0F);
-    EXPECT_FLOAT_EQ(br.height, 50.0F);
+    EXPECT_FLOAT_EQ(br.x, 95.0F);
+    EXPECT_FLOAT_EQ(br.y, 45.0F);
+    EXPECT_FLOAT_EQ(br.width, 105.0F);
+    EXPECT_FLOAT_EQ(br.height, 55.0F);
 }
 
 TEST(StackPanelTests, VerticalArrangeRespectsSpacing) {
@@ -95,6 +99,7 @@ TEST(StackPanelTests, VerticalArrangeRespectsSpacing) {
     ASSERT_TRUE(stack->add_child(a));
     ASSERT_TRUE(stack->add_child(b));
 
+    stack->measure(Size {.width = 200.0F, .height = 200.0F});
     stack->arrange(Size {.width = 200.0F, .height = 200.0F});
 
     const auto a_rect = a->bounds();
@@ -125,6 +130,7 @@ TEST(StackPanelTests, HorizontalArrangeWrapsWhenEnabled) {
     ASSERT_TRUE(stack->add_child(a));
     ASSERT_TRUE(stack->add_child(b));
 
+    stack->measure(Size {.width = 100.0F, .height = 200.0F});
     stack->arrange(Size {.width = 100.0F, .height = 200.0F});
 
     const auto a_rect = a->bounds();
@@ -150,6 +156,7 @@ TEST(StackPanelTests, ArrangePreservesParentOffsetAndRespectsMargin) {
     ASSERT_TRUE(stack->add_child(child));
 
     stack->set_bounds(Rect {.x = 40.0F, .y = 24.0F, .width = 0.0F, .height = 0.0F});
+    stack->measure(Size {.width = 180.0F, .height = 120.0F});
     stack->arrange(Size {.width = 180.0F, .height = 120.0F});
 
     const auto stack_rect = stack->bounds();
@@ -179,6 +186,7 @@ TEST(GridPanelTests, ArrangePreservesParentOffsetAndAppliesMargins) {
     grid->set_grid_position(right, GridPanel::Cell {.row = 0, .col = 1});
 
     grid->set_bounds(Rect {.x = 20.0F, .y = 12.0F, .width = 0.0F, .height = 0.0F});
+    grid->measure(Size {.width = 200.0F, .height = 80.0F});
     grid->arrange(Size {.width = 200.0F, .height = 80.0F});
 
     const auto grid_rect = grid->bounds();
@@ -190,13 +198,13 @@ TEST(GridPanelTests, ArrangePreservesParentOffsetAndAppliesMargins) {
     EXPECT_FLOAT_EQ(grid_rect.y, 12.0F);
     EXPECT_FLOAT_EQ(left_rect.x, 4.0F);
     EXPECT_FLOAT_EQ(left_rect.y, 6.0F);
-    EXPECT_FLOAT_EQ(left_rect.width, 88.0F);
+    EXPECT_FLOAT_EQ(left_rect.width, 90.0F);
     EXPECT_FLOAT_EQ(left_rect.height, 64.0F);
-    EXPECT_FLOAT_EQ(right_rect.x, 102.0F);
+    EXPECT_FLOAT_EQ(right_rect.x, 104.0F);
     EXPECT_FLOAT_EQ(right_rect.y, 4.0F);
-    EXPECT_FLOAT_EQ(right_rect.width, 92.0F);
+    EXPECT_FLOAT_EQ(right_rect.width, 90.0F);
     EXPECT_FLOAT_EQ(right_rect.height, 68.0F);
-    EXPECT_FLOAT_EQ(absolute_right_rect.x, 122.0F);
+    EXPECT_FLOAT_EQ(absolute_right_rect.x, 124.0F);
     EXPECT_FLOAT_EQ(absolute_right_rect.y, 16.0F);
 }
 
@@ -225,6 +233,7 @@ TEST(LayoutPanelsTests, NestedPanelsArrangeChildrenRecursively) {
     ASSERT_TRUE(left_stack->add_child(left_child));
     ASSERT_TRUE(right_stack->add_child(right_child));
 
+    root->measure(Size {.width = 300.0F, .height = 200.0F});
     root->arrange(Size {.width = 300.0F, .height = 200.0F});
 
     const auto left_absolute = left_child->absolute_bounds();
@@ -238,6 +247,54 @@ TEST(LayoutPanelsTests, NestedPanelsArrangeChildrenRecursively) {
     EXPECT_FLOAT_EQ(right_absolute.y, 24.0F);
     EXPECT_FLOAT_EQ(right_absolute.width, 138.0F);
     EXPECT_FLOAT_EQ(right_absolute.height, 50.0F);
+}
+
+TEST(StackPanelTests, FlexGrowConsumesRemainingVerticalSpace) {
+    auto stack = std::make_shared<StackPanel>(Orientation::Vertical);
+    auto fixed = std::make_shared<UIElement>("fixed");
+    auto flexible = std::make_shared<UIElement>("flexible");
+
+    stack->set_spacing(10.0F);
+    fixed->set_desired_size(Size {.width = 80.0F, .height = 40.0F});
+    flexible->set_desired_size(Size {.width = 80.0F, .height = 30.0F});
+    flexible->set_flex_grow(1.0F);
+
+    ASSERT_TRUE(stack->add_child(fixed));
+    ASSERT_TRUE(stack->add_child(flexible));
+
+    stack->measure(Size {.width = 200.0F, .height = 200.0F});
+    stack->arrange(Size {.width = 200.0F, .height = 200.0F});
+
+    EXPECT_FLOAT_EQ(fixed->bounds().height, 40.0F);
+    EXPECT_FLOAT_EQ(flexible->bounds().y, 50.0F);
+    EXPECT_FLOAT_EQ(flexible->bounds().height, 150.0F);
+}
+
+TEST(GridPanelTests, MeasureUsesLargestContentContributionPerTrack) {
+    auto grid = std::make_shared<GridPanel>(2, 2);
+    auto top_left = std::make_shared<UIElement>("top_left");
+    auto top_right = std::make_shared<UIElement>("top_right");
+    auto bottom_left = std::make_shared<UIElement>("bottom_left");
+    auto bottom_right = std::make_shared<UIElement>("bottom_right");
+
+    top_left->set_desired_size(Size {.width = 80.0F, .height = 30.0F});
+    top_right->set_desired_size(Size {.width = 110.0F, .height = 40.0F});
+    bottom_left->set_desired_size(Size {.width = 90.0F, .height = 70.0F});
+    bottom_right->set_desired_size(Size {.width = 60.0F, .height = 50.0F});
+
+    ASSERT_TRUE(grid->add_child(top_left));
+    ASSERT_TRUE(grid->add_child(top_right));
+    ASSERT_TRUE(grid->add_child(bottom_left));
+    ASSERT_TRUE(grid->add_child(bottom_right));
+    grid->set_grid_position(top_left, GridPanel::Cell {.row = 0, .col = 0});
+    grid->set_grid_position(top_right, GridPanel::Cell {.row = 0, .col = 1});
+    grid->set_grid_position(bottom_left, GridPanel::Cell {.row = 1, .col = 0});
+    grid->set_grid_position(bottom_right, GridPanel::Cell {.row = 1, .col = 1});
+
+    const Size measured = grid->measure(Size {.width = 500.0F, .height = 500.0F});
+
+    EXPECT_FLOAT_EQ(measured.width, 200.0F);
+    EXPECT_FLOAT_EQ(measured.height, 110.0F);
 }
 
 }  // namespace dcompframe::tests

@@ -19,7 +19,8 @@ class Panel : public StyledElement {
 public:
     Panel();
 
-    void arrange(const Size& available_size);
+    Size measure(const Size& available_size) override;
+    void arrange(const Size& available_size) override;
 };
 
 }  // namespace dcompframe

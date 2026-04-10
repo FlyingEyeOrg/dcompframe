@@ -40,7 +40,8 @@
 
 - 子节点增删、父子关系维护。
 - 事件分发支持捕获、目标、冒泡阶段。
-- 属性：边界、透明度、裁剪、边距、平移、缩放、旋转、焦点。
+- 属性：边界、透明度、裁剪、边距、平移、缩放、旋转、焦点、`flex_grow`、`flex_shrink`。
+- `UIElement::measure()`：根据 intrinsic size 和显式 `desired_size` 计算元素所需尺寸，并缓存 `measured_size`。
 - 脏标记：变更时自动向上级传播。
 - `LayoutManager`：支持 `Stack` / `Grid` 策略。
 
@@ -50,7 +51,8 @@
 
 - 支持行列设置。
 - 支持子元素单元格与跨度设置。
-- 计算并写回每个子元素边界。
+- `measure()` 阶段根据 child 内容贡献计算列宽和行高。
+- `arrange()` 阶段在测量结果基础上分配剩余空间并写回每个子元素边界。
 
 ## StackPanel
 
@@ -58,6 +60,8 @@
 
 - `Vertical`：按 Y 轴顺序排布。
 - `Horizontal`：按 X 轴排布，可在溢出时换行。
+- `measure()` 阶段负责累计主轴尺寸和交叉轴最大尺寸。
+- `arrange()` 阶段负责主轴空间分配，支持 grow/shrink 和交叉轴对齐。
 - 默认行为：容器填满父容器，交叉轴对子项做拉伸。
 
 ## 控件层
@@ -65,6 +69,7 @@
 职责：提供可复用基础控件与卡片组件。
 
 - `Panel`：容器控件。
+- `Panel::measure`：根据子元素所需尺寸计算容器需求大小。
 - `Panel::arrange`：按可用区域安排子元素，默认拉伸填满。
 - `Panel` 默认背景透明、边框透明、边框厚度为 0。
 - `GridPanel` / `StackPanel` 仅负责排布，不绘制背景，因此默认保持透明布局语义。
@@ -128,8 +133,10 @@
 	- demo 分区布局改为先在总高度内分配，再绘制各 section，避免窗口收缩时的区域重叠。
 	- 新版 demo 布局进一步提升顶部表单区和 preview 卡片可用高度，减少底部滚动区对主交互面的挤压。
 	- 最新 demo 结构改为“外层 `StackPanel` section 栈 + 局部 `GridPanel` 双列”，每类控件拥有独立 section，渲染层同步按该结构排版。
+	- 当前 demo 已切换为“布局验证窗口”，目标是验证 `Panel + StackPanel + GridPanel` 是否能独立完成可用布局，而不是继续堆叠业务展示逻辑。
 	- `UIElement` 新增绝对边界能力，`WindowRenderTarget` 改为读取真实控件边界而不是继续维护 demo 专用排版公式。
 	- `StackPanel` / `GridPanel` 已修正为保留父容器安排结果并应用 `margin` 的布局行为。
+	- `Window::arrange_content` 默认直接驱动根元素 `measure + arrange`，不再要求 demo 手写整棵树的布局回调。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `TabControl` 新增鼠标点击切换，demo 预览卡片增加动画条与当前 tab 正文说明，避免“有控件无示例”。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。

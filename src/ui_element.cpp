@@ -1,9 +1,68 @@
 #include "dcompframe/ui_element.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <utility>
 
 namespace dcompframe {
+
+namespace {
+
+float clamp_dimension(float proposed, float available) {
+    const float safe_proposed = proposed > 0.0F ? proposed : 0.0F;
+    if (!std::isfinite(available)) {
+        return safe_proposed;
+    }
+
+    return std::clamp(safe_proposed, 0.0F, available);
+}
+
+Size intrinsic_size_for_element(const std::string& name) {
+    if (name == "button") {
+        return Size {.width = 132.0F, .height = 40.0F};
+    }
+    if (name == "text_box" || name == "combo_box" || name == "check_box" || name == "slider") {
+        return Size {.width = 280.0F, .height = 40.0F};
+    }
+    if (name == "rich_text_box") {
+        return Size {.width = 320.0F, .height = 180.0F};
+    }
+    if (name == "text_block") {
+        return Size {.width = 320.0F, .height = 56.0F};
+    }
+    if (name == "label") {
+        return Size {.width = 160.0F, .height = 24.0F};
+    }
+    if (name == "image") {
+        return Size {.width = 320.0F, .height = 140.0F};
+    }
+    if (name == "progress" || name == "loading") {
+        return Size {.width = 220.0F, .height = 28.0F};
+    }
+    if (name == "list_view" || name == "items_control" || name == "scroll_viewer") {
+        return Size {.width = 320.0F, .height = 180.0F};
+    }
+    if (name == "log_box") {
+        return Size {.width = 320.0F, .height = 160.0F};
+    }
+    if (name == "tab_control") {
+        return Size {.width = 280.0F, .height = 32.0F};
+    }
+    if (name == "popup") {
+        return Size {.width = 280.0F, .height = 132.0F};
+    }
+    if (name == "expander") {
+        return Size {.width = 280.0F, .height = 84.0F};
+    }
+    if (name == "card") {
+        return Size {.width = 360.0F, .height = 280.0F};
+    }
+
+    return Size {};
+}
+
+}  // namespace
 
 void LayoutManager::set_strategy(LayoutStrategy strategy) {
     strategy_ = strategy;
@@ -45,6 +104,17 @@ void LayoutManager::apply_layout(const std::shared_ptr<UIElement>& root, const S
 }
 
 UIElement::UIElement(std::string name) : name_(std::move(name)) {}
+
+Size UIElement::measure(const Size& available_size) {
+    const Size intrinsic = intrinsic_size_for_element(name_);
+    const Size proposed {
+        .width = desired_size_.width > 0.0F ? desired_size_.width : intrinsic.width,
+        .height = desired_size_.height > 0.0F ? desired_size_.height : intrinsic.height,
+    };
+    const Size resolved = clamp_size_to_available(proposed, available_size);
+    set_measured_size(resolved);
+    return resolved;
+}
 
 void UIElement::arrange(const Size& available_size) {
     const Rect current_bounds = bounds_;
@@ -119,6 +189,28 @@ void UIElement::set_desired_size(const Size& desired_size) {
 
 Size UIElement::desired_size() const {
     return desired_size_;
+}
+
+Size UIElement::measured_size() const {
+    return measured_size_;
+}
+
+void UIElement::set_flex_grow(float flex_grow) {
+    flex_grow_ = flex_grow > 0.0F ? flex_grow : 0.0F;
+    mark_dirty();
+}
+
+float UIElement::flex_grow() const {
+    return flex_grow_;
+}
+
+void UIElement::set_flex_shrink(float flex_shrink) {
+    flex_shrink_ = flex_shrink >= 0.0F ? flex_shrink : 0.0F;
+    mark_dirty();
+}
+
+float UIElement::flex_shrink() const {
+    return flex_shrink_;
 }
 
 void UIElement::set_opacity(float opacity) {
@@ -251,6 +343,17 @@ void UIElement::mark_dirty() {
     if (const auto p = parent_.lock()) {
         p->mark_dirty();
     }
+}
+
+void UIElement::set_measured_size(const Size& measured_size) {
+    measured_size_ = measured_size;
+}
+
+Size UIElement::clamp_size_to_available(const Size& proposed_size, const Size& available_size) const {
+    return Size {
+        .width = clamp_dimension(proposed_size.width, available_size.width),
+        .height = clamp_dimension(proposed_size.height, available_size.height),
+    };
 }
 
 }  // namespace dcompframe

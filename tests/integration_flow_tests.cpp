@@ -108,7 +108,8 @@ POINT compute_combo_dropdown_point(const ComboBox& combo_box) {
 
 POINT compute_scrollbar_point(const UIElement& control, float bottom_inset) {
     const Rect bounds = control.bounds();
-    return point_from_rect(bounds, bounds.width - 3.0F, bounds.height - bottom_inset);
+    const float track_x_inset = bottom_inset >= 14.0F ? 15.0F : 11.0F;
+    return point_from_rect(bounds, bounds.width - track_x_inset, bounds.height - bottom_inset);
 }
 
 POINT compute_tab_control_point(const Card& card) {

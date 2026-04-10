@@ -237,3 +237,13 @@
   - 已为 `UIElement` 引入递归 `arrange` 链，父 panel 为 child 分配完布局槽位后，会继续驱动子 panel 完成其内部布局。
   - demo 侧 arrange 逻辑已经显著简化，不再承担布局引擎应负责的逐层排列工作。
 - 测试结果：`49/49` 全通过。
+
+## 本轮补充十（2026-04-10）
+
+- 检查项：内容测量能力、flex 分配、grid 轨道计算、旧 demo 公式残留、集成交互回归。
+- 修复结论：
+  - `UIElement` 已具备 intrinsic size、测量缓存和 flex grow/shrink 基础能力。
+  - `StackPanel` 已改为主轴/交叉轴语义布局，`GridPanel` 已改为内容驱动 track 计算。
+  - `Window` 默认直接驱动 root `measure + arrange`，旧 demo 手工分区公式已从示例主流程中删除。
+  - `demo/main.cpp` 现为布局验证窗口，只用于验证 `Panel`、`StackPanel`、`GridPanel` 组合能力。
+- 测试结果：命令行构建通过，`54/54` 全通过。

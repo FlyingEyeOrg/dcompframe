@@ -169,3 +169,16 @@
 	- 嵌套 `StackPanel` / `GridPanel` 在一次 root arrange 后即可完成递归布局。
 	- demo 不再需要逐层对子 panel 手工 arrange 才能获得正确边界。
 - 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充十（2026-04-10）
+
+- 回归目标：
+	- `UIElement` 支持自测量尺寸，`StackPanel` 支持 flex grow，`GridPanel` 支持按内容计算轨道。
+	- `Window` 默认通过 root `measure + arrange` 驱动布局，不再依赖 demo 专用布局公式。
+	- `WindowRenderTarget` 的页签、滚动条轨道点击与新版边界模型保持一致。
+- 新增/更新用例：
+	- `StackPanelTests.FlexGrowConsumesRemainingVerticalSpace`
+	- `GridPanelTests.MeasureUsesLargestContentContributionPerTrack`
+	- 既有布局测试切换为 `measure + arrange` 调用顺序
+	- 集成测试滚动条轨道点击坐标同步到新版滚动条几何
+- 结果：`ctest --preset vs2022-x64-debug-tests --output-on-failure`，`54/54` 通过。
