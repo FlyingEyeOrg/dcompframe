@@ -40,10 +40,20 @@
 
 - 子节点增删、父子关系维护。
 - 事件分发支持捕获、目标、冒泡阶段。
-- 属性：边界、透明度、裁剪、边距、平移、缩放、旋转、焦点、`flex_grow`、`flex_shrink`。
+- 属性：边界、透明度、裁剪、边距、平移、缩放、旋转、焦点、`flex_grow`、`flex_shrink`、`flex_basis`、`order`、`align_self`。
 - `UIElement::measure()`：根据 intrinsic size 和显式 `desired_size` 计算元素所需尺寸，并缓存 `measured_size`。
+- `UIElement::hit_test()`：从视觉树递归查找最深命中子节点，支持 `hit_test_visible` 开关。
 - 脏标记：变更时自动向上级传播。
-- `LayoutManager`：支持 `Stack` / `Grid` 策略。
+- `LayoutManager`：支持 `Stack` / `Grid` / `Flex` 策略。
+
+## FlexPanel
+
+职责：提供与 Web Flexbox 对齐的页面布局主容器。
+
+- 支持 `FlexDirection`、`FlexWrap`、`FlexJustifyContent`、`FlexAlignItems`、`FlexAlignContent`。
+- 支持 `row_gap` / `column_gap`。
+- 子元素支持 `flex_grow`、`flex_shrink`、`flex_basis`、`order`、`align_self`。
+- `measure()` 负责 line 拆分和内容需求计算；`arrange()` 负责剩余空间解析和最终 bounds 分配。
 
 ## GridPanel
 
@@ -58,6 +68,7 @@
 
 职责：按方向堆叠子元素并支持间距与换行。
 
+- 当前实现已收敛为 `FlexPanel` 兼容适配层。
 - `Vertical`：按 Y 轴顺序排布。
 - `Horizontal`：按 X 轴排布，可在溢出时换行。
 - `measure()` 阶段负责累计主轴尺寸和交叉轴最大尺寸。
@@ -133,7 +144,7 @@
 	- demo 分区布局改为先在总高度内分配，再绘制各 section，避免窗口收缩时的区域重叠。
 	- 新版 demo 布局进一步提升顶部表单区和 preview 卡片可用高度，减少底部滚动区对主交互面的挤压。
 	- 最新 demo 结构改为“外层 `StackPanel` section 栈 + 局部 `GridPanel` 双列”，每类控件拥有独立 section，渲染层同步按该结构排版。
-	- 当前 demo 已切换为“布局验证窗口”，目标是验证 `Panel + StackPanel + GridPanel` 是否能独立完成可用布局，而不是继续堆叠业务展示逻辑。
+	- 当前 demo 已切换为“Flex 布局验证窗口”，目标是验证 `FlexPanel` 布局和元素树命中测试路由，而不是继续堆叠业务展示逻辑。
 	- `UIElement` 新增绝对边界能力，`WindowRenderTarget` 改为读取真实控件边界而不是继续维护 demo 专用排版公式。
 	- `StackPanel` / `GridPanel` 已修正为保留父容器安排结果并应用 `margin` 的布局行为。
 	- `Window::arrange_content` 默认直接驱动根元素 `measure + arrange`，不再要求 demo 手写整棵树的布局回调。
@@ -158,6 +169,7 @@
 职责：处理焦点环、点击/双击、拖拽与快捷键命令路由。
 
 - `InputManager`：焦点切换、点击、双击、拖拽回调。
+- `InputManager::route_pointer_down/move/up`：先命中 root 元素树，再执行 capture/target/bubble 路由。
 - `InputManager::register_shortcut/on_key_down`：快捷键注册与命令分发。
 
 ## 数据绑定

@@ -1014,6 +1014,11 @@ void WindowRenderTarget::set_overlay_scene(OverlayScene scene) {
     overlay_scene_ = std::move(scene);
 }
 
+void WindowRenderTarget::set_root_element(const std::shared_ptr<UIElement>& root_element) {
+    root_element_ = root_element;
+    input_manager_.set_focus_ring_root(root_element_);
+}
+
 void WindowRenderTarget::set_interactive_controls(InteractiveControls controls) {
     interactive_controls_ = std::move(controls);
     interactive_mode_enabled_ = interactive_controls_.primary_button != nullptr
@@ -1995,6 +2000,9 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         if (drag_scroll_target_ != DragScrollTarget::None) {
             update_drag_scroll(y);
         }
+        if (root_element_ != nullptr) {
+            input_manager_.route_pointer_move(root_element_, Point {.x = x, .y = y});
+        }
         result = 0;
         return true;
     }
@@ -2004,6 +2012,13 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         SetFocus(window_host_->hwnd());
         SetCapture(window_host_->hwnd());
         const HitResult hit = hit_test(layout, x, y);
+        const bool handled_by_tree = root_element_ != nullptr
+            && input_manager_.route_pointer_down(root_element_, Point {.x = x, .y = y});
+        if (handled_by_tree) {
+            window_host_->request_render();
+            result = 0;
+            return true;
+        }
         switch (hit.target) {
         case HitTarget::PrimaryButton:
             focused_scroll_target_ = DragScrollTarget::None;
@@ -2219,7 +2234,9 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         const float x = static_cast<float>(GET_X_LPARAM(lparam));
         const float y = static_cast<float>(GET_Y_LPARAM(lparam));
         const HitResult hit = hit_test(layout, x, y);
-        if (button_pressed_ && hit.target == HitTarget::PrimaryButton) {
+        const bool handled_by_tree = root_element_ != nullptr
+            && input_manager_.route_pointer_up(root_element_, Point {.x = x, .y = y});
+        if (!handled_by_tree && button_pressed_ && hit.target == HitTarget::PrimaryButton) {
             perform_primary_action();
         }
         button_pressed_ = false;

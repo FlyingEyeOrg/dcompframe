@@ -24,6 +24,10 @@ public:
     void on_mouse_down(const std::shared_ptr<UIElement>& target, Point position);
     void on_mouse_move(Point position);
     void on_mouse_up(Point position);
+    bool route_pointer_down(const std::shared_ptr<UIElement>& root, Point position);
+    bool route_pointer_move(const std::shared_ptr<UIElement>& root, Point position);
+    bool route_pointer_up(const std::shared_ptr<UIElement>& root, Point position);
+    [[nodiscard]] std::shared_ptr<UIElement> hit_test(const std::shared_ptr<UIElement>& root, Point position) const;
 
     void set_click_handler(ClickHandler handler);
     void set_double_click_handler(DoubleClickHandler handler);

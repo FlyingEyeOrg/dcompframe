@@ -7,7 +7,7 @@
 - 渲染层：`RenderManager`、`CompositionBridge`
 - 窗口层：`WindowHost`
 - UI 核心层：`UIElement`、`LayoutManager`
-- 布局层：`GridPanel`、`StackPanel`
+- 布局层：`FlexPanel`、`StackPanel(兼容)`、`GridPanel(legacy)`
 - 控件层：`Panel`、`TextBlock`、`Image`、`Button`、`Card`、`Theme`
 - 动画层：`AnimationManager`
 - 工具辅助层：`ResourceManager`、`DeviceRecovery`、`DiagnosticsCenter`、`WindowRenderTarget`
@@ -103,7 +103,9 @@
 
 ## 10. 布局系统收敛策略
 
-- 布局系统保留 `GridPanel` 与 `StackPanel` 两种核心面板。
+- 布局系统以 `FlexPanel` 为唯一推荐容器模型。
+- `StackPanel` 仅作为兼容适配层保留。
+- `GridPanel` 仅作为历史兼容能力保留，不再作为后续页面布局首选。
 - 面板容器默认填满父容器，减少显式尺寸配置负担。
 - `StackPanel` 交叉轴默认拉伸，主轴按子项期望尺寸堆叠，行为与 WPF 设计理念保持一致。
 
@@ -150,6 +152,7 @@
 
 ## 17. demo section 布局决策
 
+- 该阶段性方案已被 2026-04-10 的 `FlexPanel` 页面树替代，保留本节仅用于追踪历史收敛路径。
 - demo 页面不再采用自由切块式 overlay 分配，而是统一收敛为纵向 section 栈。
 - 每一种类型的控件使用一个独立 `StackPanel` section 承载，保证结构语义清晰。
 - 只有在“同一行双列展示”的场景下才使用 `GridPanel`，当前用于顶部左右两列和中部双列集合区。
@@ -173,3 +176,14 @@
 - `StackPanel` 作为 flex 容器负责：主轴累计尺寸、剩余空间 grow、受限空间 shrink、交叉轴 stretch/start/center/end。
 - `GridPanel` 负责按子元素内容贡献计算 track size，不能继续固定按平均切格子处理所有场景。
 - 示例窗口只负责声明布局树，不允许再引入 demo 专用的高度分区公式主导布局系统行为。
+
+## 21. Flexbox Only 决策
+
+- 后续新增页面布局统一以 `FlexPanel` 为准，设计和约束见 `docs/flex-layout-engine-design.md` 与 `docs/flexbox-only-spec.md`。
+- 二维页面通过嵌套 flex 容器表达，不再新增 grid-only 页面组织方案。
+
+## 22. Hit-Test 路由决策
+
+- 命中测试统一通过 `UIElement::hit_test()` 从元素树最深可命中节点开始。
+- 窗口鼠标消息由 `InputManager` 负责映射为 capture -> target -> bubble 路由。
+- render target 不再直接绕过元素树向业务控件派发主点击事件。

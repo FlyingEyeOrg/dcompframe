@@ -163,3 +163,13 @@
 - 布局必须分为 `measure` 和 `arrange` 两个阶段，先确定“想要多大”，再确定“最终给多大”。
 - leaf element 应至少提供稳定的 intrinsic size，避免所有控件都必须由外部硬编码尺寸才能参与布局。
 - 主轴剩余空间应由容器按 flex 规则分配，主轴不足时允许按 shrink 规则收缩，而不是继续把 demo 公式写进主项目。
+
+## 31. Flexbox Only 原则
+
+- 后续新增页面布局统一优先使用 `FlexPanel`，二维页面通过嵌套 flex 容器表达。
+- `GridPanel` 仅视为 legacy compatibility，不再作为新界面布局首选。
+
+## 32. 元素树事件路由原则
+
+- 窗口 pointer 消息必须先命中元素树，再进入 capture -> target -> bubble 路由。
+- render target 不应绕过元素树直接向业务控件分发主点击逻辑。

@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "dcompframe/events/input_event.h"
+#include "dcompframe/input/input_manager.h"
+#include "dcompframe/layout/flex_panel.h"
 #include "dcompframe/layout/grid_panel.h"
 #include "dcompframe/layout/stack_panel.h"
 #include "dcompframe/ui_element.h"
@@ -54,6 +56,28 @@ TEST(UIElementTests, EventDispatchSupportsCaptureTargetAndBubble) {
         "root-2"
     };
     EXPECT_EQ(call_order, expected);
+}
+
+TEST(UIElementTests, HitTestFindsDeepestVisibleDescendant) {
+    auto root = std::make_shared<UIElement>("root");
+    auto container = std::make_shared<UIElement>("container");
+    auto leaf = std::make_shared<UIElement>("leaf");
+
+    ASSERT_TRUE(root->add_child(container));
+    ASSERT_TRUE(container->add_child(leaf));
+
+    root->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = 320.0F, .height = 240.0F});
+    container->set_bounds(Rect {.x = 20.0F, .y = 20.0F, .width = 200.0F, .height = 160.0F});
+    leaf->set_bounds(Rect {.x = 12.0F, .y = 14.0F, .width = 72.0F, .height = 40.0F});
+
+    const auto hit = root->hit_test(Point {.x = 40.0F, .y = 44.0F});
+    ASSERT_NE(hit, nullptr);
+    EXPECT_EQ(hit->name(), "leaf");
+
+    leaf->set_hit_test_visible(false);
+    const auto fallback = root->hit_test(Point {.x = 40.0F, .y = 44.0F});
+    ASSERT_NE(fallback, nullptr);
+    EXPECT_EQ(fallback->name(), "container");
 }
 
 TEST(GridPanelTests, ArrangeSplitsCellsAndAppliesPlacement) {
@@ -268,6 +292,97 @@ TEST(StackPanelTests, FlexGrowConsumesRemainingVerticalSpace) {
     EXPECT_FLOAT_EQ(fixed->bounds().height, 40.0F);
     EXPECT_FLOAT_EQ(flexible->bounds().y, 50.0F);
     EXPECT_FLOAT_EQ(flexible->bounds().height, 150.0F);
+}
+
+TEST(FlexPanelTests, RowLayoutDistributesGrowBasisAndGap) {
+    auto row = std::make_shared<FlexPanel>(FlexDirection::Row);
+    auto left = std::make_shared<UIElement>("left");
+    auto right = std::make_shared<UIElement>("right");
+
+    row->set_column_gap(12.0F);
+    left->set_flex_basis(60.0F);
+    left->set_flex_grow(1.0F);
+    right->set_flex_basis(60.0F);
+    right->set_flex_grow(2.0F);
+
+    ASSERT_TRUE(row->add_child(left));
+    ASSERT_TRUE(row->add_child(right));
+
+    row->measure(Size {.width = 300.0F, .height = 100.0F});
+    row->arrange(Size {.width = 300.0F, .height = 100.0F});
+
+    EXPECT_FLOAT_EQ(left->bounds().x, 0.0F);
+    EXPECT_FLOAT_EQ(left->bounds().width, 116.0F);
+    EXPECT_FLOAT_EQ(right->bounds().x, 128.0F);
+    EXPECT_FLOAT_EQ(right->bounds().width, 172.0F);
+}
+
+TEST(FlexPanelTests, WrapMovesOverflowItemsToNextLine) {
+    auto row = std::make_shared<FlexPanel>(FlexDirection::Row);
+    auto a = std::make_shared<UIElement>("a");
+    auto b = std::make_shared<UIElement>("b");
+    auto c = std::make_shared<UIElement>("c");
+
+    row->set_wrap(FlexWrap::Wrap);
+    row->set_align_content(FlexAlignContent::Start);
+    row->set_column_gap(10.0F);
+    row->set_row_gap(8.0F);
+    a->set_desired_size(Size {.width = 70.0F, .height = 20.0F});
+    b->set_desired_size(Size {.width = 70.0F, .height = 20.0F});
+    c->set_desired_size(Size {.width = 70.0F, .height = 20.0F});
+
+    ASSERT_TRUE(row->add_child(a));
+    ASSERT_TRUE(row->add_child(b));
+    ASSERT_TRUE(row->add_child(c));
+
+    row->measure(Size {.width = 170.0F, .height = 120.0F});
+    row->arrange(Size {.width = 170.0F, .height = 120.0F});
+
+    EXPECT_FLOAT_EQ(a->bounds().y, 0.0F);
+    EXPECT_FLOAT_EQ(b->bounds().y, 0.0F);
+    EXPECT_FLOAT_EQ(c->bounds().y, 28.0F);
+}
+
+TEST(InputManagerTests, HitTestRoutingDispatchesCaptureTargetAndBubble) {
+    auto root = std::make_shared<UIElement>("root");
+    auto container = std::make_shared<UIElement>("container");
+    auto leaf = std::make_shared<UIElement>("leaf");
+
+    ASSERT_TRUE(root->add_child(container));
+    ASSERT_TRUE(container->add_child(leaf));
+
+    root->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = 200.0F, .height = 200.0F});
+    container->set_bounds(Rect {.x = 20.0F, .y = 20.0F, .width = 140.0F, .height = 140.0F});
+    leaf->set_bounds(Rect {.x = 10.0F, .y = 10.0F, .width = 60.0F, .height = 40.0F});
+
+    std::vector<std::string> route;
+    int click_count = 0;
+
+    root->set_event_handler([&](InputEvent&, EventPhase phase) {
+        route.push_back("root-" + std::to_string(static_cast<int>(phase)));
+    });
+    container->set_event_handler([&](InputEvent&, EventPhase phase) {
+        route.push_back("container-" + std::to_string(static_cast<int>(phase)));
+    });
+    leaf->set_event_handler([&](InputEvent& event, EventPhase phase) {
+        route.push_back("leaf-" + std::to_string(static_cast<int>(phase)));
+        if (phase == EventPhase::Target) {
+            event.handled = true;
+        }
+    });
+
+    InputManager input;
+    input.set_click_handler([&](UIElement&) { ++click_count; });
+
+    const bool handled = input.route_pointer_down(root, Point {.x = 40.0F, .y = 42.0F});
+
+    EXPECT_TRUE(handled);
+    EXPECT_EQ(click_count, 0);
+    EXPECT_EQ(route, (std::vector<std::string> {
+        "root-0",
+        "container-0",
+        "leaf-1",
+    }));
 }
 
 TEST(GridPanelTests, MeasureUsesLargestContentContributionPerTrack) {

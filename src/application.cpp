@@ -94,6 +94,7 @@ std::wstring Window::title() const {
 
 void Window::set_root(const std::shared_ptr<UIElement>& root) {
     root_ = root;
+    render_target_.set_root_element(root);
 }
 
 void Window::set_arrange_handler(std::function<void(const Size&)> handler) {

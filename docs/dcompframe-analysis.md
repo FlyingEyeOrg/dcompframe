@@ -3,6 +3,13 @@
 - 编译失败主因不是业务逻辑错误，而是 MSVC 并发编译下的 PDB 写入冲突，以及控件拆分过程中遗留的截断源文件。
 - 当前收口方案保留独立控件头提升可维护性，但仍以 `src/controls/controls.cpp` 作为唯一实现单元，避免半拆分状态继续扩散。
 - UI 风格层面明确区分两类职责：`GridPanel` / `StackPanel` / `Panel` 维持 WPF 容器语义，其余控件统一映射为 Element Plus 的浅色表单视觉系统。
+
+## Flexbox Only 分析（2026-04-10）
+
+- 本轮布局收敛的关键点，不是“再把 StackPanel 做强一点”，而是显式引入 `FlexPanel` 作为 Web Flexbox 语义的宿主。
+- 这样做之后，布局、hit-test、事件路由和 demo 文档终于能共享同一套术语：direction、wrap、basis、grow、target、currentTarget、capture、bubble。
+- 原先“当前交互为 demo overlay 级命中测试，尚未与完整 UIElement 命中树统一”的风险已被显著收敛：窗口鼠标消息已开始经 `InputManager` 路由进元素树。
+- 仍然保留的风险是：`GridPanel` 还在仓库中存在，若没有规范门禁，后续开发者仍可能把它继续用于新页面布局；因此必须配套 `flexbox-only-spec.md` 做流程约束。
 # 专项分析：完整实现阶段可行性与风险
 
 ## 目标

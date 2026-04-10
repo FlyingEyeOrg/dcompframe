@@ -2,6 +2,16 @@
 
 ## 已完成
 
+- 2026-04-10（FlexPanel + 命中测试路由 + Flexbox Only 规范）
+  - 新增 `FlexPanel`，布局能力对齐 Web Flexbox：direction、wrap、grow、shrink、basis、gap、align/justify/content。
+  - `UIElement` 新增 `flex_basis`、`order`、`align_self`、`hit_test_visible`、`contains_point()`、`hit_test()`。
+  - `InputManager` 新增 root 级 pointer route，命中后按 capture -> target -> bubble 分发到元素树。
+  - `WindowRenderTarget` 开始把鼠标按下/移动/抬起并入元素树路由，demo `LogBox` 直接展示事件阶段。
+  - `demo/main.cpp` 改为纯 `FlexPanel` 布局 demo，不再依赖 `GridPanel` / `StackPanel` 组织主页面。
+  - 新增设计文档 `docs/flex-layout-engine-design.md` 与开发规范 `docs/flexbox-only-spec.md`。
+  - 新增/更新测试：`UIElementTests.HitTestFindsDeepestVisibleDescendant`、`FlexPanelTests.*`、`InputManagerTests.HitTestRoutingDispatchesCaptureTargetAndBubble`。
+  - 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_tests`、`ctest --preset vs2022-x64-debug-tests`、`cmake --build --preset vs2022-x64-debug --target dcompframe_demo` 通过，结果 `58/58`。
+
 - 2026-04-10（布局系统重构为 measure/arrange + flex）
   - `UIElement` 新增 `measure()`、测量缓存、intrinsic size 和 `flex_grow/flex_shrink`，元素不再只依赖外部手工 `desired_size`。
   - `StackPanel` 改为主轴/交叉轴语义布局：支持内容测量、剩余空间 grow、空间不足 shrink，以及横向 wrap。

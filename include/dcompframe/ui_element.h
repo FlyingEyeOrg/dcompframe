@@ -12,13 +12,59 @@ namespace dcompframe {
 
 enum class LayoutStrategy {
     Stack,
-    Grid
+    Grid,
+    Flex
 };
 
 enum class LayoutAxisAlignment {
     Start,
     Center,
     End,
+    Stretch
+};
+
+enum class FlexDirection {
+    Row,
+    RowReverse,
+    Column,
+    ColumnReverse
+};
+
+enum class FlexWrap {
+    NoWrap,
+    Wrap,
+    WrapReverse
+};
+
+enum class FlexJustifyContent {
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround
+};
+
+enum class FlexAlignItems {
+    Start,
+    End,
+    Center,
+    Stretch
+};
+
+enum class FlexAlignContent {
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround,
+    Stretch
+};
+
+enum class FlexAlignSelf {
+    Auto,
+    Start,
+    End,
+    Center,
     Stretch
 };
 
@@ -67,6 +113,13 @@ public:
     [[nodiscard]] float flex_grow() const;
     void set_flex_shrink(float flex_shrink);
     [[nodiscard]] float flex_shrink() const;
+    void set_flex_basis(float flex_basis);
+    [[nodiscard]] float flex_basis() const;
+    [[nodiscard]] bool has_flex_basis() const;
+    void set_order(int order);
+    [[nodiscard]] int order() const;
+    void set_align_self(FlexAlignSelf align_self);
+    [[nodiscard]] FlexAlignSelf align_self() const;
 
     void set_opacity(float opacity);
     [[nodiscard]] float opacity() const;
@@ -86,9 +139,13 @@ public:
     [[nodiscard]] bool is_focusable() const;
     void set_focused(bool focused);
     [[nodiscard]] bool is_focused() const;
+    void set_hit_test_visible(bool hit_test_visible);
+    [[nodiscard]] bool hit_test_visible() const;
 
     void set_event_handler(EventHandler handler);
     void dispatch_event(InputEvent& event);
+    [[nodiscard]] bool contains_point(const Point& position) const;
+    [[nodiscard]] std::shared_ptr<UIElement> hit_test(const Point& position);
 
     [[nodiscard]] const std::string& name() const;
     [[nodiscard]] bool is_dirty() const;
@@ -114,9 +171,13 @@ private:
     float rotation_deg_ = 0.0F;
     float flex_grow_ = 0.0F;
     float flex_shrink_ = 1.0F;
+    float flex_basis_ = -1.0F;
+    int order_ = 0;
+    FlexAlignSelf align_self_ = FlexAlignSelf::Auto;
     float opacity_ = 1.0F;
     bool focusable_ = false;
     bool focused_ = false;
+    bool hit_test_visible_ = true;
     bool dirty_ = true;
     EventHandler event_handler_ {};
 };

@@ -100,6 +100,10 @@ void LayoutManager::apply_layout(const std::shared_ptr<UIElement>& root, const S
         }
         break;
     }
+    case LayoutStrategy::Flex:
+        root->measure(available_size);
+        root->arrange(available_size);
+        break;
     }
 }
 
@@ -213,6 +217,37 @@ float UIElement::flex_shrink() const {
     return flex_shrink_;
 }
 
+void UIElement::set_flex_basis(float flex_basis) {
+    flex_basis_ = flex_basis >= 0.0F ? flex_basis : -1.0F;
+    mark_dirty();
+}
+
+float UIElement::flex_basis() const {
+    return flex_basis_;
+}
+
+bool UIElement::has_flex_basis() const {
+    return flex_basis_ >= 0.0F;
+}
+
+void UIElement::set_order(int order) {
+    order_ = order;
+    mark_dirty();
+}
+
+int UIElement::order() const {
+    return order_;
+}
+
+void UIElement::set_align_self(FlexAlignSelf align_self) {
+    align_self_ = align_self;
+    mark_dirty();
+}
+
+FlexAlignSelf UIElement::align_self() const {
+    return align_self_;
+}
+
 void UIElement::set_opacity(float opacity) {
     opacity_ = std::clamp(opacity, 0.0F, 1.0F);
     mark_dirty();
@@ -283,11 +318,24 @@ bool UIElement::is_focused() const {
     return focused_;
 }
 
+void UIElement::set_hit_test_visible(bool hit_test_visible) {
+    hit_test_visible_ = hit_test_visible;
+    mark_dirty();
+}
+
+bool UIElement::hit_test_visible() const {
+    return hit_test_visible_;
+}
+
 void UIElement::set_event_handler(EventHandler handler) {
     event_handler_ = std::move(handler);
 }
 
 void UIElement::dispatch_event(InputEvent& event) {
+    if (event.target == nullptr) {
+        event.target = this;
+    }
+
     std::vector<std::shared_ptr<UIElement>> path;
     auto current = parent();
     while (current) {
@@ -296,25 +344,76 @@ void UIElement::dispatch_event(InputEvent& event) {
     }
 
     for (auto it = path.rbegin(); it != path.rend() && !event.handled; ++it) {
+        event.phase = EventPhase::Capture;
+        event.current_target = it->get();
         (*it)->handle_event(event, EventPhase::Capture);
     }
 
     if (event.handled) {
+        event.current_target = nullptr;
         return;
     }
 
+    event.phase = EventPhase::Target;
+    event.current_target = this;
     handle_event(event, EventPhase::Target);
 
     if (event.handled) {
+        event.current_target = nullptr;
         return;
     }
 
     for (const auto& ancestor : path) {
+        event.phase = EventPhase::Bubble;
+        event.current_target = ancestor.get();
         ancestor->handle_event(event, EventPhase::Bubble);
         if (event.handled) {
+            event.current_target = nullptr;
             return;
         }
     }
+
+    event.current_target = nullptr;
+}
+
+bool UIElement::contains_point(const Point& position) const {
+    const Rect rect = absolute_bounds();
+    if (rect.width <= 0.0F || rect.height <= 0.0F) {
+        return false;
+    }
+
+    const bool inside_bounds = position.x >= rect.x && position.x <= (rect.x + rect.width)
+        && position.y >= rect.y && position.y <= (rect.y + rect.height);
+    if (!inside_bounds) {
+        return false;
+    }
+
+    if (clip_rect_.width <= 0.0F || clip_rect_.height <= 0.0F) {
+        return true;
+    }
+
+    const Rect clip {
+        .x = rect.x + clip_rect_.x,
+        .y = rect.y + clip_rect_.y,
+        .width = clip_rect_.width,
+        .height = clip_rect_.height,
+    };
+    return position.x >= clip.x && position.x <= (clip.x + clip.width)
+        && position.y >= clip.y && position.y <= (clip.y + clip.height);
+}
+
+std::shared_ptr<UIElement> UIElement::hit_test(const Point& position) {
+    if (!hit_test_visible_ || !contains_point(position)) {
+        return nullptr;
+    }
+
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+        if (const auto hit = (*it)->hit_test(position)) {
+            return hit;
+        }
+    }
+
+    return shared_from_this();
 }
 
 const std::string& UIElement::name() const {

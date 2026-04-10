@@ -15,6 +15,7 @@
 
 #include "dcompframe/render_manager.h"
 #include "dcompframe/controls/controls.h"
+#include "dcompframe/input/input_manager.h"
 #include "dcompframe/window_host.h"
 
 namespace dcompframe {
@@ -61,6 +62,7 @@ public:
     ~WindowRenderTarget();
 
     void set_overlay_scene(OverlayScene scene);
+    void set_root_element(const std::shared_ptr<UIElement>& root_element);
     void set_interactive_controls(InteractiveControls controls);
     void set_primary_action_handler(std::function<void()> handler);
     bool initialize();
@@ -112,7 +114,9 @@ private:
     IDWriteTextFormat* input_text_format_ = nullptr;
     IDWriteTextFormat* helper_text_format_ = nullptr;
     OverlayScene overlay_scene_ {};
+    std::shared_ptr<UIElement> root_element_ {};
     InteractiveControls interactive_controls_ {};
+    InputManager input_manager_ {};
     std::function<void()> primary_action_handler_ {};
     bool interactive_mode_enabled_ = false;
     bool mouse_left_down_ = false;

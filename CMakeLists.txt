@@ -17,6 +17,7 @@ add_library(dcompframe
     src/render_manager.cpp
     src/window_host.cpp
     src/ui_element.cpp
+    src/layout/flex_panel.cpp
     src/layout/grid_panel.cpp
     src/layout/stack_panel.cpp
     src/controls/style.cpp
