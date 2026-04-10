@@ -44,7 +44,13 @@ public:
         std::shared_ptr<ListView> list_view;
         std::shared_ptr<ItemsControl> items_control;
         std::shared_ptr<TextBlock> text_block;
+        std::shared_ptr<Label> label;
         std::shared_ptr<Image> image;
+        std::shared_ptr<Progress> progress;
+        std::shared_ptr<Loading> loading;
+        std::shared_ptr<TabControl> tab_control;
+        std::shared_ptr<Popup> popup;
+        std::shared_ptr<Expander> expander;
         std::shared_ptr<Card> card;
     };
 
@@ -123,6 +129,7 @@ private:
     int hovered_item_index_ = -1;
     int hovered_combo_index_ = -1;
     int button_click_count_ = 0;
+    float combo_box_scroll_offset_ = 0.0F;
     std::size_t focused_control_index_ = 0;
     std::optional<std::size_t> pressed_combo_index_ {};
     unsigned long long caret_blink_seed_ = 0;

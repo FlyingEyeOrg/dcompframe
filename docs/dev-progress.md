@@ -2,6 +2,22 @@
 
 ## 已完成
 
+- 2026-04-10（按 UI 规范补齐控件并全量接入 demo）
+  - 依据 `docs/ui-requirements/ui-framework-design-spec.md` 完成控件族补齐：`Label`、`Progress`、`Loading`、`TabControl`、`Popup`、`Expander`。
+  - `controls.h` 聚合头导出新增控件，`WindowRenderTarget::InteractiveControls` 完成新增控件接线。
+  - Demo 完成新增控件实例化与展示，保持 `Direct3D11 + DirectComposition + WS_EX_NOREDIRECTIONBITMAP` 技术栈不变。
+  - Element Plus 风格延续：新增控件采用浅色面板、蓝色主色与弱对比边框体系。
+  - 输入与滚轮链路继续收口：ComboBox 下拉打开时滚轮优先消费于下拉层，避免外层 ScrollViewer 穿透滚动。
+  - 新增测试：`ControlsTests.AdditionalControlsSupportCoreStateTransitions`、`IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`。
+  - 验证结果：`cmake --build --preset vs2022-x64-debug` 与 `ctest --preset vs2022-x64-debug-tests` 通过，`45/45`。
+
+- 2026-04-10（UI 需求基线文档建立）
+  - 新增独立目录 `docs/ui-requirements/`，用于承载后续 UI 开发强制规范。
+  - 新增框架总规范 `ui-framework-design-spec.md`，明确设计概要、技术要求、验收标准与质量门禁。
+  - 新增控件规范 `ui-controls-design-spec.md`，覆盖 TextBox、ComboBox、Progress、Loading、TabControl、Grid、StackPanel、Panel、Label、Popup、Expander、ItemsControl 的设计概要、设计要求、功能标准、验收标准。
+  - 文档内容对齐 WinUI、WPF、WAI-ARIA APG、Material 3 公开标准，并建立可追溯标准来源。
+  - README 与设计决策文档已同步引用新规范，后续 UI 开发将按该基线执行。
+
 - 2026-04-10（第四轮输入与滚动修复）
   - Demo 根容器切换为 `GridPanel`，运行时按窗口客户区尺寸重新 `arrange()`，内容区与外层卡片一起铺满窗口。
   - 重新收口 overlay 自适应布局：右列列表区与底部 `ScrollViewer` 分区不再互相遮挡，`ItemsControl` 不再被底部滚动区覆盖。

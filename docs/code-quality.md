@@ -76,7 +76,11 @@
 
 - 发现：容器内子元素超出父容器时未进行裁剪，出现可见溢出。
 - 修复：在 overlay 父容器内容区增加 `PushAxisAlignedClip/PopAxisAlignedClip` 裁剪。
-- 发现：按钮文本虽然使用居中格式，但绘制矩形与按钮本体不一致，视觉上未居中。
+  - 检查项：`ui-framework-design-spec.md` 对齐、缺失控件补齐、输入滚轮边界、demo 全控件展示。
+  - 发现：框架内缺少 `Label/Progress/Loading/TabControl/Popup/Expander` 状态模型，demo 无法覆盖全部规范控件。
+  - 修复：新增 6 类控件头与实现，聚合头 `controls.h` 纳入导出；`WindowRenderTarget::InteractiveControls` 与 demo 全量接入；补齐 ComboBox 下拉滚轮消费边界、文本输入即时重绘、caret 绘制一致性。
+  - 测试：新增 `ControlsTests.AdditionalControlsSupportCoreStateTransitions` 与 `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`。
+  - 结果：通过。`cmake --build --preset vs2022-x64-debug` 成功，`ctest --preset vs2022-x64-debug-tests` 结果 `45/45`。
 - 修复：按钮文本改为使用完整按钮矩形绘制。
 - 发现：`CheckBox`、`ComboBox`、`Slider` 缺少各自控件特征，显示接近普通文本条目。
 - 修复：为三类控件补齐选框、下拉箭头、滑轨与滑块等视觉元素，并补充 `ScrollViewer` 视口/滚动条表现。

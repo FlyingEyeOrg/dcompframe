@@ -52,3 +52,11 @@
 - `RichTextBox` 的根因是“有编辑模型但没有视口模型”，因此长文本 caret、选区和鼠标拖拽都缺少滚动约束；本轮补上内部 `scroll_offset` 后，编辑与视口开始统一。
 - `ListView`/`ItemsControl` 的滚动问题不在 wheel，而在缺少 thumb 命中与拖拽映射；本轮通过统一 thumb 几何和偏移换算，补齐了桌面列表应有的直接操控能力。
 - Demo 中 `ItemsControl` 被 `ScrollViewer` 遮挡的根因是上下区块按固定高度切分；本轮改为先保留底部滚动区，再反推上半区高度，避免区块重叠。
+
+## 规范驱动控件补齐分析（2026-04-10）
+
+- 按 `ui-framework-design-spec.md` 复盘后，框架缺口主要在“有容器/输入控件，但缺状态展示控件”。
+- 补齐 `Label/Progress/Loading/TabControl/Popup/Expander` 后，框架控件族从交互单点修复进入“可完整演示 + 可回归测试”状态。
+- `WindowRenderTarget` 接入新增控件后，右侧卡片预览区形成稳定的 Element Plus 风格展示面板，避免 demo 与规范脱节。
+- 新增集成测试对滚轮消费边界做了明确约束：ComboBox 下拉打开时滚轮不再穿透外层 `ScrollViewer`。
+- 当前风险点已从“缺控件”转移为“复杂交互深度不足”（例如 Popup 完整焦点陷阱、TabControl 手动/自动激活切换策略），可在下一轮按 TDD 深化。

@@ -106,3 +106,11 @@
 - 布局系统保留 `GridPanel` 与 `StackPanel` 两种核心面板。
 - 面板容器默认填满父容器，减少显式尺寸配置负担。
 - `StackPanel` 交叉轴默认拉伸，主轴按子项期望尺寸堆叠，行为与 WPF 设计理念保持一致。
+
+## 11. UI 需求基线约束
+
+- 从 2026-04-10 起，UI 相关开发统一以 `docs/ui-requirements/` 下文档为准：
+	- `ui-framework-design-spec.md`
+	- `ui-controls-design-spec.md`
+- 输入、焦点、滚轮冒泡、弹层层级、容器裁剪行为必须按文档验收条款实现。
+- 所有 UI BUG 修复必须建立“问题映射 -> 测试用例 -> 验收条款”的追踪关系，防止回归。

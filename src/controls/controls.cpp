@@ -103,6 +103,17 @@ void Panel::arrange(const Size& available_size) {
     }
 }
 
+Label::Label(std::string text) : StyledElement("label"), text_(std::move(text)) {}
+
+void Label::set_text(std::string text) {
+    text_ = std::move(text);
+    mark_dirty();
+}
+
+const std::string& Label::text() const {
+    return text_;
+}
+
 TextBlock::TextBlock(std::string text) : StyledElement("text_block"), text_(std::move(text)) {}
 
 void TextBlock::set_text(std::string text) {
@@ -136,6 +147,210 @@ void Button::set_text(std::string text) {
 
 const std::string& Button::text() const {
     return text_;
+}
+
+Progress::Progress() : StyledElement("progress") {}
+
+void Progress::set_range(float min_value, float max_value) {
+    min_ = min_value;
+    max_ = max_value >= min_value ? max_value : min_value;
+    value_ = clamp_value(value_, min_, max_);
+    mark_dirty();
+}
+
+void Progress::set_value(float value) {
+    value_ = clamp_value(value, min_, max_);
+    mark_dirty();
+}
+
+float Progress::value() const {
+    return value_;
+}
+
+float Progress::min_value() const {
+    return min_;
+}
+
+float Progress::max_value() const {
+    return max_;
+}
+
+void Progress::set_indeterminate(bool indeterminate) {
+    indeterminate_ = indeterminate;
+    mark_dirty();
+}
+
+bool Progress::is_indeterminate() const {
+    return indeterminate_;
+}
+
+float Progress::normalized_value() const {
+    const float range = max_ - min_;
+    if (range <= 0.0001F) {
+        return 0.0F;
+    }
+    return clamp_value((value_ - min_) / range, 0.0F, 1.0F);
+}
+
+Loading::Loading() : StyledElement("loading") {}
+
+void Loading::set_active(bool active) {
+    active_ = active;
+    mark_dirty();
+}
+
+bool Loading::active() const {
+    return active_;
+}
+
+void Loading::set_overlay_mode(bool overlay_mode) {
+    overlay_mode_ = overlay_mode;
+    mark_dirty();
+}
+
+bool Loading::overlay_mode() const {
+    return overlay_mode_;
+}
+
+void Loading::set_text(std::string text) {
+    text_ = std::move(text);
+    mark_dirty();
+}
+
+const std::string& Loading::text() const {
+    return text_;
+}
+
+TabControl::TabControl() : StyledElement("tab_control") {
+    set_focusable(true);
+}
+
+void TabControl::set_tabs(std::vector<std::string> tabs) {
+    tabs_ = std::move(tabs);
+    if (tabs_.empty()) {
+        selected_index_.reset();
+    } else if (!selected_index_ || *selected_index_ >= tabs_.size()) {
+        selected_index_ = 0U;
+    }
+    mark_dirty();
+}
+
+const std::vector<std::string>& TabControl::tabs() const {
+    return tabs_;
+}
+
+void TabControl::set_selected_index(std::size_t index) {
+    if (tabs_.empty() || index >= tabs_.size()) {
+        selected_index_.reset();
+    } else {
+        selected_index_ = index;
+    }
+    mark_dirty();
+}
+
+std::optional<std::size_t> TabControl::selected_index() const {
+    return selected_index_;
+}
+
+std::string TabControl::selected_tab() const {
+    if (!selected_index_ || *selected_index_ >= tabs_.size()) {
+        return {};
+    }
+    return tabs_[*selected_index_];
+}
+
+bool TabControl::select_next() {
+    if (tabs_.empty()) {
+        return false;
+    }
+    const std::size_t next_index = selected_index_ ? ((*selected_index_ + 1U) % tabs_.size()) : 0U;
+    set_selected_index(next_index);
+    return true;
+}
+
+bool TabControl::select_previous() {
+    if (tabs_.empty()) {
+        return false;
+    }
+    const std::size_t prev_index = selected_index_ ? ((*selected_index_ + tabs_.size() - 1U) % tabs_.size()) : 0U;
+    set_selected_index(prev_index);
+    return true;
+}
+
+Popup::Popup() : StyledElement("popup") {
+    set_focusable(true);
+}
+
+void Popup::set_open(bool open) {
+    open_ = open;
+    mark_dirty();
+}
+
+bool Popup::is_open() const {
+    return open_;
+}
+
+void Popup::set_modal(bool modal) {
+    modal_ = modal;
+    mark_dirty();
+}
+
+bool Popup::is_modal() const {
+    return modal_;
+}
+
+void Popup::set_title(std::string title) {
+    title_ = std::move(title);
+    mark_dirty();
+}
+
+const std::string& Popup::title() const {
+    return title_;
+}
+
+void Popup::set_body(std::string body) {
+    body_ = std::move(body);
+    mark_dirty();
+}
+
+const std::string& Popup::body() const {
+    return body_;
+}
+
+Expander::Expander() : StyledElement("expander") {
+    set_focusable(true);
+}
+
+void Expander::set_header(std::string header) {
+    header_ = std::move(header);
+    mark_dirty();
+}
+
+const std::string& Expander::header() const {
+    return header_;
+}
+
+void Expander::set_content_text(std::string content) {
+    content_text_ = std::move(content);
+    mark_dirty();
+}
+
+const std::string& Expander::content_text() const {
+    return content_text_;
+}
+
+void Expander::set_expanded(bool expanded) {
+    expanded_ = expanded;
+    mark_dirty();
+}
+
+bool Expander::expanded() const {
+    return expanded_;
+}
+
+bool Expander::toggle() {
+    set_expanded(!expanded_);
+    return expanded_;
 }
 
 void Button::set_on_click(std::function<void()> callback) {

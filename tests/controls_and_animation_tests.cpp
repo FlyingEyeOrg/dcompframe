@@ -201,6 +201,53 @@ TEST(ControlsTests, TextAlignmentDefaultsToCenterExceptRichTextBox) {
     EXPECT_EQ(rich_text_box.text_vertical_alignment(), TextVerticalAlignment::Top);
 }
 
+TEST(ControlsTests, AdditionalControlsSupportCoreStateTransitions) {
+    Label label("状态标签");
+    Progress progress;
+    Loading loading;
+    TabControl tab_control;
+    Popup popup;
+    Expander expander;
+
+    label.set_text("运行中");
+    EXPECT_EQ(label.text(), "运行中");
+
+    progress.set_range(0.0F, 100.0F);
+    progress.set_value(135.0F);
+    EXPECT_FLOAT_EQ(progress.value(), 100.0F);
+    progress.set_indeterminate(true);
+    EXPECT_TRUE(progress.is_indeterminate());
+
+    loading.set_text("加载数据中...");
+    loading.set_active(true);
+    loading.set_overlay_mode(true);
+    EXPECT_TRUE(loading.active());
+    EXPECT_TRUE(loading.overlay_mode());
+    EXPECT_EQ(loading.text(), "加载数据中...");
+
+    tab_control.set_tabs({"概览", "交互", "诊断"});
+    ASSERT_TRUE(tab_control.selected_index().has_value());
+    EXPECT_EQ(tab_control.selected_tab(), "概览");
+    EXPECT_TRUE(tab_control.select_next());
+    EXPECT_EQ(tab_control.selected_tab(), "交互");
+    EXPECT_TRUE(tab_control.select_previous());
+    EXPECT_EQ(tab_control.selected_tab(), "概览");
+
+    popup.set_title("规范弹层");
+    popup.set_body("用于验证 Popup 的基础状态和展示信息。");
+    popup.set_modal(true);
+    popup.set_open(true);
+    EXPECT_TRUE(popup.is_modal());
+    EXPECT_TRUE(popup.is_open());
+    EXPECT_EQ(popup.title(), "规范弹层");
+
+    expander.set_header("展开详情");
+    expander.set_content_text("此区域用于展示更多控件说明");
+    EXPECT_FALSE(expander.expanded());
+    EXPECT_TRUE(expander.toggle());
+    EXPECT_TRUE(expander.expanded());
+}
+
 TEST(ControlsTests, PanelArrangeStretchesChildrenToAvailableSize) {
     auto panel = std::make_shared<Panel>();
     auto child_a = std::make_shared<TextBlock>("A");

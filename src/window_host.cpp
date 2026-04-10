@@ -37,6 +37,8 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
         case WM_LBUTTONDBLCLK:
+        case WM_CAPTURECHANGED:
+        case WM_CANCELMODE:
         case WM_CHAR:
         case WM_KEYDOWN:
         case WM_KEYUP:

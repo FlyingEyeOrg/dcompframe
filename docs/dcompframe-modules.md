@@ -71,6 +71,12 @@
 - `CheckBox`：支持勾选态与选中样式。
 - `ComboBox`：支持数据项、选中索引与选中文本读取。
 - `Slider`：支持范围和数值设置。
+- `Label`：轻量标签控件，用于状态文案和可访问名称承载。
+- `Progress`：支持范围、当前值、确定/不确定模式。
+- `Loading`：支持激活态、overlay 模式与状态文案。
+- `TabControl`：支持 tab 集合、选中索引和前后切换。
+- `Popup`：支持 open/modal/title/body 状态模型。
+- `Expander`：支持头部、正文和展开/收起状态。
 - 文本对齐：除 `RichTextBox` 外默认水平/垂直居中。
 
 ## 样式与主题
@@ -103,6 +109,7 @@
 	- 单行表单标签与值使用 no-wrap 文本格式，富文本说明区域使用独立 wrap 文本格式。
 	- `ScrollViewer` 通过 `ItemsControl::visible_range()` 仅绘制 viewport 内可见项，并绘制轻量滚动 thumb。
 	- `ListView` 与 `ItemsControl` 均支持内部滚动、视口裁剪与轻量滚动条；`ItemsControl` 默认以类 `StackPanel` 的纵向列表方式渲染。
+	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。
 	- `RichTextBox` 采用内部滚动偏移 + 视口裁剪，长文本选择与 caret 绘制不会越出富文本框边界。
 	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。

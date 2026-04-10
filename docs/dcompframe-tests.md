@@ -77,3 +77,14 @@
 - 本次交互回归重点：验证 `ItemsControl`、`ScrollViewer` 内容模型、TextBox 标准 Win32 输入链路、ComboBox overlay 布局不回流。
 - 本次第三轮回归重点：验证 `RichTextBox` 编辑能力、`ListView/ItemsControl` 默认滚动、响应式布局下滚动区高度分配和弹层顶层绘制顺序。
 - 本次第四轮回归重点：验证 `ScrollViewer` 取消焦点后不会离开区域继续滚动、`RichTextBox` 选区被裁剪在视口内，以及 `ListView/ItemsControl` 拖拽滚动条语义不破坏既有滚轮行为。
+
+## 本轮补充（2026-04-10）
+
+- 新增用例：
+	- `ControlsTests.AdditionalControlsSupportCoreStateTransitions`
+	- `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`
+- 覆盖目标：
+	- `Label/Progress/Loading/TabControl/Popup/Expander` 状态机与核心属性。
+	- ComboBox 下拉层滚轮消费优先级，防止穿透到外层 `ScrollViewer`。
+	- TextBox 输入链路（`WM_CHAR`）端到端回归。
+- 最新结果：`ctest --preset vs2022-x64-debug-tests`，`45/45` 通过。
