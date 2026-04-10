@@ -30,6 +30,7 @@
 - `WindowHost` 采用阻塞式消息循环（`GetMessage`）作为默认运行模式。
 - 在 `WM_CLOSE/WM_DESTROY` 上触发退出消息，保证应用可预测退出。
 - 测试场景可使用有限迭代循环（`max_iterations`）确保用例可控。
+- 交互反馈依赖鼠标消息触发重绘请求（`WM_MOUSEMOVE/WM_LBUTTONDOWN/WM_LBUTTONUP`）。
 
 ## 3. 事件与脏标记策略
 
@@ -66,7 +67,9 @@
 - `Present` 返回 `DXGI_ERROR_DEVICE_REMOVED/RESET` 时进入设备丢失处理路径。
 - 在 swapchain 上叠加 D2D/DirectWrite 绘制卡片与控件占位内容，避免“仅背景色”现象。
 - 当 D2D 初始化失败时，使用 DX11.1 `ClearView` 绘制几何控件块作为兜底，仍保持控件可见。
+- 当 D2D `EndDraw()` 在运行时失败时，同样立即切换到 DX11.1 几何兜底，避免出现“只有背景、无控件”的中间态。
 - 不再使用 GDI 作为渲染兜底路径，统一采用 DX + DComp 呈现链路。
+- Overlay 交互状态（按钮 hover/press/toggle、列表 hover）在 D2D 主路径与 DX11 几何兜底路径中保持一致的命中逻辑和视觉反馈。
 
 ## 8. DWM 兼容与回退策略
 

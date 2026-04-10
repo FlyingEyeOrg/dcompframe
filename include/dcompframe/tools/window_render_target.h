@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <d3d11.h>
+#include <d3d11_1.h>
 #include <d2d1_1.h>
 #include <dcomp.h>
 #include <dwrite.h>
@@ -33,6 +34,7 @@ public:
 
 private:
     bool initialize_dx11_dcomp_target();
+    bool ensure_swap_chain_size();
     bool recreate_render_target_view();
     bool initialize_d2d_overlay();
     bool recreate_d2d_target();
@@ -45,6 +47,8 @@ private:
     bool ready_ = false;
     int presented_frames_ = 0;
     bool using_dx11_dcomp_ = false;
+    unsigned int swap_chain_width_ = 0;
+    unsigned int swap_chain_height_ = 0;
 
     ID3D11Device* d3d_device_ = nullptr;
     ID3D11DeviceContext* d3d_context_ = nullptr;
@@ -64,6 +68,12 @@ private:
     IDWriteTextFormat* text_format_ = nullptr;
     IDWriteTextFormat* item_text_format_ = nullptr;
     OverlayScene overlay_scene_ {};
+    bool mouse_left_down_ = false;
+    bool button_hovered_ = false;
+    bool button_pressed_ = false;
+    bool button_toggled_ = false;
+    int hovered_item_index_ = -1;
+    int button_click_count_ = 0;
 };
 
 }  // namespace dcompframe

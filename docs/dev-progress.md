@@ -12,6 +12,7 @@
 - 窗口层：
   - `WindowHost` 支持创建/销毁、可见性、状态切换、DPI、消息循环渲染调度。
   - 默认扩展样式保持 `WS_EX_NOREDIRECTIONBITMAP`。
+  - 新增鼠标消息触发重绘（`WM_MOUSEMOVE/WM_LBUTTONDOWN/WM_LBUTTONUP`），支持悬停与点击的实时视觉反馈。
 - UI 核心层：
   - `UIElement` 新增透明度、裁剪、变换、边距、焦点、脏标记与递归清理。
   - 新增 `LayoutManager`，支持 `Absolute/Stack/Grid` 布局策略。
@@ -27,6 +28,11 @@
   - 在 DX 路径增加 D2D/DirectWrite 叠加绘制，demo 可见卡片与控件内容，不再仅有背景色。
   - 修复 D2D 目标创建参数与工厂初始化细节，提升控件可见绘制稳定性。
   - 新增 DX11 `ClearView` 几何兜底层：当 D2D 初始化失败时仍绘制控件块，确保 no-redirection 场景下不出现“只有背景”。
+  - 修复 D2D `EndDraw()` 运行时失败未触发兜底的问题：现在失败后立即切换 DX11 几何控件绘制，demo 不再只显示背景色。
+  - 修复 `CreateBitmapFromDxgiSurface(E_INVALIDARG)`：composition swapchain 的 D2D target bitmap 参数改回兼容的 `TARGET | CANNOT_DRAW`，文字层恢复可绘制。
+  - 背景色改为基于窗口尺寸计算，窗口大小变化时可见背景同步变化。
+  - demo overlay 按钮新增 hover/press/toggle 交互与点击计数显示。
+  - demo list 区域新增逐项 hover 高亮（D2D 与 DX11 fallback 路径一致）。
   - 去除非 DX 路径中的 GDI 绘制逻辑，保持渲染链路为 DX/DComp 提交模型。
 - 测试：扩展到 33 个测试，x64/x86 Debug 下 `ctest` 全部通过。
 - demo：升级 `dcompframe_demo`，覆盖窗口、控件、动画、资源、诊断与渲染目标链路。

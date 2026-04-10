@@ -4,6 +4,8 @@
 #include <dxgi.h>
 #include <iterator>
 #include <array>
+#include <algorithm>
+#include <cstdio>
 #include <string>
 
 #pragma comment(lib, "d2d1.lib")
@@ -19,6 +21,12 @@ void safe_release(T*& pointer) {
         pointer->Release();
         pointer = nullptr;
     }
+}
+
+std::string hr_to_string(HRESULT hr) {
+    char buffer[32] {};
+    std::snprintf(buffer, sizeof(buffer), "0x%08X", static_cast<unsigned int>(hr));
+    return std::string(buffer);
 }
 
 }  // namespace
@@ -75,18 +83,78 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             return false;
         }
 
+        if (!ensure_swap_chain_size()) {
+            render_manager_->diagnostics().log(LogLevel::Error, "Swapchain resize/rebuild failed");
+            return false;
+        }
+
+        const auto size = window_host_->client_size();
+        const float width = size.width > 0.0F ? size.width : 1280.0F;
+        const float height = size.height > 0.0F ? size.height : 720.0F;
+
+        // Background tone responds to current window size so resize has immediate visual feedback.
+        const float size_ratio = std::clamp((width + height) / 2600.0F, 0.4F, 1.8F);
         const float clear_color[4] {
-            0.08F,
-            0.10F + static_cast<float>((presented_frames_ % 20) * 0.01F),
-            0.16F,
+            0.05F + 0.03F * size_ratio,
+            0.08F + 0.05F * size_ratio,
+            0.14F + 0.04F * size_ratio,
             1.0F,
         };
         d3d_context_->OMSetRenderTargets(1, &render_target_view_, nullptr);
         d3d_context_->ClearRenderTargetView(render_target_view_, clear_color);
 
-        const auto size = window_host_->client_size();
-        const float width = size.width > 0.0F ? size.width : 1280.0F;
-        const float height = size.height > 0.0F ? size.height : 720.0F;
+        POINT cursor_point {};
+        bool pointer_valid = false;
+        if (window_host_->hwnd() != nullptr && GetCursorPos(&cursor_point)) {
+            if (ScreenToClient(window_host_->hwnd(), &cursor_point)) {
+                pointer_valid = true;
+            }
+        }
+
+        const bool pointer_inside = pointer_valid && cursor_point.x >= 0 && cursor_point.y >= 0
+            && cursor_point.x < static_cast<LONG>(width) && cursor_point.y < static_cast<LONG>(height);
+        const float pointer_x = static_cast<float>(cursor_point.x);
+        const float pointer_y = static_cast<float>(cursor_point.y);
+
+        const float button_left = width * 0.73F;
+        const float button_top = height * 0.50F;
+        const float button_right = width * 0.86F;
+        const float button_bottom = height * 0.58F;
+
+        const bool button_hovered = pointer_inside
+            && pointer_x >= button_left
+            && pointer_x <= button_right
+            && pointer_y >= button_top
+            && pointer_y <= button_bottom;
+        const bool left_down = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+        if (left_down && !mouse_left_down_) {
+            button_pressed_ = button_hovered;
+        }
+        if (!left_down && mouse_left_down_) {
+            if (button_pressed_ && button_hovered) {
+                button_toggled_ = !button_toggled_;
+                ++button_click_count_;
+                render_manager_->diagnostics().log(LogLevel::Info, "Overlay button clicked");
+            }
+            button_pressed_ = false;
+        }
+        mouse_left_down_ = left_down;
+        button_hovered_ = button_hovered;
+
+        int hovered_item_index = -1;
+        for (int i = 0; i < 5; ++i) {
+            const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
+            const float bottom = top + 40.0F;
+            if (pointer_inside
+                && pointer_x >= width * 0.14F
+                && pointer_x <= width * 0.70F
+                && pointer_y >= top
+                && pointer_y <= bottom) {
+                hovered_item_index = i;
+                break;
+            }
+        }
+        hovered_item_index_ = hovered_item_index;
 
         if (d2d_context_ != nullptr && d2d_target_bitmap_ != nullptr && d2d_brush_ != nullptr) {
 
@@ -132,7 +200,11 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     D2D1::RectF(width * 0.14F, top, width * 0.70F, top + 40.0F),
                     10.0F,
                     10.0F);
-                d2d_brush_->SetColor(i == 0 ? D2D1::ColorF(0.24F, 0.34F, 0.54F, 1.0F) : D2D1::ColorF(0.22F, 0.28F, 0.38F, 1.0F));
+                const bool hovered = static_cast<int>(i) == hovered_item_index_;
+                d2d_brush_->SetColor(
+                    hovered
+                        ? D2D1::ColorF(0.30F, 0.45F, 0.70F, 1.0F)
+                        : (i == 0 ? D2D1::ColorF(0.24F, 0.34F, 0.54F, 1.0F) : D2D1::ColorF(0.22F, 0.28F, 0.38F, 1.0F)));
                 d2d_context_->FillRoundedRectangle(control, d2d_brush_);
 
                 if (item_text_format_ != nullptr) {
@@ -146,16 +218,65 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 }
             }
 
-            d2d_brush_->SetColor(D2D1::ColorF(0.10F, 0.55F, 0.95F, 1.0F));
+            D2D1_COLOR_F button_color = D2D1::ColorF(0.10F, 0.55F, 0.95F, 1.0F);
+            if (button_toggled_) {
+                button_color = D2D1::ColorF(0.06F, 0.68F, 0.48F, 1.0F);
+            }
+            if (button_pressed_) {
+                button_color = D2D1::ColorF(
+                    button_color.r * 0.8F,
+                    button_color.g * 0.8F,
+                    button_color.b * 0.8F,
+                    1.0F);
+            } else if (button_hovered_) {
+                button_color = D2D1::ColorF(
+                    std::min(button_color.r + 0.08F, 1.0F),
+                    std::min(button_color.g + 0.08F, 1.0F),
+                    std::min(button_color.b + 0.08F, 1.0F),
+                    1.0F);
+            }
+            d2d_brush_->SetColor(button_color);
             const D2D1_ROUNDED_RECT action = D2D1::RoundedRect(
                 D2D1::RectF(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F),
                 12.0F,
                 12.0F);
             d2d_context_->FillRoundedRectangle(action, d2d_brush_);
 
+            if (item_text_format_ != nullptr) {
+                const std::wstring button_text = button_toggled_
+                    ? L"Started"
+                    : (button_pressed_ ? L"Pressing" : L"Start");
+                d2d_brush_->SetColor(D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
+                d2d_context_->DrawText(
+                    button_text.c_str(),
+                    static_cast<UINT32>(button_text.size()),
+                    item_text_format_,
+                    D2D1::RectF(width * 0.755F, height * 0.522F, width * 0.85F, height * 0.575F),
+                    d2d_brush_);
+            }
+
+            if (item_text_format_ != nullptr && button_click_count_ > 0) {
+                const std::wstring status = L"Clicks: " + std::to_wstring(button_click_count_);
+                d2d_brush_->SetColor(D2D1::ColorF(0.76F, 0.86F, 1.0F, 1.0F));
+                d2d_context_->DrawText(
+                    status.c_str(),
+                    static_cast<UINT32>(status.size()),
+                    item_text_format_,
+                    D2D1::RectF(width * 0.74F, height * 0.60F, width * 0.88F, height * 0.66F),
+                    d2d_brush_);
+            }
+
             const HRESULT end_draw_hr = d2d_context_->EndDraw();
             if (FAILED(end_draw_hr)) {
-                render_manager_->diagnostics().log(LogLevel::Warning, "D2D overlay draw failed");
+                if (end_draw_hr == D2DERR_RECREATE_TARGET) {
+                    safe_release(d2d_brush_);
+                    safe_release(d2d_target_bitmap_);
+                    if (!recreate_d2d_target()) {
+                        render_manager_->diagnostics().log(LogLevel::Warning, "D2D target recreation failed after EndDraw");
+                    }
+                }
+                draw_dx11_overlay_fallback(width, height);
+                render_manager_->diagnostics().log(LogLevel::Warning, "D2D overlay draw failed (hr=" + hr_to_string(end_draw_hr) + "); DX11 fallback rendered controls");
             }
         } else {
             // Keep controls visible on DX11+DComp even when D2D initialization fails.
@@ -217,13 +338,29 @@ void WindowRenderTarget::draw_dx11_overlay_fallback(float width, float height) {
     };
 
     clear_rect(width * 0.10F, height * 0.10F, width * 0.90F, height * 0.65F, {0.10F, 0.16F, 0.26F, 1.0F});
-    clear_rect(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F, {0.10F, 0.55F, 0.95F, 1.0F});
+    std::array<float, 4> button_color = {0.10F, 0.55F, 0.95F, 1.0F};
+    if (button_toggled_) {
+        button_color = {0.06F, 0.68F, 0.48F, 1.0F};
+    }
+    if (button_pressed_) {
+        button_color = {button_color[0] * 0.8F, button_color[1] * 0.8F, button_color[2] * 0.8F, 1.0F};
+    } else if (button_hovered_) {
+        button_color = {
+            std::min(button_color[0] + 0.08F, 1.0F),
+            std::min(button_color[1] + 0.08F, 1.0F),
+            std::min(button_color[2] + 0.08F, 1.0F),
+            1.0F,
+        };
+    }
+    clear_rect(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F, button_color);
 
     for (int i = 0; i < 5; ++i) {
         const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
-        const std::array<float, 4> row_color = (i == 0)
-            ? std::array<float, 4> {0.24F, 0.34F, 0.54F, 1.0F}
-            : std::array<float, 4> {0.22F, 0.28F, 0.38F, 1.0F};
+        const std::array<float, 4> row_color = (i == hovered_item_index_)
+            ? std::array<float, 4> {0.30F, 0.45F, 0.70F, 1.0F}
+            : ((i == 0)
+                ? std::array<float, 4> {0.24F, 0.34F, 0.54F, 1.0F}
+                : std::array<float, 4> {0.22F, 0.28F, 0.38F, 1.0F});
         clear_rect(width * 0.14F, top, width * 0.70F, top + 40.0F, row_color);
     }
 }
@@ -320,6 +457,8 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+    swap_chain_width_ = swap_chain_desc.Width;
+    swap_chain_height_ = swap_chain_desc.Height;
 
     hr = dxgi_factory->CreateSwapChainForComposition(d3d_device_, &swap_chain_desc, nullptr, &swap_chain_);
     if (FAILED(hr) || swap_chain_ == nullptr) {
@@ -396,6 +535,48 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     return true;
 }
 
+bool WindowRenderTarget::ensure_swap_chain_size() {
+    if (swap_chain_ == nullptr || d3d_context_ == nullptr || window_host_ == nullptr) {
+        return false;
+    }
+
+    const Size size = window_host_->client_size();
+    const UINT target_width = static_cast<UINT>(size.width > 0.0F ? size.width : 1.0F);
+    const UINT target_height = static_cast<UINT>(size.height > 0.0F ? size.height : 1.0F);
+    if (target_width == swap_chain_width_ && target_height == swap_chain_height_) {
+        return true;
+    }
+
+    ID3D11RenderTargetView* null_target = nullptr;
+    d3d_context_->OMSetRenderTargets(1, &null_target, nullptr);
+    if (d2d_context_ != nullptr) {
+        d2d_context_->SetTarget(nullptr);
+    }
+
+    safe_release(d2d_brush_);
+    safe_release(d2d_target_bitmap_);
+    safe_release(render_target_view_);
+
+    const HRESULT resize_hr = swap_chain_->ResizeBuffers(0, target_width, target_height, DXGI_FORMAT_UNKNOWN, 0);
+    if (FAILED(resize_hr)) {
+        render_manager_->diagnostics().log(LogLevel::Error, "ResizeBuffers failed (hr=" + hr_to_string(resize_hr) + ")");
+        return false;
+    }
+
+    swap_chain_width_ = target_width;
+    swap_chain_height_ = target_height;
+
+    if (!recreate_render_target_view()) {
+        return false;
+    }
+
+    if (d2d_context_ != nullptr && !recreate_d2d_target()) {
+        render_manager_->diagnostics().log(LogLevel::Warning, "D2D target recreation failed after ResizeBuffers");
+    }
+
+    return true;
+}
+
 bool WindowRenderTarget::recreate_render_target_view() {
     safe_release(render_target_view_);
     if (swap_chain_ == nullptr || d3d_device_ == nullptr) {
@@ -427,6 +608,7 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
             &options,
             reinterpret_cast<void**>(&d2d_factory_));
         if (FAILED(factory_hr) || d2d_factory_ == nullptr) {
+            render_manager_->diagnostics().log(LogLevel::Info, "D2D1CreateFactory failed (hr=" + hr_to_string(factory_hr) + ")");
             return false;
         }
     }
@@ -474,17 +656,20 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
         const HRESULT qhr = d3d_device_->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgi_device));
         if (FAILED(qhr) || dxgi_device == nullptr) {
             safe_release(dxgi_device);
+            render_manager_->diagnostics().log(LogLevel::Info, "IDXGIDevice query for D2D failed (hr=" + hr_to_string(qhr) + ")");
             return false;
         }
 
         const HRESULT device_hr = d2d_factory_->CreateDevice(dxgi_device, &d2d_device_);
         safe_release(dxgi_device);
         if (FAILED(device_hr) || d2d_device_ == nullptr) {
+            render_manager_->diagnostics().log(LogLevel::Info, "ID2D1Factory1::CreateDevice failed (hr=" + hr_to_string(device_hr) + ")");
             return false;
         }
 
         const HRESULT context_hr = d2d_device_->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2d_context_);
         if (FAILED(context_hr) || d2d_context_ == nullptr) {
+            render_manager_->diagnostics().log(LogLevel::Info, "ID2D1Device::CreateDeviceContext failed (hr=" + hr_to_string(context_hr) + ")");
             return false;
         }
     }
@@ -508,7 +693,7 @@ bool WindowRenderTarget::recreate_d2d_target() {
 
     const auto create_target_bitmap = [&](D2D1_ALPHA_MODE alpha_mode) {
         const D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
-            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, alpha_mode),
             96.0F,
             96.0F);
@@ -522,6 +707,7 @@ bool WindowRenderTarget::recreate_d2d_target() {
     }
     safe_release(surface);
     if (FAILED(bitmap_hr) || d2d_target_bitmap_ == nullptr) {
+        render_manager_->diagnostics().log(LogLevel::Info, "CreateBitmapFromDxgiSurface failed (hr=" + hr_to_string(bitmap_hr) + ")");
         return false;
     }
 

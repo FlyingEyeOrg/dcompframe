@@ -22,6 +22,11 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
         case WM_DPICHANGED:
             self->apply_dpi(HIWORD(wparam));
             return 0;
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+            self->request_render();
+            return 0;
         case WM_CLOSE:
             DestroyWindow(hwnd);
             return 0;

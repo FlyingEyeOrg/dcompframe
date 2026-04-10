@@ -24,6 +24,7 @@
 - `on_size_changed`：更新客户区并触发重绘。
 - `apply_dpi`：基于 96 DPI 基线更新缩放并触发重绘。
 - `set_window_state`：支持 Normal/Minimized/Maximized/Fullscreen。
+- 鼠标移动与按键消息会触发重绘请求，保证交互可见状态实时刷新。
 
 ## UIElement / LayoutManager
 
@@ -90,7 +91,9 @@
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
-	- D2D 初始化失败时，使用 DX11.1 `ClearView` 绘制几何控件块兜底，保持控件可见。
+	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。
+	- overlay 按钮支持 hover/press/toggle 交互，列表区域支持逐项 hover 高亮。
+	- D2D 初始化失败或 `EndDraw()` 运行时失败时，使用 DX11.1 `ClearView` 绘制几何控件块兜底，保持控件可见。
 	- `render_frame` 执行清屏、`Present` 与 `IDCompositionDevice::Commit`。
 	- 设备丢失时通过 `DeviceRecovery` 触发恢复并重建渲染目标视图。
 

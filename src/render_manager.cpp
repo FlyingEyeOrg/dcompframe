@@ -105,6 +105,22 @@ bool DiagnosticsCenter::export_report(const std::filesystem::path& output) const
     json["commits_per_second"] = commits_per_second();
     json["peak_resource_bytes"] = peak_resource_bytes();
 
+    nlohmann::json logs = nlohmann::json::array();
+    for (const auto& entry : logs_) {
+        std::string level = "info";
+        if (entry.level == LogLevel::Warning) {
+            level = "warning";
+        } else if (entry.level == LogLevel::Error) {
+            level = "error";
+        }
+
+        logs.push_back({
+            {"level", level},
+            {"message", entry.message},
+        });
+    }
+    json["logs"] = std::move(logs);
+
     std::ofstream file(output);
     if (!file.is_open()) {
         return false;

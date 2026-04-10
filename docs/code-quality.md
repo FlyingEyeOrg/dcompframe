@@ -47,6 +47,14 @@
 - 修复：改为显式 `ID2D1Factory1` 创建和 `PREMULTIPLIED` 目标位图参数，并在恢复路径重建 D2D target。
 - 发现：部分机器上 D2D 初始化失败会导致 demo 仅有背景色。
 - 修复：新增 DX11.1 `ClearView` 几何控件兜底绘制；DWrite 初始化失败不再中断 D2D 初始化流程。
+- 发现：D2D 初始化成功但 `EndDraw()` 运行时失败时，原逻辑只记录 warning，不会触发 DX11 兜底，导致窗口内只有背景色。
+- 修复：`EndDraw()` 失败后立即执行 DX11 几何控件兜底；若返回 `D2DERR_RECREATE_TARGET`，先重建 D2D target 再继续下一帧渲染。
+- 发现：D2D target bitmap 创建返回 `CreateBitmapFromDxgiSurface failed (hr=0x80070057)`，导致整条 D2D 文字/圆角绘制路径不可用，只能退回无文字的 DX11 几何兜底。
+- 修复：将 D2D target bitmap 选项调整为 `D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW`，与 composition swapchain surface 的使用方式保持兼容。
+- 发现：窗口交互状态（按钮点击、列表 hover）在消息循环中没有持续重绘触发，视觉反馈不稳定。
+- 修复：`WindowHost` 新增鼠标消息触发 `request_render()`，并在 `WindowRenderTarget` 增加按钮和列表的实时命中/状态渲染。
+- 发现：背景视觉与窗口尺寸缺乏联动，用户难以感知 resize 生效。
+- 修复：背景清屏色改为随窗口尺寸动态计算，窗口变化即时反映在背景层。
 - 发现：非 DX 路径仍保留 GDI 绘制分支，不满足“无 GDI 绘制”要求。
 - 修复：移除 `WindowRenderTarget` 中的 GDI fallback 绘制逻辑，统一走 DX/DComp 提交策略。
 - 发现：交互高级需求（文本选择/IME 组合、虚拟列表、惯性滚动、快捷键命令）缺失。
