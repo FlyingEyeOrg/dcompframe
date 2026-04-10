@@ -29,10 +29,16 @@ public:
     struct InteractiveControls {
         std::shared_ptr<Button> primary_button;
         std::shared_ptr<TextBox> text_box;
+        std::shared_ptr<RichTextBox> rich_text_box;
         std::shared_ptr<CheckBox> check_box;
         std::shared_ptr<ComboBox> combo_box;
         std::shared_ptr<Slider> slider;
         std::shared_ptr<ScrollViewer> scroll_viewer;
+        std::shared_ptr<ListView> list_view;
+        std::shared_ptr<ItemsControl> items_control;
+        std::shared_ptr<TextBlock> text_block;
+        std::shared_ptr<Image> image;
+        std::shared_ptr<Card> card;
     };
 
     WindowRenderTarget(RenderManager* render_manager, WindowHost* window_host);
@@ -87,6 +93,7 @@ private:
     IDWriteTextFormat* text_format_ = nullptr;
     IDWriteTextFormat* item_text_format_ = nullptr;
     IDWriteTextFormat* input_text_format_ = nullptr;
+    IDWriteTextFormat* helper_text_format_ = nullptr;
     OverlayScene overlay_scene_ {};
     InteractiveControls interactive_controls_ {};
     std::function<void()> primary_action_handler_ {};
@@ -95,12 +102,14 @@ private:
     bool button_hovered_ = false;
     bool button_pressed_ = false;
     bool text_box_selecting_ = false;
+    bool rich_text_box_selecting_ = false;
     bool slider_dragging_ = false;
     bool combo_box_hovered_ = false;
     bool combo_box_pressed_ = false;
     bool slider_hovered_ = false;
     bool check_box_hovered_ = false;
     bool text_box_hovered_ = false;
+    bool rich_text_box_hovered_ = false;
     int hovered_item_index_ = -1;
     int hovered_combo_index_ = -1;
     int button_click_count_ = 0;

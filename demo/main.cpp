@@ -31,10 +31,16 @@ struct DemoWindow {
     dcompframe::BindingContext binding_context;
     std::shared_ptr<dcompframe::Button> primary_button = std::make_shared<dcompframe::Button>("新建窗口");
     std::shared_ptr<dcompframe::TextBox> text_box = std::make_shared<dcompframe::TextBox>();
+    std::shared_ptr<dcompframe::RichTextBox> rich_text_box = std::make_shared<dcompframe::RichTextBox>();
     std::shared_ptr<dcompframe::CheckBox> check_box = std::make_shared<dcompframe::CheckBox>();
     std::shared_ptr<dcompframe::ComboBox> combo_box = std::make_shared<dcompframe::ComboBox>();
     std::shared_ptr<dcompframe::Slider> slider = std::make_shared<dcompframe::Slider>();
     std::shared_ptr<dcompframe::ScrollViewer> scroll_viewer = std::make_shared<dcompframe::ScrollViewer>();
+    std::shared_ptr<dcompframe::ItemsControl> items_control = std::make_shared<dcompframe::ItemsControl>();
+    std::shared_ptr<dcompframe::ListView> list_view = std::make_shared<dcompframe::ListView>();
+    std::shared_ptr<dcompframe::TextBlock> text_block = std::make_shared<dcompframe::TextBlock>("Element Plus 风格预览");
+    std::shared_ptr<dcompframe::Image> image = std::make_shared<dcompframe::Image>();
+    std::shared_ptr<dcompframe::Card> card = std::make_shared<dcompframe::Card>();
     DemoApplication* app = nullptr;
     std::size_t id = 0;
 };
@@ -165,12 +171,56 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     text_box->bind_text(binding_context.title);
     binding_context.title.set(fmt::format("Window {}", id));
 
+    rich_text_box->set_rich_text(
+        "RichTextBox 示例: 这里现在支持直接编辑。\n"
+        "你可以输入多行文本、回车换行，并观察光标、选区和自动换行表现。\n"
+        "当前 Demo 会统一将非布局控件渲染为更接近 Element Plus 的浅色表单风格。\n"
+        "窗口缩放时，表单区、列表区、卡片区和底部滚动区会一起自适应。");
+
     check_box->set_checked((id % 2U) == 1U);
     combo_box->set_items({"Overview", "Diagnostics", "Editor", "Preview", "Settings", "Account", "Advanced Options"});
     combo_box->set_selected_index(id % combo_box->items().size());
     slider->set_range(0.0F, 100.0F);
     slider->set_step(5.0F);
     slider->set_value(25.0F + static_cast<float>((id - 1U) % 4U) * 20.0F);
+
+    items_control->set_items({
+        "Alpha capability",
+        "Beta diagnostics",
+        "Gamma animation",
+        "Delta layout token",
+        "Epsilon state sync",
+        "Zeta typography",
+        "Eta popup layering",
+        "Theta responsive panel",
+        "Iota virtual viewport",
+        "Kappa action footer",
+    });
+    items_control->set_selected_index((id - 1U) % items_control->items().size());
+    items_control->set_item_spacing(6.0F);
+
+    std::vector<std::string> scroll_items;
+    scroll_items.reserve(36);
+    for (int index = 1; index <= 36; ++index) {
+        scroll_items.push_back(fmt::format("Scroll item {:02d} - 用于检查滚动条、裁剪区、文本对齐与 hover 呈现", index));
+    }
+    auto scroll_content = std::make_shared<dcompframe::ItemsControl>();
+    scroll_content->set_items(std::move(scroll_items));
+    scroll_viewer->set_content(scroll_content);
+
+    list_view->set_groups({
+        dcompframe::ListGroup {.name = "Primary", .items = {"Layout", "Rendering", "Input", "Composition", "Typography"}},
+        dcompframe::ListGroup {.name = "Secondary", .items = {"Diagnostics", "Theme", "Assets", "Preview", "Scroll"}},
+        dcompframe::ListGroup {.name = "Utility", .items = {"Card", "Popup", "Editor", "Tokens", "Status"}},
+    });
+    list_view->set_selected_index(2);
+
+    image->set_source("demo://element-plus-placeholder");
+    card->set_title("Element Plus Card");
+    card->set_body("用于展示卡片、标签、按钮与描述文本的组合布局。当前使用更轻的分层、浅蓝标题带和更贴近 Web Element Plus 的信息密度。");
+    card->set_icon("picture");
+    card->set_tags({"Preview", "Control", "Card"});
+    card->set_primary_action(primary_button);
 
     primary_button->set_on_click([this] {
         if (app != nullptr) {
@@ -179,6 +229,8 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     });
     primary_button->bind_enabled(binding_context.enabled);
     binding_context.enabled.set(true);
+
+    rich_text_box->set_rich_text(rich_text_box->rich_text() + fmt::format("\n\nWindow {} 已准备就绪。", id));
 
     text_box->set_on_text_changed([this](const std::string& value) {
         if (app != nullptr) {
@@ -210,10 +262,16 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     render_target.set_interactive_controls(dcompframe::WindowRenderTarget::InteractiveControls {
         .primary_button = primary_button,
         .text_box = text_box,
+        .rich_text_box = rich_text_box,
         .check_box = check_box,
         .combo_box = combo_box,
         .slider = slider,
         .scroll_viewer = scroll_viewer,
+        .list_view = list_view,
+        .items_control = items_control,
+        .text_block = text_block,
+        .image = image,
+        .card = card,
     });
     render_target.set_primary_action_handler([application] {
         if (application != nullptr) {

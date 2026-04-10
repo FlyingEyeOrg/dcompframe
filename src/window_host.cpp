@@ -33,12 +33,14 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             }
             return 0;
         case WM_MOUSEMOVE:
+        case WM_MOUSEWHEEL:
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
         case WM_LBUTTONDBLCLK:
         case WM_CHAR:
         case WM_KEYDOWN:
         case WM_KEYUP:
+        case WM_GETDLGCODE:
         case WM_SETFOCUS:
         case WM_KILLFOCUS:
         case WM_TIMER:

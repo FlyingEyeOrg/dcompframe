@@ -43,6 +43,7 @@
 35. `ControlsTests.ComboBoxStoresItemsAndSelectedText`
 36. `ControlsTests.TextAlignmentDefaultsToCenterExceptRichTextBox`
 37. `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`
+38. `ControlsTests.ItemsControlStoresItemsSelectionAndVisibleRange`
 
 ## 覆盖点
 
@@ -57,13 +58,16 @@
 - 交互高级能力：文本选择/输入法组合、列表虚拟范围、惯性滚动、快捷键命令路由
 - 可靠性：soak baseline、资源峰值巡检、配置缺失与损坏故障注入
 - 架构能力：可插拔后端清单、命令缓冲与批量 drain
+- Element Plus 交互回归：TextBox 输入、ComboBox overlay、ItemsControl 可见范围、ScrollViewer 内容模型与滚轮链路
 
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：37/37 通过
+- 结果：43/43 通过
 - 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
 - 本次回归重点：验证 `controls.h` 聚合头 + 独立控件头组合下的编译稳定性，以及 Element Plus 风格控件渲染不影响既有测试语义。
 - 后端回归：`RenderManagerTests.BackendRegistryAndCommandBatchingWork` 已按当前实现收口为 3 个显式后端（`Simulated` / `DirectX` / `DirectX12` 预留）。
+- 文本编辑回归：`RichTextBox` 的 `move_caret_left() + backspace()` 语义已与 `TextBox` 保持一致，当前测试按“删除光标左侧字符”校验。
+- 本次交互回归重点：验证 `ItemsControl`、`ScrollViewer` 内容模型、TextBox 标准 Win32 输入链路、ComboBox overlay 布局不回流。

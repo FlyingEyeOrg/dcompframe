@@ -37,6 +37,20 @@
 8. SOLID/DRY：通过（ComboBox/RichTextBox 基于既有 `StyledElement` 复用）。
 9. 错误处理：通过（渲染失败统一显式返回错误）。
 
+## 本次交互收口记录（2026-04-10）
+
+- 发现：`CheckBox` 和 `ScrollViewer` 右侧文本使用固定窄值列，DirectWrite 默认换行导致单行文案被错误折行。
+- 修复：区分单行 no-wrap 文本格式与说明区 wrap 文本格式，并扩大交互标签文本区域。
+- 发现：`ComboBox` 展开时下拉框参与主布局计算，会把后续控件整体顶开。
+- 修复：下拉列表改为 overlay 弹层，仅命中测试参与，不再进入主布局流。
+- 发现：`ScrollViewer` 只有占位 glyph，没有真实滚动内容，也缺少可见范围优化。
+- 修复：接入 `ItemsControl` 作为内容模型，增加 viewport 裁剪、可见范围绘制和轻量滚动 thumb。
+- 发现：Demo 中 TextBox 输入依赖标准 Win32 消息链路，但窗口过程未转发 `WM_GETDLGCODE` / `WM_MOUSEWHEEL`。
+- 修复：`WindowHost` 增补消息转发，`WindowRenderTarget` 增补键盘/滚轮处理。
+- 发现：`ScrollViewer::set_content` 依赖 UI 树挂接，测试中的所有权模型不一致会触发 `bad_weak_ptr`。
+- 修复：ScrollViewer 内容模型去耦 UI 树挂接，测试改为与实际 UI 树生命周期一致的 `shared_ptr` 使用方式。
+- 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_tests` 成功，`ctest --preset vs2022-x64-debug-tests` 结果 `41/41`。
+
 ## 本次发现与修复（2026-04-10）
 
 - 发现：`WindowHost` 在 `WM_DESTROY` 直接 `PostQuitMessage`，导致多窗口场景下任意窗口关闭都会中断全局消息循环。
@@ -108,6 +122,12 @@
 ## 最终结论
 
 当前代码通过质量门禁，可进入下一阶段（多窗口并发与长期稳定性）集成优化。
+
+- 2026-04-10（测试收口与 PDB 稳定化）：
+  - 检查项：RenderBackend 测试一致性、RichTextBox 编辑语义、MSVC Debug 调试信息输出方式。
+  - 发现：移除 WARP 后，旧测试仍按 4 个后端断言；任务终端混入历史日志，容易误判测试状态；Debug 构建需固定 `/Z7` 才能稳定避开 `C1041`。
+  - 修复：测试显式校验 3 个后端集合；统一 RichTextBox 与 TextBox 的退格语义预期；保留 `/Z7` 构建策略。
+  - 结果：通过。x64 Debug `43/43` 测试全绿，当前修改未引入新的编译或运行时回归。
 
 - 2026-04-10（真交互补凑）：
   - 检查项：TextBox、ComboBox、Hit-testing。

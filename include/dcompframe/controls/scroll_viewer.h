@@ -14,6 +14,7 @@
 
 namespace dcompframe {
 
+class ItemsControl;
 
 class ScrollViewer : public StyledElement {
 public:
@@ -21,13 +22,18 @@ public:
 
     void set_scroll_offset(float x, float y);
     [[nodiscard]] Point scroll_offset() const;
+    void scroll_by(float delta_x, float delta_y);
     void set_inertia_velocity(float x, float y);
     void tick_inertia(std::chrono::milliseconds delta_time, float deceleration = 0.0015F);
     [[nodiscard]] Point inertia_velocity() const;
 
+    void set_content(const std::shared_ptr<ItemsControl>& content);
+    [[nodiscard]] std::shared_ptr<ItemsControl> content() const;
+
 private:
     Point offset_ {};
     Point velocity_ {};
+    std::shared_ptr<ItemsControl> content_ {};
 };
 
 }  // namespace dcompframe

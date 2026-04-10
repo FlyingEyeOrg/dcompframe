@@ -57,14 +57,25 @@ TEST(ControlExtensionTests, AdditionalControlsStoreAndExposeState) {
     EXPECT_EQ(visible.first, 1U);
     EXPECT_GE(visible.second, visible.first);
 
-    ScrollViewer scroll;
-    scroll.set_scroll_offset(10.0F, 20.0F);
-    EXPECT_FLOAT_EQ(scroll.scroll_offset().x, 10.0F);
-    EXPECT_FLOAT_EQ(scroll.scroll_offset().y, 20.0F);
-    scroll.set_inertia_velocity(0.2F, 0.1F);
-    scroll.tick_inertia(std::chrono::milliseconds {10});
-    EXPECT_GT(scroll.scroll_offset().x, 10.0F);
-    EXPECT_GT(scroll.scroll_offset().y, 20.0F);
+    auto content = std::make_shared<ItemsControl>();
+    content->set_items({"One", "Two", "Three", "Four", "Five"});
+    content->set_selected_index(3);
+    const auto item_visible = content->visible_range(18.0F, 40.0F, 14.0F);
+    EXPECT_GE(item_visible.second, item_visible.first);
+
+    auto scroll = std::make_shared<ScrollViewer>();
+    scroll->set_content(content);
+    scroll->set_scroll_offset(10.0F, 20.0F);
+    EXPECT_FLOAT_EQ(scroll->scroll_offset().x, 10.0F);
+    EXPECT_FLOAT_EQ(scroll->scroll_offset().y, 20.0F);
+    EXPECT_EQ(scroll->content(), content);
+    scroll->set_inertia_velocity(0.2F, 0.1F);
+    scroll->tick_inertia(std::chrono::milliseconds {10});
+    EXPECT_GT(scroll->scroll_offset().x, 10.0F);
+    EXPECT_GT(scroll->scroll_offset().y, 20.0F);
+    scroll->scroll_by(-20.0F, -50.0F);
+    EXPECT_FLOAT_EQ(scroll->scroll_offset().x, 0.0F);
+    EXPECT_FLOAT_EQ(scroll->scroll_offset().y, 0.0F);
 
     CheckBox check;
     check.set_checked(true);

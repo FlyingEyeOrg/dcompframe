@@ -2,6 +2,16 @@
 
 ## 已完成
 
+- 2026-04-10（Element Plus 交互层第二轮收口）
+  - `WindowRenderTarget` 重新整理为左右分栏表单布局：保留 `GridPanel` / `StackPanel` / `Panel` 的 WPF 容器语义，交互控件展示统一收敛到 Element Plus 风格。
+  - 修复 `CheckBox` 右侧文案异常换行：单行标签改用显式 `DWRITE_WORD_WRAPPING_NO_WRAP` 与更宽文本区域，不再被右侧窄列挤压。
+  - 修复 `ComboBox` 展开会顶开后续元素：下拉列表改为 overlay 浮层，不再参与主布局流。
+  - 扩展 `ScrollViewer`：接入 `ItemsControl` 内容模型，Demo 中加入足够多滚动项，并基于可见范围只绘制 viewport 内元素。
+  - 新增 `ItemsControl` 控件与测试，Demo 中补齐 `RichTextBox`、`TextBlock`、`Image`、`Card`、`ListView`、`ItemsControl`、`ScrollViewer` 的可视示例。
+  - 修复 Demo 中 TextBox 输入链路：`WindowHost` / `WindowRenderTarget` 新增 `WM_GETDLGCODE`、`WM_MOUSEWHEEL` 路由，TextBox 输入与 ScrollViewer 滚轮/键盘滚动恢复正常。
+  - 架构优化：把滚动内容虚拟范围计算前移到 `ItemsControl::visible_range()`，减少 ScrollViewer 全量绘制开销。
+  - 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_tests` 与 `ctest --preset vs2022-x64-debug-tests` 均通过，结果 `41/41`。
+
 - 2026-04-10（UIElement3 风格升级与交互优化）
   - 优化按钮居中：在 draw_centered_text 内部显式临时设置 DWRITE_TEXT_ALIGNMENT_CENTER 解决水平与垂直方向未能完全绝对居中的问题。
   - CheckBox UI 升级：改绘为 24x24 矩形块，应用 WinUI 3 风格的蓝底白钩  标志；同时更新文本起始偏移量（label_offset），避免文本与 CheckBox 钩子重合并提供更好的布局展示。
@@ -106,11 +116,18 @@
 - 阶段 3（布局面板与控件实现）：完成。
 - 阶段 4（动画与效果）：核心能力完成。
 - 阶段 5（稳定性、测试与文档）：已达到首版交付标准。
+- 阶段 6（Element Plus 交互收口与 demo 完整示例）：已完成当前轮需求收口。
 
 ## 后续待办
 
 - 增加设备丢失/恢复的 8h 长稳压测与统计报表自动归档。
 - 按 `docs/future-todo.md` 持续推进剩余 P3 增强事项。
+
+
+- 2026-04-10（测试收口与构建稳定化）
+  - 测试收口：修正 `RenderManagerTests.BackendRegistryAndCommandBatchingWork` 的旧后端数量断言，并同步 `RichTextBox` 编辑语义测试预期。
+  - 构建稳定：确认 x64 Debug 下使用 `/Z7` 规避 MSVC 共享 PDB 写入冲突，`cmake --build --preset vs2022-x64-debug --target dcompframe_tests` 可稳定完成。
+  - 回归结果：`ctest --preset vs2022-x64-debug-tests` 现为 `43/43` 全部通过。
 
 
 - 2026-04-10（编译修复与控件头拆分收口）

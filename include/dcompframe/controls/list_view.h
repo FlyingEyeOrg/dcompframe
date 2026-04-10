@@ -33,11 +33,15 @@ public:
     void set_groups(std::vector<ListGroup> groups);
     [[nodiscard]] const std::vector<ListGroup>& groups() const;
     [[nodiscard]] std::pair<std::size_t, std::size_t> visible_range(float scroll_offset, float viewport_height, float item_height) const;
+    void set_scroll_offset(float scroll_offset);
+    [[nodiscard]] float scroll_offset() const;
+    void scroll_by(float delta);
 
 private:
     std::vector<std::string> items_;
     std::vector<ListGroup> groups_;
     std::optional<std::size_t> selected_index_ {};
+    float scroll_offset_ = 0.0F;
 };
 
 }  // namespace dcompframe

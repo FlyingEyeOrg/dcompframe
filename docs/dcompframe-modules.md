@@ -66,6 +66,7 @@
 - `TextBox`：支持占位文本、可观察字符串绑定、文本选择和输入法组合提交。
 - `RichTextBox`：富文本输入控件，默认左上对齐。
 - `ListView`：支持数据项、选中索引、分组与可视范围计算。
+- `ItemsControl`：支持列表项集合、选中索引、项间距和可见范围计算，可作为 `ScrollViewer` 内容源。
 - `ScrollViewer`：支持滚动偏移与惯性滚动。
 - `CheckBox`：支持勾选态与选中样式。
 - `ComboBox`：支持数据项、选中索引与选中文本读取。
@@ -98,6 +99,9 @@
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
+	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件。
+	- 单行表单标签与值使用 no-wrap 文本格式，富文本说明区域使用独立 wrap 文本格式。
+	- `ScrollViewer` 通过 `ItemsControl::visible_range()` 仅绘制 viewport 内可见项，并绘制轻量滚动 thumb。
 	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。
 	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。
 	- overlay 按钮支持 hover/press/toggle 交互，按钮文字基于完整按钮矩形居中绘制。

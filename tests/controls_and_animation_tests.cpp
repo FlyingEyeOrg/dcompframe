@@ -65,6 +65,24 @@ TEST(ControlsTests, ComboBoxStoresItemsAndSelectedText) {
     EXPECT_TRUE(combo_box.selected_text().empty());
 }
 
+TEST(ControlsTests, ItemsControlStoresItemsSelectionAndVisibleRange) {
+    ItemsControl items_control;
+    items_control.set_items({"One", "Two", "Three", "Four"});
+    items_control.set_selected_index(2);
+    items_control.set_item_spacing(6.0F);
+
+    ASSERT_TRUE(items_control.selected_index().has_value());
+    EXPECT_EQ(*items_control.selected_index(), 2U);
+
+    const auto visible = items_control.visible_range(12.0F, 44.0F, 16.0F);
+    EXPECT_EQ(visible.first, 0U);
+    EXPECT_GE(visible.second, 2U);
+
+    items_control.clear_items();
+    EXPECT_TRUE(items_control.items().empty());
+    EXPECT_FALSE(items_control.selected_index().has_value());
+}
+
 TEST(ControlsTests, TextBoxSupportsEditingSelectionAndTwoWayBinding) {
     TextBox text_box;
     Observable<std::string> title {"Alpha"};
@@ -89,6 +107,39 @@ TEST(ControlsTests, TextBoxSupportsEditingSelectionAndTwoWayBinding) {
     EXPECT_TRUE(text_box.has_selection());
     text_box.clear_selection();
     EXPECT_FALSE(text_box.has_selection());
+}
+
+TEST(ControlsTests, RichTextBoxSupportsEditingSelectionAndCaretMovement) {
+    RichTextBox rich_text_box;
+    rich_text_box.set_rich_text("Line1\nLine2");
+    rich_text_box.move_caret_end();
+    EXPECT_TRUE(rich_text_box.insert_text("\nLine3"));
+    EXPECT_EQ(rich_text_box.rich_text(), "Line1\nLine2\nLine3");
+
+    rich_text_box.set_selection(6, 11);
+    EXPECT_TRUE(rich_text_box.has_selection());
+    EXPECT_TRUE(rich_text_box.insert_text("Body"));
+    EXPECT_EQ(rich_text_box.rich_text(), "Line1\nBody\nLine3");
+
+    rich_text_box.move_caret_left();
+    EXPECT_TRUE(rich_text_box.backspace());
+    EXPECT_EQ(rich_text_box.rich_text(), "Line1\nBoy\nLine3");
+}
+
+TEST(ControlsTests, ListViewAndItemsControlTrackScrollOffsets) {
+    ListView list_view;
+    list_view.set_items({"A", "B", "C", "D", "E", "F"});
+    list_view.scroll_by(24.0F);
+    EXPECT_FLOAT_EQ(list_view.scroll_offset(), 24.0F);
+
+    ItemsControl items_control;
+    items_control.set_items({"One", "Two", "Three", "Four", "Five", "Six"});
+    items_control.set_item_spacing(4.0F);
+    items_control.scroll_by(18.0F);
+    EXPECT_FLOAT_EQ(items_control.scroll_offset(), 18.0F);
+
+    const auto visible = items_control.visible_range(items_control.scroll_offset(), 56.0F, 24.0F);
+    EXPECT_LE(visible.first, visible.second);
 }
 
 TEST(ControlsTests, CheckBoxComboBoxAndSliderSupportInteractiveStateChanges) {

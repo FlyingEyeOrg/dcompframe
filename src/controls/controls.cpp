@@ -382,11 +382,144 @@ RichTextBox::RichTextBox() : StyledElement("rich_text_box") {
 
 void RichTextBox::set_rich_text(std::string rich_text) {
     rich_text_ = std::move(rich_text);
+    clamp_selection();
     mark_dirty();
 }
 
 const std::string& RichTextBox::rich_text() const {
     return rich_text_;
+}
+
+void RichTextBox::set_selection(std::size_t start, std::size_t end) {
+    const std::size_t max_size = code_unit_length(rich_text_);
+    selection_start_ = min_value(start, max_size);
+    selection_end_ = min_value(end, max_size);
+    caret_position_ = selection_end_;
+    mark_dirty();
+}
+
+std::pair<std::size_t, std::size_t> RichTextBox::selection() const {
+    return {min_value(selection_start_, selection_end_), max_value(selection_start_, selection_end_)};
+}
+
+bool RichTextBox::has_selection() const {
+    return selection_start_ != selection_end_;
+}
+
+void RichTextBox::clear_selection() {
+    selection_start_ = caret_position_;
+    selection_end_ = caret_position_;
+    mark_dirty();
+}
+
+void RichTextBox::select_all() {
+    selection_start_ = 0;
+    selection_end_ = code_unit_length(rich_text_);
+    caret_position_ = selection_end_;
+    mark_dirty();
+}
+
+void RichTextBox::set_caret_position(std::size_t position, bool extend_selection) {
+    const std::size_t clamped = min_value(position, code_unit_length(rich_text_));
+    caret_position_ = clamped;
+    if (extend_selection) {
+        selection_end_ = caret_position_;
+    } else {
+        selection_start_ = caret_position_;
+        selection_end_ = caret_position_;
+    }
+    mark_dirty();
+}
+
+std::size_t RichTextBox::caret_position() const {
+    return caret_position_;
+}
+
+void RichTextBox::move_caret_left(bool extend_selection) {
+    if (caret_position_ == 0) {
+        return;
+    }
+
+    set_caret_position(caret_position_ - 1, extend_selection);
+}
+
+void RichTextBox::move_caret_right(bool extend_selection) {
+    const std::size_t length = code_unit_length(rich_text_);
+    if (caret_position_ >= length) {
+        return;
+    }
+
+    set_caret_position(caret_position_ + 1, extend_selection);
+}
+
+void RichTextBox::move_caret_home(bool extend_selection) {
+    set_caret_position(0, extend_selection);
+}
+
+void RichTextBox::move_caret_end(bool extend_selection) {
+    set_caret_position(code_unit_length(rich_text_), extend_selection);
+}
+
+bool RichTextBox::insert_text(std::string text) {
+    replace_selection_with(std::move(text));
+    return true;
+}
+
+bool RichTextBox::backspace() {
+    if (has_selection()) {
+        replace_selection_with("");
+        return true;
+    }
+
+    if (caret_position_ == 0) {
+        return false;
+    }
+
+    const std::wstring wide = utf8_to_wstring(rich_text_);
+    std::wstring updated = wide;
+    updated.erase(updated.begin() + static_cast<std::ptrdiff_t>(caret_position_ - 1));
+    rich_text_ = wstring_to_utf8(updated);
+    set_caret_position(caret_position_ - 1, false);
+    mark_dirty();
+    return true;
+}
+
+bool RichTextBox::delete_forward() {
+    if (has_selection()) {
+        replace_selection_with("");
+        return true;
+    }
+
+    const std::wstring wide = utf8_to_wstring(rich_text_);
+    if (caret_position_ >= wide.size()) {
+        return false;
+    }
+
+    std::wstring updated = wide;
+    updated.erase(updated.begin() + static_cast<std::ptrdiff_t>(caret_position_));
+    rich_text_ = wstring_to_utf8(updated);
+    mark_dirty();
+    return true;
+}
+
+void RichTextBox::replace_selection_with(const std::string& replacement) {
+    const auto [start, end] = selection();
+    std::wstring wide = utf8_to_wstring(rich_text_);
+    std::wstring replacement_wide = utf8_to_wstring(replacement);
+    wide.replace(start, end - start, replacement_wide);
+    rich_text_ = wstring_to_utf8(wide);
+    const std::size_t next_position = start + replacement_wide.size();
+    selection_start_ = next_position;
+    selection_end_ = next_position;
+    caret_position_ = next_position;
+    mark_dirty();
+}
+
+void RichTextBox::clamp_selection() {
+    const std::size_t length = code_unit_length(rich_text_);
+    selection_start_ = min_value(selection_start_, length);
+    selection_end_ = min_value(selection_end_, length);
+    caret_position_ = min_value(caret_position_, length);
 }
 
 ListView::ListView() : StyledElement("list_view") {
@@ -445,15 +578,108 @@ std::pair<std::size_t, std::size_t> ListView::visible_range(float scroll_offset,
     return {min_value(begin, items_.size()), end};
 }
 
-ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {}
+void ListView::set_scroll_offset(float scroll_offset) {
+    scroll_offset_ = max_value(0.0F, scroll_offset);
+    mark_dirty();
+}
+
+float ListView::scroll_offset() const {
+    return scroll_offset_;
+}
+
+void ListView::scroll_by(float delta) {
+    set_scroll_offset(scroll_offset_ + delta);
+}
+
+ItemsControl::ItemsControl() : StyledElement("items_control") {
+    set_focusable(true);
+}
+
+void ItemsControl::set_items(std::vector<std::string> items) {
+    items_ = std::move(items);
+    if (selected_index_ && *selected_index_ >= items_.size()) {
+        selected_index_.reset();
+    }
+    mark_dirty();
+}
+
+const std::vector<std::string>& ItemsControl::items() const {
+    return items_;
+}
+
+void ItemsControl::append_item(std::string item) {
+    items_.push_back(std::move(item));
+    mark_dirty();
+}
+
+void ItemsControl::clear_items() {
+    items_.clear();
+    selected_index_.reset();
+    mark_dirty();
+}
+
+void ItemsControl::set_selected_index(std::size_t index) {
+    if (index < items_.size()) {
+        selected_index_ = index;
+    } else {
+        selected_index_.reset();
+    }
+    mark_dirty();
+}
+
+std::optional<std::size_t> ItemsControl::selected_index() const {
+    return selected_index_;
+}
+
+void ItemsControl::set_item_spacing(float item_spacing) {
+    item_spacing_ = item_spacing >= 0.0F ? item_spacing : 0.0F;
+    mark_dirty();
+}
+
+float ItemsControl::item_spacing() const {
+    return item_spacing_;
+}
+
+void ItemsControl::set_scroll_offset(float scroll_offset) {
+    scroll_offset_ = max_value(0.0F, scroll_offset);
+    mark_dirty();
+}
+
+float ItemsControl::scroll_offset() const {
+    return scroll_offset_;
+}
+
+void ItemsControl::scroll_by(float delta) {
+    set_scroll_offset(scroll_offset_ + delta);
+}
+
+std::pair<std::size_t, std::size_t> ItemsControl::visible_range(float scroll_offset, float viewport_height, float item_height) const {
+    if (items_.empty() || viewport_height <= 0.0F || item_height <= 0.0F) {
+        return {0U, 0U};
+    }
+
+    const float stride = item_height + item_spacing_;
+    const std::size_t begin = static_cast<std::size_t>(max_value(0.0F, scroll_offset) / max_value(1.0F, stride));
+    const std::size_t visible_count = static_cast<std::size_t>(std::ceil(viewport_height / max_value(1.0F, stride))) + 1U;
+    const std::size_t end = min_value(items_.size(), begin + visible_count);
+    return {min_value(begin, items_.size()), end};
+}
+
+ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {
+    set_focusable(true);
+}
 
 void ScrollViewer::set_scroll_offset(float x, float y) {
-    offset_ = Point {.x = x, .y = y};
+    offset_ = Point {.x = max_value(0.0F, x), .y = max_value(0.0F, y)};
     mark_dirty();
 }
 
 Point ScrollViewer::scroll_offset() const {
     return offset_;
+}
+
+void ScrollViewer::scroll_by(float delta_x, float delta_y) {
+    set_scroll_offset(offset_.x + delta_x, offset_.y + delta_y);
 }
 
 void ScrollViewer::set_inertia_velocity(float x, float y) {
@@ -483,6 +709,19 @@ void ScrollViewer::tick_inertia(std::chrono::milliseconds delta_time, float dece
 
 Point ScrollViewer::inertia_velocity() const {
     return velocity_;
+}
+
+void ScrollViewer::set_content(const std::shared_ptr<ItemsControl>& content) {
+    if (content_ == content) {
+        return;
+    }
+
+    content_ = content;
+    mark_dirty();
+}
+
+std::shared_ptr<ItemsControl> ScrollViewer::content() const {
+    return content_;
 }
 
 CheckBox::CheckBox() : StyledElement("check_box") {

@@ -9,6 +9,7 @@
 #include "dcompframe/controls/text_box.h"
 #include "dcompframe/controls/rich_text_box.h"
 #include "dcompframe/controls/list_view.h"
+#include "dcompframe/controls/items_control.h"
 #include "dcompframe/controls/scroll_viewer.h"
 #include "dcompframe/controls/check_box.h"
 #include "dcompframe/controls/combo_box.h"

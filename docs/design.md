@@ -85,7 +85,15 @@
 - `TextBox` 增加文本选择与输入法组合提交模型（selection + composition）。
 - `ListView` 增加分组模型和虚拟窗口范围计算（virtual range）。
 - `ScrollViewer` 增加惯性滚动速度模型与阻尼衰减。
+- `ComboBox` 下拉层采用 overlay 策略，不参与主文档流布局，避免展开时推挤后续控件。
+- `WindowHost` 必须转发 `WM_GETDLGCODE`、`WM_CHAR`、`WM_MOUSEWHEEL` 给渲染目标，确保文本输入和滚轮滚动走标准 Win32 消息链路。
 - 输入命令系统基于快捷键路由（如 Ctrl+S）实现轻量 command dispatch。
+
+## 9.1 Element Plus 表单布局策略
+
+- 非布局控件采用表单式两列排布：左列承载输入控件，右列承载展示类控件，底部保留独立滚动区。
+- 单行表单标签统一禁止自动换行；说明性文本和富文本区域使用单独的 wrap 文本格式。
+- `ScrollViewer` 与 `ItemsControl` 组合使用可见范围裁剪，优先控制绘制成本而不是在渲染阶段遍历全部项。
 
 ## 10. 布局系统收敛策略
 
