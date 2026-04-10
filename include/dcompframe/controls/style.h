@@ -1,4 +1,7 @@
 #pragma once
+#include <optional>
+#include <cstddef>
+#include <chrono>
 
 #include <string>
 #include <unordered_map>

@@ -113,3 +113,16 @@
 - 按 `docs/future-todo.md` 持续推进剩余 P3 增强事项。
 
 
+- 2026-04-10（编译修复与控件头拆分收口）
+  - 修复拆分后编译失败：恢复 `src/controls/controls.cpp` 为唯一控件实现入口，CMake 不再引用不完整的拆分 `.cpp` 文件。
+  - 保留控件头拆分成果：`controls.h` 退化为聚合头，`Button/TextBox/ComboBox/...` 各自独立头文件继续对外暴露。
+  - 样式收敛：保持 `GridPanel` / `StackPanel` / `Panel` 的 WPF 布局语义不变，其余表单控件统一切换为 Element Plus 风格的浅色面板、蓝色主按钮、细边框与 focus ring。
+  - 删除回退机制：移除 `RenderManager` 探测阶段和 `WindowRenderTarget` 初始化中的 WARP 回退，demo 启动保留显式失败。
+  - 代码一致性：同步修正文档中关于 `Warp`、隐式降级和兜底策略的历史描述，并更新后端数量测试。
+
+
+* 完成了 `controls.h` 聚合头与 13 个独立控件头文件的收口，继续由 `controls.cpp` 作为唯一实现入口，降低了头文件耦合度。
+* 更新 `window_render_target.cpp` 的渲染逻辑，移除所有硬编码的圆角弧度和配色，应用了符合 `Element Plus` (Web) 风格的扁平化圆角（`4.0F`）和标准品牌蓝配色体系（Normal / Hover / Active）。
+* 修复了 `Button` 文本绘制时未重置前景色画刷导致文本不显示的 BUG。
+* 彻底废除了 WARP（软件加速）后端的代码和回退枚举，确保了严格的硬件加速策略流；并移除了 `main.cpp` 初始化时的隐式 `Simulated` 回退。
+* 删除了误提交且内容截断的 `src/controls/card.cpp` 残留文件，避免后续拆分继续污染工程目录。

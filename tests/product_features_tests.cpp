@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -136,7 +137,10 @@ TEST(TextBoxTests, CompositionAndSelectionWorkflow) {
 TEST(RenderManagerTests, BackendRegistryAndCommandBatchingWork) {
     RenderManager manager;
     const auto backends = manager.supported_backends();
-    EXPECT_GE(backends.size(), 4U);
+    ASSERT_EQ(backends.size(), 3U);
+    EXPECT_NE(std::find(backends.begin(), backends.end(), RenderBackend::Simulated), backends.end());
+    EXPECT_NE(std::find(backends.begin(), backends.end(), RenderBackend::DirectX), backends.end());
+    EXPECT_NE(std::find(backends.begin(), backends.end(), RenderBackend::DirectX12), backends.end());
 
     manager.enqueue_command(RenderCommand {.type = RenderCommandType::Clear, .payload = "c0"});
     manager.enqueue_command(RenderCommand {.type = RenderCommandType::Commit, .payload = "c1"});

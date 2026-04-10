@@ -346,16 +346,16 @@ void draw_checkbox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brus
     const D2D1_RECT_F box = D2D1::RectF(cx - 10.0F, cy - 10.0F, cx + 10.0F, cy + 10.0F);
 
     if (checked) {
-        brush->SetColor(D2D1::ColorF(0.0F, 0.47F, 0.83F, 1.0F)); // WinUI3 checked background (accent color)
+        brush->SetColor(D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F));
         context->FillRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush);
-        
-        brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)); // White tick
+
+        brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
         context->DrawLine(D2D1::Point2F(box.left + 5.0F, box.top + 10.0F), D2D1::Point2F(box.left + 9.0F, box.bottom - 6.0F), brush, 2.0F);
         context->DrawLine(D2D1::Point2F(box.left + 9.0F, box.bottom - 6.0F), D2D1::Point2F(box.right - 4.0F, box.top + 5.0F), brush, 2.0F);
     } else {
-        brush->SetColor(D2D1::ColorF(0.13F, 0.18F, 0.28F, 1.0F));
+        brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
         context->FillRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush);
-        brush->SetColor(D2D1::ColorF(0.70F, 0.82F, 1.0F, 1.0F));
+        brush->SetColor(D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F));
         context->DrawRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush, 1.0F);
     }
 }
@@ -363,7 +363,7 @@ void draw_checkbox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brus
 void draw_combobox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect) {
     const float center_x = rect.right - 28.0F;
     const float center_y = (rect.top + rect.bottom) * 0.5F;
-    brush->SetColor(D2D1::ColorF(0.72F, 0.82F, 1.0F, 1.0F));
+    brush->SetColor(D2D1::ColorF(0.57F, 0.60F, 0.65F, 1.0F));
     context->DrawLine(D2D1::Point2F(center_x - 6.0F, center_y - 3.0F), D2D1::Point2F(center_x, center_y + 3.0F), brush, 2.0F);
     context->DrawLine(D2D1::Point2F(center_x, center_y + 3.0F), D2D1::Point2F(center_x + 6.0F, center_y - 3.0F), brush, 2.0F);
 }
@@ -374,24 +374,24 @@ void draw_slider_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush,
     const float center_y = (rect.top + rect.bottom) * 0.5F;
     const float thumb_x = track_left + (track_right - track_left) * clamp_value(value, 0.0F, 1.0F);
 
-    brush->SetColor(D2D1::ColorF(0.18F, 0.24F, 0.34F, 1.0F));
+    brush->SetColor(D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F));
     context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(track_right, center_y), brush, 6.0F);
-    brush->SetColor(D2D1::ColorF(0.13F, 0.80F, 0.96F, 1.0F));
+    brush->SetColor(D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F));
     context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(thumb_x, center_y), brush, 6.0F);
-    brush->SetColor(D2D1::ColorF(0.94F, 0.97F, 1.0F, 1.0F));
+    brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
     context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(thumb_x, center_y), 8.0F, 8.0F), brush);
 }
 
 void draw_scrollviewer_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect) {
     const D2D1_RECT_F viewport = D2D1::RectF(rect.left + 16.0F, rect.top + 10.0F, rect.right - 16.0F, rect.bottom - 10.0F);
-    brush->SetColor(D2D1::ColorF(0.12F, 0.17F, 0.27F, 1.0F));
-    context->FillRoundedRectangle(D2D1::RoundedRect(viewport, 6.0F, 6.0F), brush);
-    brush->SetColor(D2D1::ColorF(0.68F, 0.78F, 0.98F, 1.0F));
-    context->DrawRoundedRectangle(D2D1::RoundedRect(viewport, 6.0F, 6.0F), brush, 1.0F);
+    brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+    context->FillRoundedRectangle(D2D1::RoundedRect(viewport, 4.0F, 4.0F), brush);
+    brush->SetColor(D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F));
+    context->DrawRoundedRectangle(D2D1::RoundedRect(viewport, 4.0F, 4.0F), brush, 1.0F);
 
     const D2D1_RECT_F thumb = D2D1::RectF(viewport.right - 8.0F, viewport.top + 6.0F, viewport.right - 4.0F, viewport.top + 22.0F);
-    brush->SetColor(D2D1::ColorF(0.12F, 0.80F, 0.96F, 1.0F));
-    context->FillRoundedRectangle(D2D1::RoundedRect(thumb, 2.0F, 2.0F), brush);
+    brush->SetColor(D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F));
+    context->FillRoundedRectangle(D2D1::RoundedRect(thumb, 4.0F, 4.0F), brush);
 }
 
 void fill_rounded_rect(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, const D2D1_COLOR_F& color, float radius = 12.0F) {
@@ -416,12 +416,12 @@ void draw_label_value(
         return;
     }
 
-    brush->SetColor(D2D1::ColorF(0.72F, 0.82F, 1.0F, 1.0F));
+    brush->SetColor(D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
     context->DrawText(label.c_str(), static_cast<UINT32>(label.size()), format, D2D1::RectF(rect.left + label_offset, rect.top, rect.left + 170.0F + (label_offset - 18.0F), rect.bottom), brush);
     
     const auto prev_align = format->GetTextAlignment();
     format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-    brush->SetColor(D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F));
+    brush->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
     context->DrawText(value.c_str(), static_cast<UINT32>(value.size()), format, D2D1::RectF(rect.right - 100.0F, rect.top, rect.right - 18.0F, rect.bottom), brush);
     format->SetTextAlignment(prev_align);
 }
@@ -436,8 +436,14 @@ void draw_text_box_editor(
     bool hovered,
     bool focused,
     bool caret_visible) {
-    fill_rounded_rect(context, brush, rect, hovered ? D2D1::ColorF(0.18F, 0.26F, 0.40F, 1.0F) : D2D1::ColorF(0.14F, 0.20F, 0.32F, 1.0F));
-    stroke_rounded_rect(context, brush, rect, focused ? D2D1::ColorF(0.10F, 0.74F, 0.96F, 1.0F) : D2D1::ColorF(0.42F, 0.56F, 0.82F, 0.8F));
+    fill_rounded_rect(context, brush, rect, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+    stroke_rounded_rect(
+        context,
+        brush,
+        rect,
+        focused ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)),
+        focused ? 2.0F : 1.0F,
+        4.0F);
 
     const D2D1_RECT_F text_rect = inset_rect(rect, 16.0F, 12.0F);
     const std::wstring wide_text = utf8_to_wstring(text_box.text());
@@ -484,7 +490,7 @@ void draw_text_box_editor(
         }
     }
 
-    brush->SetColor(use_placeholder ? D2D1::ColorF(0.58F, 0.66F, 0.80F, 1.0F) : D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
+    brush->SetColor(use_placeholder ? D2D1::ColorF(0.64F, 0.67F, 0.72F, 1.0F) : D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
     context->DrawTextLayout(D2D1::Point2F(text_rect.left, text_rect.top), layout, brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
     if (!use_placeholder && focused && caret_visible) {
@@ -624,20 +630,17 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             d2d_context_->BeginDraw();
             d2d_context_->SetTransform(D2D1::Matrix3x2F::Identity());
 
-            d2d_brush_->SetColor(D2D1::ColorF(0.10F, 0.16F, 0.26F, 1.0F));
+            d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
             const D2D1_RECT_F card_rect = interactive_mode_enabled_
                 ? layout.card
                 : D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F);
-            const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(
-                card_rect,
-                20.0F,
-                20.0F);
+            const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(card_rect, 4.0F, 4.0F);
             d2d_context_->FillRoundedRectangle(card, d2d_brush_);
 
-            d2d_brush_->SetColor(D2D1::ColorF(0.00F, 0.72F, 0.86F, 1.0F));
-            d2d_context_->DrawRoundedRectangle(card, d2d_brush_, 2.0F);
+            d2d_brush_->SetColor(D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F));
+            d2d_context_->DrawRoundedRectangle(card, d2d_brush_, 1.0F);
 
-            d2d_brush_->SetColor(D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
+            d2d_brush_->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
             if (text_format_ != nullptr) {
                 const std::wstring title = interactive_mode_enabled_ ? L"DCompFrame Interactive Demo" : overlay_scene_.title;
                 const D2D1_RECT_F title_rect = interactive_mode_enabled_
@@ -653,7 +656,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 && interactive_controls_.combo_box != nullptr && interactive_controls_.slider != nullptr
                 && interactive_controls_.primary_button != nullptr) {
                 if (item_text_format_ != nullptr) {
-                    d2d_brush_->SetColor(D2D1::ColorF(0.68F, 0.78F, 0.98F, 1.0F));
+                    d2d_brush_->SetColor(D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
                     draw_centered_text(
                         d2d_context_,
                         d2d_brush_,
@@ -662,17 +665,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         layout.subtitle);
                 }
 
-                D2D1_COLOR_F button_color = D2D1::ColorF(0.10F, 0.55F, 0.95F, 1.0F);
+                D2D1_COLOR_F button_color = D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F);
                 if (button_pressed_) {
-                    button_color = D2D1::ColorF(0.08F, 0.42F, 0.78F, 1.0F);
+                    button_color = D2D1::ColorF(0.20F, 0.49F, 0.80F, 1.0F);
                 } else if (button_hovered_) {
-                    button_color = D2D1::ColorF(0.16F, 0.62F, 1.0F, 1.0F);
+                    button_color = D2D1::ColorF(0.47F, 0.73F, 1.0F, 1.0F);
                 }
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.button, button_color, 14.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.button, button_color, 4.0F);
                 if (focused_control_index_ == kPrimaryButtonFocusIndex) {
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, inset_rect(layout.button, -2.0F, -2.0F), D2D1::ColorF(0.88F, 0.96F, 1.0F, 1.0F), 2.0F, 16.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, inset_rect(layout.button, -2.0F, -2.0F), D2D1::ColorF(0.75F, 0.84F, 1.0F, 1.0F), 2.0F, 4.0F);
                 }
                 if (item_text_format_ != nullptr) {
+                    d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
                     draw_centered_text(
                         d2d_context_,
                         d2d_brush_,
@@ -692,8 +696,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     focused_control_index_ == kTextBoxFocusIndex,
                     ((GetTickCount64() - caret_blink_seed_) / 500ULL) % 2ULL == 0ULL);
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, check_box_hovered_ ? D2D1::ColorF(0.18F, 0.26F, 0.40F, 1.0F) : D2D1::ColorF(0.14F, 0.20F, 0.32F, 1.0F));
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, focused_control_index_ == kCheckBoxFocusIndex ? D2D1::ColorF(0.10F, 0.74F, 0.96F, 1.0F) : D2D1::ColorF(0.42F, 0.56F, 0.82F, 0.8F));
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.check_box, focused_control_index_ == kCheckBoxFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (check_box_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kCheckBoxFocusIndex ? 2.0F : 1.0F, 4.0F);
                 draw_checkbox_glyph(d2d_context_, d2d_brush_, layout.check_box, interactive_controls_.check_box->checked());
                 draw_label_value(
                     d2d_context_,
@@ -704,8 +708,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     layout.check_box,
                     52.0F);
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, combo_box_hovered_ ? D2D1::ColorF(0.18F, 0.26F, 0.40F, 1.0F) : D2D1::ColorF(0.14F, 0.20F, 0.32F, 1.0F));
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, focused_control_index_ == kComboBoxFocusIndex ? D2D1::ColorF(0.10F, 0.74F, 0.96F, 1.0F) : D2D1::ColorF(0.42F, 0.56F, 0.82F, 0.8F));
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, focused_control_index_ == kComboBoxFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (combo_box_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kComboBoxFocusIndex ? 2.0F : 1.0F, 4.0F);
                 draw_combobox_glyph(d2d_context_, d2d_brush_, layout.combo_box);
                 draw_label_value(
                     d2d_context_,
@@ -716,17 +720,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     layout.combo_box);
 
                 if (interactive_controls_.combo_box->is_dropdown_open()) {
-                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(0.12F, 0.18F, 0.28F, 0.98F), 12.0F);
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(0.38F, 0.52F, 0.76F, 1.0F), 1.0F, 12.0F);
+                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_dropdown, D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F), 1.0F, 4.0F);
                     for (std::size_t index = 0; index < layout.combo_items.size(); ++index) {
                         const bool item_hovered = hovered_combo_index_ == static_cast<int>(index);
                         const bool selected = interactive_controls_.combo_box->selected_index() && *interactive_controls_.combo_box->selected_index() == index;
                         fill_rounded_rect(
                             d2d_context_,
                             d2d_brush_,
-                            inset_rect(layout.combo_items[index], 4.0F, 2.0F),
-                            item_hovered ? D2D1::ColorF(0.20F, 0.34F, 0.54F, 1.0F) : (selected ? D2D1::ColorF(0.16F, 0.28F, 0.46F, 1.0F) : D2D1::ColorF(0.10F, 0.16F, 0.26F, 1.0F)),
-                            6.0F);
+                            inset_rect(layout.combo_items[index], 4.0F, 4.0F),
+                            item_hovered ? D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F) : (selected ? D2D1::ColorF(0.90F, 0.95F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)),
+                            4.0F);
+                        d2d_brush_->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
                         draw_centered_text(
                             d2d_context_,
                             d2d_brush_,
@@ -736,8 +741,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     }
                 }
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.slider, slider_hovered_ ? D2D1::ColorF(0.18F, 0.26F, 0.40F, 1.0F) : D2D1::ColorF(0.14F, 0.20F, 0.32F, 1.0F));
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.slider, focused_control_index_ == kSliderFocusIndex ? D2D1::ColorF(0.10F, 0.74F, 0.96F, 1.0F) : D2D1::ColorF(0.42F, 0.56F, 0.82F, 0.8F));
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.slider, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.slider, focused_control_index_ == kSliderFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (slider_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kSliderFocusIndex ? 2.0F : 1.0F, 4.0F);
                 draw_slider_glyph(d2d_context_, d2d_brush_, layout.slider_track, interactive_controls_.slider->normalized_value());
                 draw_label_value(
                     d2d_context_,
@@ -748,8 +753,8 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     layout.slider);
 
                 if (interactive_controls_.scroll_viewer != nullptr) {
-                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer, D2D1::ColorF(0.14F, 0.20F, 0.32F, 1.0F));
-                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer, D2D1::ColorF(0.42F, 0.56F, 0.82F, 0.8F));
+                    fill_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
+                    stroke_rounded_rect(d2d_context_, d2d_brush_, layout.scroll_viewer, D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F), 1.0F, 4.0F);
                     draw_scrollviewer_glyph(d2d_context_, d2d_brush_, layout.scroll_viewer);
                     draw_label_value(
                         d2d_context_,
@@ -760,27 +765,27 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         layout.scroll_viewer);
                 }
 
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer, D2D1::ColorF(0.12F, 0.18F, 0.28F, 1.0F), 14.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.footer, D2D1::ColorF(0.32F, 0.46F, 0.72F, 0.95F), 1.0F, 14.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.footer, D2D1::ColorF(0.98F, 0.98F, 0.99F, 1.0F), 4.0F);
+                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.footer, D2D1::ColorF(0.91F, 0.92F, 0.94F, 1.0F), 1.0F, 4.0F);
                 const std::wstring footer = L"标题绑定: " + utf8_to_wstring(interactive_controls_.text_box->text())
                     + L"   |   Combo: " + utf8_to_wstring(interactive_controls_.combo_box->selected_text())
                     + L"   |   Slider: " + utf8_to_wstring(std::to_string(interactive_controls_.slider->value()))
                     + L"   |   CreateWindow 点击次数: " + std::to_wstring(button_click_count_);
+                d2d_brush_->SetColor(D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
                 draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, footer, layout.footer);
             } else {
                 for (std::size_t i = 0; i < items.size(); ++i) {
                     const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
                     const D2D1_RECT_F control_rect = D2D1::RectF(width * 0.14F, top, width * 0.70F, top + 40.0F);
-                    const D2D1_ROUNDED_RECT control = D2D1::RoundedRect(
-                        control_rect,
-                        10.0F,
-                        10.0F);
+                    const D2D1_ROUNDED_RECT control = D2D1::RoundedRect(control_rect, 4.0F, 4.0F);
                     const bool hovered_item = static_cast<int>(i) == hovered_item_index_;
                     d2d_brush_->SetColor(
                         hovered_item
-                            ? D2D1::ColorF(0.30F, 0.45F, 0.70F, 1.0F)
-                            : (i == 0 ? D2D1::ColorF(0.24F, 0.34F, 0.54F, 1.0F) : D2D1::ColorF(0.22F, 0.28F, 0.38F, 1.0F)));
+                            ? D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F)
+                            : (i == 0 ? D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)));
                     d2d_context_->FillRoundedRectangle(control, d2d_brush_);
+                    d2d_brush_->SetColor(D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F));
+                    d2d_context_->DrawRoundedRectangle(control, d2d_brush_, 1.0F);
 
                     if (items[i].find(L"CheckBox:") == 0) {
                         draw_checkbox_glyph(d2d_context_, d2d_brush_, control_rect, items[i].find(L"checked") != std::wstring::npos);
@@ -793,15 +798,15 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     }
 
                     if (item_text_format_ != nullptr) {
-                        d2d_brush_->SetColor(D2D1::ColorF(0.92F, 0.95F, 1.0F, 1.0F));
+                        d2d_brush_->SetColor(D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
                         draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, items[i], D2D1::RectF(width * 0.16F, top + 4.0F, width * 0.68F, top + 36.0F));
                     }
                 }
 
                 const D2D1_RECT_F action_rect = D2D1::RectF(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F);
-                fill_rounded_rect(d2d_context_, d2d_brush_, action_rect, button_hovered_ ? D2D1::ColorF(0.16F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.10F, 0.55F, 0.95F, 1.0F), 12.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, action_rect, button_hovered_ ? D2D1::ColorF(0.47F, 0.73F, 1.0F, 1.0F) : D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F), 4.0F);
                 if (item_text_format_ != nullptr) {
-                    d2d_brush_->SetColor(D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
+                    d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
                     draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, L"Start", action_rect);
                 }
             }
@@ -1221,10 +1226,6 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     if (FAILED(hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
         hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
     }
-    if (FAILED(hr)) {
-        hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
-    }
-
     if (FAILED(hr) || d3d_device_ == nullptr || d3d_context_ == nullptr) {
         cleanup_dx11_dcomp_target();
         return false;

@@ -35,6 +35,10 @@ target_include_directories(dcompframe
 target_compile_features(dcompframe PUBLIC cxx_std_20)
 target_link_libraries(dcompframe PUBLIC fmt::fmt nlohmann_json::nlohmann_json)
 target_compile_definitions(dcompframe PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX)
+if(MSVC)
+    target_compile_options(dcompframe PRIVATE /FS)
+    target_compile_options(dcompframe PRIVATE $<$<CONFIG:Debug>:/Z7> $<$<CONFIG:RelWithDebInfo>:/Z7>)
+endif()
 
 if(WIN32)
     target_link_libraries(dcompframe PUBLIC d3d11 dxgi dcomp user32 gdi32)
@@ -55,6 +59,10 @@ if(BUILD_TESTING)
 
     target_compile_features(dcompframe_tests PRIVATE cxx_std_20)
     target_link_libraries(dcompframe_tests PRIVATE dcompframe GTest::gtest_main)
+    if(MSVC)
+        target_compile_options(dcompframe_tests PRIVATE /FS)
+        target_compile_options(dcompframe_tests PRIVATE $<$<CONFIG:Debug>:/Z7> $<$<CONFIG:RelWithDebInfo>:/Z7>)
+    endif()
 
     include(GoogleTest)
     gtest_discover_tests(dcompframe_tests)
@@ -63,6 +71,10 @@ endif()
 add_executable(dcompframe_demo demo/main.cpp)
 target_compile_features(dcompframe_demo PRIVATE cxx_std_20)
 target_link_libraries(dcompframe_demo PRIVATE dcompframe fmt::fmt)
+if(MSVC)
+    target_compile_options(dcompframe_demo PRIVATE /FS)
+    target_compile_options(dcompframe_demo PRIVATE $<$<CONFIG:Debug>:/Z7> $<$<CONFIG:RelWithDebInfo>:/Z7>)
+endif()
 
 install(TARGETS dcompframe dcompframe_demo
     RUNTIME DESTINATION bin

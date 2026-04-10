@@ -15,8 +15,8 @@
 ## 2. 渲染后端策略
 
 - 保留 `Simulated` 后端用于测试与快速验证，但不做运行时自动回退。
-- 提供可插拔后端枚举：`Simulated` / `DirectX` / `Warp` / `DirectX12(预留)`。
-- 当前渲染实现覆盖 DX11（硬件与 WARP），DX12 保留插件位并给出明确未实现状态。
+- 提供可插拔后端枚举：`Simulated` / `DirectX` / `DirectX12(预留)`。
+- 当前渲染实现覆盖 DX11 硬件路径，DX12 保留插件位并给出明确未实现状态。
 - 统一通过 `CompositionBridge` 执行提交门禁和节流。
 - Fail-Fast 原则：开发阶段禁止静默降级与隐式 fallback，初始化或绘制失败直接返回错误并记录诊断。
 
@@ -76,9 +76,9 @@
 ## 8. DWM 兼容与后端策略
 
 - 主路径：`WS_EX_NOREDIRECTIONBITMAP + DirectComposition + DX11`。
-- `RenderManager` 对 `DirectX` 与 `Warp` 后端采用显式选择，不做隐式自动切换。
+- `RenderManager` 对 `DirectX` 与 `Simulated` 后端采用显式选择，不做隐式自动切换。
 - DComp 探测使用 `IDCompositionDevice` 接口，避免探测误失败导致透明窗口误判。
-- demo 启动策略：首选后端失败时可显式降级到 `Simulated`，保证程序可启动与调试。
+- demo 启动策略：首选后端失败时直接显式失败，保证问题可观测。
 
 ## 9. 交互系统策略
 

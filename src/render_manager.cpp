@@ -284,17 +284,9 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
             &raw_context);
     };
 
-    HRESULT d3d_hr = E_FAIL;
-    if (backend == RenderBackend::Warp) {
-        d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, create_flags);
-        if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
-            d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
-        }
-    } else {
-        d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, create_flags);
-        if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
-            d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
-        }
+    HRESULT d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, create_flags);
+    if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
+        d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
     }
 
     if (raw_context != nullptr) {
@@ -367,7 +359,6 @@ std::vector<RenderBackend> RenderManager::supported_backends() const {
     return {
         RenderBackend::Simulated,
         RenderBackend::DirectX,
-        RenderBackend::Warp,
         RenderBackend::DirectX12,
     };
 }

@@ -49,11 +49,8 @@ public:
 
         const auto backend = config_.use_directx_backend ? dcompframe::RenderBackend::DirectX : dcompframe::RenderBackend::Simulated;
         if (!render_manager_.initialize_with_backend(backend)) {
-            fmt::print("RenderManager initialization failed for backend={}, fallback to Simulated.\n", static_cast<int>(backend));
-            if (!render_manager_.initialize_with_backend(dcompframe::RenderBackend::Simulated)) {
-                fmt::print("RenderManager initialization failed for Simulated backend.\n");
-                return false;
-            }
+            fmt::print("RenderManager initialization failed.\n");
+            return false;
         }
 
         render_manager_.start_render_thread();

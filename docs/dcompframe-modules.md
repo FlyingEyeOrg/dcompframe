@@ -58,6 +58,7 @@
 
 - `Panel`：容器控件。
 - `Panel::arrange`：按可用区域安排子元素，默认拉伸填满。
+- 控件声明已从 `controls.h` 拆分为独立头文件，`controls.h` 仅保留聚合入口，降低头文件耦合。
 - `TextBlock`：文本控件。
 - `Image`：图像资源引用控件。
 - `Button`：支持回调点击与禁用态。
@@ -96,6 +97,7 @@
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
+	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
 	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。
 	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。
 	- overlay 按钮支持 hover/press/toggle 交互，按钮文字基于完整按钮矩形居中绘制。

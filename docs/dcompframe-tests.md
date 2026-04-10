@@ -65,3 +65,5 @@
 - 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
+- 本次回归重点：验证 `controls.h` 聚合头 + 独立控件头组合下的编译稳定性，以及 Element Plus 风格控件渲染不影响既有测试语义。
+- 后端回归：`RenderManagerTests.BackendRegistryAndCommandBatchingWork` 已按当前实现收口为 3 个显式后端（`Simulated` / `DirectX` / `DirectX12` 预留）。

@@ -17,7 +17,6 @@ namespace dcompframe {
 enum class RenderBackend {
     Simulated,
     DirectX,
-    Warp,
     DirectX12
 };
 
