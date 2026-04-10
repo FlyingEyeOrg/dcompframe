@@ -18,6 +18,29 @@ float clamp_dimension(float proposed, float available) {
     return std::clamp(safe_proposed, 0.0F, available);
 }
 
+float apply_upper_bound(float value, float upper_bound) {
+    if (upper_bound < 0.0F) {
+        return value;
+    }
+
+    return std::min(value, upper_bound);
+}
+
+float apply_lower_bound(float value, float lower_bound) {
+    if (lower_bound <= 0.0F) {
+        return value;
+    }
+
+    return std::max(value, lower_bound);
+}
+
+Size apply_size_constraints(const Size& proposed, const Size& min_size, const Size& max_size) {
+    return Size {
+        .width = apply_upper_bound(apply_lower_bound(proposed.width, min_size.width), max_size.width),
+        .height = apply_upper_bound(apply_lower_bound(proposed.height, min_size.height), max_size.height),
+    };
+}
+
 Size intrinsic_size_for_element(const std::string& name) {
     if (name == "button") {
         return Size {.width = 132.0F, .height = 40.0F};
@@ -58,6 +81,18 @@ Size intrinsic_size_for_element(const std::string& name) {
     if (name == "card") {
         return Size {.width = 360.0F, .height = 280.0F};
     }
+    if (name == "toggle_switch") {
+        return Size {.width = 64.0F, .height = 32.0F};
+    }
+    if (name == "radio_group") {
+        return Size {.width = 280.0F, .height = 40.0F};
+    }
+    if (name == "badge") {
+        return Size {.width = 96.0F, .height = 28.0F};
+    }
+    if (name == "divider") {
+        return Size {.width = 0.0F, .height = 12.0F};
+    }
 
     return Size {};
 }
@@ -74,37 +109,9 @@ void LayoutManager::apply_layout(const std::shared_ptr<UIElement>& root, const S
     }
 
     root->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
-
-    switch (strategy_) {
-    case LayoutStrategy::Stack: {
-        float cursor_y = 0.0F;
-        for (const auto& child : root->children()) {
-            const auto desired = child->desired_size();
-            const float child_height = desired.height > 0.0F ? desired.height : 0.0F;
-            child->set_bounds(Rect {.x = 0.0F, .y = cursor_y, .width = available_size.width, .height = child_height});
-            cursor_y += child_height;
-        }
-        break;
-    }
-    case LayoutStrategy::Grid: {
-        const auto& children = root->children();
-        if (children.empty()) {
-            break;
-        }
-
-        const float width = available_size.width / static_cast<float>(children.size());
-        float cursor_x = 0.0F;
-        for (const auto& child : children) {
-            child->set_bounds(Rect {.x = cursor_x, .y = 0.0F, .width = width, .height = available_size.height});
-            cursor_x += width;
-        }
-        break;
-    }
-    case LayoutStrategy::Flex:
-        root->measure(available_size);
-        root->arrange(available_size);
-        break;
-    }
+    (void)strategy_;
+    root->measure(available_size);
+    root->arrange(available_size);
 }
 
 UIElement::UIElement(std::string name) : name_(std::move(name)) {}
@@ -115,7 +122,7 @@ Size UIElement::measure(const Size& available_size) {
         .width = desired_size_.width > 0.0F ? desired_size_.width : intrinsic.width,
         .height = desired_size_.height > 0.0F ? desired_size_.height : intrinsic.height,
     };
-    const Size resolved = clamp_size_to_available(proposed, available_size);
+    const Size resolved = clamp_size_to_available(apply_size_constraints(proposed, min_size_, max_size_), available_size);
     set_measured_size(resolved);
     return resolved;
 }
@@ -273,6 +280,45 @@ void UIElement::set_margin(const Thickness& margin) {
 
 Thickness UIElement::margin() const {
     return margin_;
+}
+
+void UIElement::set_padding(const Thickness& padding) {
+    padding_ = padding;
+    mark_dirty();
+}
+
+Thickness UIElement::padding() const {
+    return padding_;
+}
+
+void UIElement::set_min_size(const Size& min_size) {
+    min_size_ = Size {
+        .width = std::max(0.0F, min_size.width),
+        .height = std::max(0.0F, min_size.height),
+    };
+    if (max_size_.width >= 0.0F && max_size_.width < min_size_.width) {
+        max_size_.width = min_size_.width;
+    }
+    if (max_size_.height >= 0.0F && max_size_.height < min_size_.height) {
+        max_size_.height = min_size_.height;
+    }
+    mark_dirty();
+}
+
+Size UIElement::min_size() const {
+    return min_size_;
+}
+
+void UIElement::set_max_size(const Size& max_size) {
+    max_size_ = Size {
+        .width = max_size.width >= 0.0F ? std::max(max_size.width, min_size_.width) : -1.0F,
+        .height = max_size.height >= 0.0F ? std::max(max_size.height, min_size_.height) : -1.0F,
+    };
+    mark_dirty();
+}
+
+Size UIElement::max_size() const {
+    return max_size_;
 }
 
 void UIElement::set_transform(float translate_x, float translate_y, float scale_x, float scale_y, float rotation_deg) {
@@ -449,9 +495,10 @@ void UIElement::set_measured_size(const Size& measured_size) {
 }
 
 Size UIElement::clamp_size_to_available(const Size& proposed_size, const Size& available_size) const {
+    const Size constrained = apply_size_constraints(proposed_size, min_size_, max_size_);
     return Size {
-        .width = clamp_dimension(proposed_size.width, available_size.width),
-        .height = clamp_dimension(proposed_size.height, available_size.height),
+        .width = clamp_dimension(constrained.width, available_size.width),
+        .height = clamp_dimension(constrained.height, available_size.height),
     };
 }
 

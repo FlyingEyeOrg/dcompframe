@@ -50,13 +50,17 @@ protected:
             .text_box = text_box_,
             .rich_text_box = rich_text_box_,
             .check_box = check_box_,
+            .toggle_switch = toggle_switch_,
             .combo_box = combo_box_,
+            .radio_group = radio_group_,
             .slider = slider_,
             .scroll_viewer = scroll_viewer_,
             .list_view = list_view_,
             .items_control = items_control_,
             .text_block = text_block_,
             .label = label_,
+            .badge = badge_,
+            .divider = divider_,
             .image = image_,
             .progress = progress_,
             .loading = loading_,
@@ -80,132 +84,197 @@ protected:
 
 private:
     void configure_panels() {
-        page_->set_margin(dcompframe::Thickness {.left = 24.0F, .top = 122.0F, .right = 24.0F, .bottom = 24.0F});
+        page_->set_margin(dcompframe::Thickness {.left = 24.0F, .top = 72.0F, .right = 24.0F, .bottom = 24.0F});
         page_->set_row_gap(18.0F);
 
         hero_row_->set_column_gap(20.0F);
+        hero_row_->set_row_gap(20.0F);
+        hero_row_->set_wrap(dcompframe::FlexWrap::Wrap);
         hero_row_->set_align_items(dcompframe::FlexAlignItems::Stretch);
-        hero_row_->set_flex_grow(3.0F);
 
         form_column_->set_row_gap(14.0F);
         form_column_->set_flex_grow(1.0F);
-        form_column_->set_flex_basis(0.0F);
+        form_column_->set_flex_basis(420.0F);
+        form_column_->set_min_size(dcompframe::Size {.width = 420.0F, .height = 0.0F});
 
         options_row_->set_column_gap(14.0F);
         options_row_->set_wrap(dcompframe::FlexWrap::Wrap);
 
+        switches_row_->set_column_gap(14.0F);
+        switches_row_->set_wrap(dcompframe::FlexWrap::Wrap);
+        switches_row_->set_align_items(dcompframe::FlexAlignItems::Center);
+
+        action_row_->set_column_gap(12.0F);
+        action_row_->set_wrap(dcompframe::FlexWrap::Wrap);
+        action_row_->set_align_items(dcompframe::FlexAlignItems::Center);
+
         preview_column_->set_row_gap(14.0F);
         preview_column_->set_flex_grow(1.0F);
-        preview_column_->set_flex_basis(0.0F);
+        preview_column_->set_flex_basis(420.0F);
+        preview_column_->set_min_size(dcompframe::Size {.width = 420.0F, .height = 0.0F});
+
+        status_row_->set_column_gap(14.0F);
+        status_row_->set_wrap(dcompframe::FlexWrap::Wrap);
+        status_row_->set_align_items(dcompframe::FlexAlignItems::Center);
 
         collections_row_->set_column_gap(20.0F);
-        collections_row_->set_flex_grow(1.0F);
+        collections_row_->set_row_gap(20.0F);
+        collections_row_->set_wrap(dcompframe::FlexWrap::Wrap);
+
+        list_view_->set_flex_grow(1.0F);
+        list_view_->set_flex_basis(340.0F);
+        items_control_->set_flex_grow(1.0F);
+        items_control_->set_flex_basis(340.0F);
+
+        scroll_viewer_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
+        log_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
     }
 
     void configure_controls() {
-        text_box_->set_placeholder("Flexbox 布局: TextBox 由 flex-basis + flex-grow 管理主轴尺寸");
+        text_box_->set_placeholder("输入标题，观察 Flex 布局与事件日志联动");
         text_box_->set_text(fmt::format("Flexbox Demo Window {}", id()));
 
         rich_text_box_->set_rich_text(
-            "当前 demo 只使用 Web Flexbox 语义构建布局。\n"
-            "1. 顶部区域使用 row + column 两层 flex 容器。\n"
-            "2. 中部列表区使用 row 容器并给左右列相同 grow。\n"
-            "3. 所有后续布局开发统一收敛到 flex-direction / wrap / gap / grow / shrink。\n"
-            "4. 鼠标点击会走元素树 hit-test，再按隧道/目标/冒泡写入日志。");
+            "此 Demo 现在只保留 Flexbox 主线。\n"
+            "- 旧 Grid/Stack 已从框架主路径移除。\n"
+            "- 每个控件都拥有独立的 Flex 边界。\n"
+            "- 标题栏走自定义非客户区 + DWM 扩展。\n"
+            "- 鼠标事件统一经过 hit-test 与 capture/target/bubble。"
+        );
         rich_text_box_->set_flex_grow(1.0F);
+        rich_text_box_->set_min_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
 
         check_box_->set_checked(true);
         check_box_->set_flex_grow(1.0F);
-        check_box_->set_flex_basis(0.0F);
+        check_box_->set_flex_basis(176.0F);
 
-        combo_box_->set_items({"row", "column", "wrap", "grow", "shrink", "align"});
-        combo_box_->set_selected_index(2);
+        toggle_switch_->set_checked(true);
+        toggle_switch_->set_desired_size(dcompframe::Size {.width = 92.0F, .height = 40.0F});
+
+        combo_box_->set_items({"row", "column", "wrap", "grow", "space-evenly", "align-content"});
+        combo_box_->set_selected_index(4);
         combo_box_->set_flex_grow(1.0F);
-        combo_box_->set_flex_basis(0.0F);
+        combo_box_->set_flex_basis(176.0F);
+
+        radio_group_->set_items({"Design", "Runtime", "Routing"});
+        radio_group_->set_selected_index(0);
+        radio_group_->set_desired_size(dcompframe::Size {.width = 320.0F, .height = 44.0F});
 
         slider_->set_range(0.0F, 100.0F);
         slider_->set_step(5.0F);
         slider_->set_value(65.0F);
+        slider_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 44.0F});
+
+        primary_button_->set_text("新建窗口");
+        primary_button_->set_desired_size(dcompframe::Size {.width = 148.0F, .height = 40.0F});
+
+        badge_->set_text("Element Plus");
+        badge_->set_tone(dcompframe::BadgeTone::Primary);
+        badge_->set_desired_size(dcompframe::Size {.width = 128.0F, .height = 32.0F});
+
+        divider_->set_orientation(dcompframe::DividerOrientation::Horizontal);
+        divider_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 18.0F});
 
         text_block_->set_text(
-            "右侧预览列使用 column flex 容器。卡片区域通过 flex-grow 吃掉剩余高度，模拟 Web 页面里常见的自适应侧栏。"
+            "右侧列不再把 Tab/Progress/Popup/Expander 塞进一张卡片里，而是让它们作为独立控件并列在 Flex 树中。"
         );
-        image_->set_source("demo://flexbox-preview");
+        text_block_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 64.0F});
 
-        card_->set_title("Flex Layout Card");
+        label_->set_text("规范: 新增布局与示例只允许使用 Flexbox");
+        label_->set_desired_size(dcompframe::Size {.width = 260.0F, .height = 32.0F});
+
+        image_->set_source("demo://flexbox-preview");
+        image_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
+
+        card_->set_title("Independent Card");
         card_->set_body(
-            "Card 自身不是容器算法的特例。它只是一个普通 flex item，通过 flex-grow 和 flex-basis 参与剩余空间分配。"
+            "Card 只展示卡片本身，不再承载其他控件的内部派生布局，因此窗口缩放时不会再把 Tab/Progress/Popup 挤到一起。"
         );
         card_->set_icon("flex");
-        card_->set_tags({"flex-direction", "gap", "bubble"});
-        card_->set_primary_action(primary_button_);
-        card_->set_flex_grow(1.0F);
+        card_->set_tags({"flex-only", "stable-bounds", "element-plus"});
+        card_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 144.0F});
 
-        list_view_->set_groups({
-            dcompframe::ListGroup {.name = "Flex Core", .items = {"direction", "wrap", "basis", "grow"}},
-            dcompframe::ListGroup {.name = "Event Flow", .items = {"capture", "target", "bubble"}},
-        });
-        list_view_->set_selected_index(0);
-        list_view_->set_flex_grow(1.0F);
-        list_view_->set_flex_basis(0.0F);
+        tab_control_->set_tabs({"Overview", "Layout", "Route", "API"});
+        tab_control_->set_selected_index(1);
+        tab_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 140.0F});
 
-        items_control_->set_items({
-            "所有主布局容器统一为 FlexPanel",
-            "旧 GridPanel 仅保留兼容测试，不再用于新界面",
-            "hit-test 从元素树最深命中节点开始回溯",
-            "InputManager 负责把窗口指针事件路由到树上",
-            "文档与 README 统一约束后续只写 Flexbox",
-        });
-        items_control_->set_item_spacing(6.0F);
-        items_control_->set_flex_grow(1.0F);
-        items_control_->set_flex_basis(0.0F);
+        expander_->set_header("布局与架构约束");
+        expander_->set_content_text(
+            "1. 删除旧布局入口，只保留 Flex 主线。\n"
+            "2. 布局引擎补足 padding / min / max / space-evenly。\n"
+            "3. 标题栏进入自定义非客户区路径。"
+        );
+        expander_->set_expanded(true);
+        expander_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 116.0F});
 
-        auto scroll_content = std::make_shared<dcompframe::ItemsControl>();
-        scroll_content->set_items({
-            "justify-content: 主轴空白分配",
-            "align-items: 交叉轴对齐",
-            "align-self: 子项局部覆盖",
-            "flex-basis: 初始主轴尺寸",
-            "flex-grow / flex-shrink: 剩余空间解析",
-            "wrap + row-gap/column-gap: 多行换行布局",
-        });
-        scroll_content->set_item_spacing(6.0F);
-        scroll_viewer_->set_content(scroll_content);
-        scroll_viewer_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 148.0F});
-
-        log_box_->set_lines({
-            "[flex] demo initialized",
-            "[flex] click any visible element to inspect route phases",
-            "[flex] top-level layout uses only FlexPanel containers",
-        });
-        log_box_->set_max_lines(200);
-        log_box_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 180.0F});
-        log_box_->set_flex_grow(1.0F);
-
-        label_->set_text("规范: 后续新增布局只能使用 Flexbox");
         progress_->set_range(0.0F, 100.0F);
         progress_->set_value(65.0F);
+        progress_->set_flex_grow(1.0F);
+        progress_->set_flex_basis(260.0F);
+        progress_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 42.0F});
+
         loading_->set_active(true);
         loading_->set_overlay_mode(false);
         loading_->set_text("Flexbox layout active");
-        tab_control_->set_tabs({"Overview", "Layout", "Route", "Spec"});
-        tab_control_->set_selected_index(1);
-        popup_->set_title("Flexbox Notes");
-        popup_->set_body("Popup 继续作为 overlay 演示对象，但页面主布局已经全部切到 FlexPanel。\n命中测试仍然基于元素树进行。"
+        loading_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 40.0F});
+
+        popup_->set_title("Popup Notes");
+        popup_->set_body(
+            "Popup 保留为覆盖式控件，但在 Demo 中它有自己的独立边界和独立绘制入口。"
         );
         popup_->set_modal(true);
-        popup_->set_open((id() % 2U) == 1U);
-        expander_->set_header("布局规范说明");
-        expander_->set_content_text(
-            "1. 容器统一使用 FlexPanel。\n"
-            "2. 用嵌套 flex 表达二维布局。\n"
-            "3. 命中测试先找最深命中元素，再执行 capture / target / bubble。"
-        );
-        expander_->set_expanded(true);
+        popup_->set_open(true);
+        popup_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 54.0F});
+
+        list_view_->set_groups({
+            dcompframe::ListGroup {.name = "Flex Core", .items = {"direction", "wrap", "basis", "grow", "padding"}},
+            dcompframe::ListGroup {.name = "Window", .items = {"title bar", "DWM", "hit test", "DPI"}},
+        });
+        list_view_->set_selected_index(0);
+        list_view_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+
+        items_control_->set_items({
+            "ToggleSwitch / RadioGroup / Badge / Divider 已补入项目",
+            "自定义标题栏保留 DWM resize / snap / shadow 行为",
+            "旧布局代码已不再进入主库编译",
+            "Flex 布局支持 padding 与 min/max 约束",
+            "Demo 中每个控件都有独立边界并可单独调试",
+        });
+        items_control_->set_item_spacing(6.0F);
+        items_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 188.0F});
+
+        auto scroll_content = std::make_shared<dcompframe::ItemsControl>();
+        scroll_content->set_items({
+            "justify-content: start / end / center / space-between / space-around / space-evenly",
+            "align-content: start / end / center / stretch / space-between / space-around / space-evenly",
+            "item constraints: flex-basis + grow/shrink + min/max",
+            "container insets: padding 与 gap 分工明确",
+            "命中测试优先最深可见子节点",
+            "窗口消息与控件事件统一路由",
+        });
+        scroll_content->set_item_spacing(6.0F);
+        scroll_viewer_->set_content(scroll_content);
+
+        log_box_->set_lines({
+            "[flex] demo initialized",
+            "[frame] custom title bar + DWM path ready",
+            "[route] click any visible control to inspect phases",
+        });
+        log_box_->set_max_lines(200);
+        log_box_->set_flex_grow(1.0F);
 
         combo_box_->set_on_selection_changed([this](std::optional<std::size_t> index, const std::string& value) {
-            log_box_->append_line(
-                fmt::format("[combo] index={} value={}", index ? static_cast<int>(*index) : -1, value));
+            log_box_->append_line(fmt::format("[combo] index={} value={}", index ? static_cast<int>(*index) : -1, value));
+            host().request_render();
+        });
+        toggle_switch_->set_on_checked_changed([this](bool checked) {
+            badge_->set_text(checked ? "Element Plus" : "Compact");
+            badge_->set_tone(checked ? dcompframe::BadgeTone::Primary : dcompframe::BadgeTone::Warning);
+            log_box_->append_line(fmt::format("[switch] checked={}", checked));
+            host().request_render();
+        });
+        radio_group_->set_on_selection_changed([this](std::optional<std::size_t> index, const std::string& value) {
+            log_box_->append_line(fmt::format("[radio] index={} value={}", index ? static_cast<int>(*index) : -1, value));
             host().request_render();
         });
         slider_->set_on_value_changed([this](float value) {
@@ -224,6 +293,7 @@ private:
         root_panel_->add_child(page_);
 
         page_->add_child(hero_row_);
+        page_->add_child(divider_);
         page_->add_child(collections_row_);
         page_->add_child(scroll_viewer_);
         page_->add_child(log_box_);
@@ -234,14 +304,30 @@ private:
         form_column_->add_child(text_box_);
         form_column_->add_child(rich_text_box_);
         form_column_->add_child(options_row_);
+        form_column_->add_child(switches_row_);
         form_column_->add_child(slider_);
+        form_column_->add_child(action_row_);
 
         options_row_->add_child(check_box_);
         options_row_->add_child(combo_box_);
 
+        switches_row_->add_child(toggle_switch_);
+        switches_row_->add_child(radio_group_);
+
+        action_row_->add_child(primary_button_);
+        action_row_->add_child(badge_);
+
         preview_column_->add_child(text_block_);
+        preview_column_->add_child(label_);
         preview_column_->add_child(image_);
         preview_column_->add_child(card_);
+        preview_column_->add_child(tab_control_);
+        preview_column_->add_child(expander_);
+        preview_column_->add_child(status_row_);
+
+        status_row_->add_child(progress_);
+        status_row_->add_child(loading_);
+        status_row_->add_child(popup_);
 
         collections_row_->add_child(list_view_);
         collections_row_->add_child(items_control_);
@@ -274,6 +360,8 @@ private:
         attach_trace(collections_row_, "collections-row");
         attach_trace(text_box_, "text-box");
         attach_trace(combo_box_, "combo-box");
+        attach_trace(toggle_switch_, "toggle-switch");
+        attach_trace(radio_group_, "radio-group");
         attach_trace(list_view_, "list-view");
         attach_trace(card_, "card");
     }
@@ -283,19 +371,26 @@ private:
     std::shared_ptr<dcompframe::FlexPanel> hero_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
     std::shared_ptr<dcompframe::FlexPanel> form_column_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Column);
     std::shared_ptr<dcompframe::FlexPanel> options_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
+    std::shared_ptr<dcompframe::FlexPanel> switches_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
+    std::shared_ptr<dcompframe::FlexPanel> action_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
     std::shared_ptr<dcompframe::FlexPanel> preview_column_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Column);
+    std::shared_ptr<dcompframe::FlexPanel> status_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
     std::shared_ptr<dcompframe::FlexPanel> collections_row_ = std::make_shared<dcompframe::FlexPanel>(dcompframe::FlexDirection::Row);
     std::shared_ptr<dcompframe::Button> primary_button_ = std::make_shared<dcompframe::Button>("新建窗口");
     std::shared_ptr<dcompframe::TextBox> text_box_ = std::make_shared<dcompframe::TextBox>();
     std::shared_ptr<dcompframe::RichTextBox> rich_text_box_ = std::make_shared<dcompframe::RichTextBox>();
     std::shared_ptr<dcompframe::CheckBox> check_box_ = std::make_shared<dcompframe::CheckBox>();
+    std::shared_ptr<dcompframe::ToggleSwitch> toggle_switch_ = std::make_shared<dcompframe::ToggleSwitch>();
     std::shared_ptr<dcompframe::ComboBox> combo_box_ = std::make_shared<dcompframe::ComboBox>();
+    std::shared_ptr<dcompframe::RadioGroup> radio_group_ = std::make_shared<dcompframe::RadioGroup>();
     std::shared_ptr<dcompframe::Slider> slider_ = std::make_shared<dcompframe::Slider>();
     std::shared_ptr<dcompframe::ScrollViewer> scroll_viewer_ = std::make_shared<dcompframe::ScrollViewer>();
     std::shared_ptr<dcompframe::ItemsControl> items_control_ = std::make_shared<dcompframe::ItemsControl>();
     std::shared_ptr<dcompframe::ListView> list_view_ = std::make_shared<dcompframe::ListView>();
     std::shared_ptr<dcompframe::TextBlock> text_block_ = std::make_shared<dcompframe::TextBlock>();
     std::shared_ptr<dcompframe::Label> label_ = std::make_shared<dcompframe::Label>();
+    std::shared_ptr<dcompframe::Badge> badge_ = std::make_shared<dcompframe::Badge>();
+    std::shared_ptr<dcompframe::Divider> divider_ = std::make_shared<dcompframe::Divider>();
     std::shared_ptr<dcompframe::Image> image_ = std::make_shared<dcompframe::Image>();
     std::shared_ptr<dcompframe::Progress> progress_ = std::make_shared<dcompframe::Progress>();
     std::shared_ptr<dcompframe::Loading> loading_ = std::make_shared<dcompframe::Loading>();

@@ -1,6 +1,7 @@
 #include "dcompframe/tools/window_render_target.h"
 
 #include <d2d1helper.h>
+#include <dwmapi.h>
 #include <dxgi.h>
 #include <algorithm>
 #include <chrono>
@@ -15,6 +16,7 @@
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
+#pragma comment(lib, "dwmapi.lib")
 
 namespace dcompframe {
 
@@ -39,21 +41,35 @@ constexpr std::size_t kPrimaryButtonFocusIndex = 0;
 constexpr std::size_t kTextBoxFocusIndex = 1;
 constexpr std::size_t kRichTextBoxFocusIndex = 2;
 constexpr std::size_t kCheckBoxFocusIndex = 3;
-constexpr std::size_t kComboBoxFocusIndex = 4;
-constexpr std::size_t kSliderFocusIndex = 5;
-constexpr std::size_t kInteractiveFocusCount = 6;
+constexpr std::size_t kToggleSwitchFocusIndex = 4;
+constexpr std::size_t kComboBoxFocusIndex = 5;
+constexpr std::size_t kRadioGroupFocusIndex = 6;
+constexpr std::size_t kSliderFocusIndex = 7;
+constexpr std::size_t kInteractiveFocusCount = 8;
 constexpr UINT_PTR kCaretTimerId = 1;
+
+constexpr float kCaptionHeight = 48.0F;
+constexpr float kCaptionButtonWidth = 46.0F;
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
 
 enum class HitTarget {
     None,
+    CaptionMinimize,
+    CaptionMaximize,
+    CaptionClose,
     PrimaryButton,
     TextBox,
     RichTextBox,
     CheckBox,
+    ToggleSwitch,
     ComboBoxHeader,
     ComboBoxItem,
     ComboBoxThumb,
     ComboBoxScrollBar,
+    RadioGroupOption,
     Slider,
     ScrollViewerThumb,
     ScrollViewerScrollBar,
@@ -76,11 +92,16 @@ enum class HitTarget {
 struct HitResult {
     HitTarget target = HitTarget::None;
     int combo_index = -1;
+    int radio_index = -1;
 };
 
 struct OverlayLayout {
     D2D1_RECT_F card {};
     D2D1_RECT_F title_band {};
+    D2D1_RECT_F caption_icon {};
+    D2D1_RECT_F caption_minimize {};
+    D2D1_RECT_F caption_maximize {};
+    D2D1_RECT_F caption_close {};
     D2D1_RECT_F title {};
     D2D1_RECT_F subtitle {};
     D2D1_RECT_F button {};
@@ -94,13 +115,19 @@ struct OverlayLayout {
     D2D1_RECT_F rich_text_box {};
     D2D1_RECT_F rich_text_viewport {};
     D2D1_RECT_F check_box {};
+    D2D1_RECT_F toggle_label {};
+    D2D1_RECT_F toggle_switch {};
     D2D1_RECT_F combo_label {};
     D2D1_RECT_F combo_box {};
+    D2D1_RECT_F radio_label {};
+    D2D1_RECT_F radio_group {};
     D2D1_RECT_F slider_label {};
     D2D1_RECT_F slider {};
     D2D1_RECT_F text_block_label {};
     D2D1_RECT_F text_block {};
     D2D1_RECT_F label_chip {};
+    D2D1_RECT_F badge {};
+    D2D1_RECT_F divider {};
     D2D1_RECT_F image_label {};
     D2D1_RECT_F image {};
     D2D1_RECT_F card_preview {};
@@ -142,6 +169,7 @@ struct OverlayLayout {
     D2D1_RECT_F combo_dropdown_scrollbar {};
     D2D1_RECT_F slider_track {};
     std::vector<D2D1_RECT_F> combo_items;
+    std::vector<D2D1_RECT_F> radio_items;
 };
 
 template <typename T>
@@ -279,31 +307,39 @@ OverlayLayout compute_layout(
     float combo_box_scroll_offset,
     float page_scroll_offset) {
     OverlayLayout layout;
-    const float outer_margin_x = clamp_value(width * 0.008F, 6.0F, 14.0F);
-    const float outer_margin_y = clamp_value(height * 0.010F, 6.0F, 14.0F);
-    layout.card = D2D1::RectF(outer_margin_x, outer_margin_y, width - outer_margin_x, height - outer_margin_y);
-    layout.title_band = D2D1::RectF(layout.card.left + 10.0F, layout.card.top + 10.0F, layout.card.right - 10.0F, layout.card.top + 94.0F);
-    layout.title = D2D1::RectF(layout.title_band.left + 18.0F, layout.title_band.top + 14.0F, layout.title_band.right - 196.0F, layout.title_band.top + 46.0F);
-    layout.subtitle = D2D1::RectF(layout.title_band.left + 18.0F, layout.title_band.top + 46.0F, layout.title_band.right - 196.0F, layout.title_band.bottom - 12.0F);
-    layout.button = D2D1::RectF(layout.title_band.right - 156.0F, layout.title_band.top + 22.0F, layout.title_band.right - 18.0F, layout.title_band.top + 62.0F);
-    layout.content_clip = D2D1::RectF(layout.card.left + 10.0F, layout.title_band.bottom + 10.0F, layout.card.right - 10.0F, layout.card.bottom - 10.0F);
+    layout.card = D2D1::RectF(0.0F, 0.0F, width, height);
+    layout.title_band = D2D1::RectF(0.0F, 0.0F, width, kCaptionHeight);
+    layout.caption_icon = D2D1::RectF(14.0F, 10.0F, 42.0F, 38.0F);
+    layout.caption_close = D2D1::RectF(width - kCaptionButtonWidth, 0.0F, width, kCaptionHeight);
+    layout.caption_maximize = D2D1::RectF(layout.caption_close.left - kCaptionButtonWidth, 0.0F, layout.caption_close.left, kCaptionHeight);
+    layout.caption_minimize = D2D1::RectF(layout.caption_maximize.left - kCaptionButtonWidth, 0.0F, layout.caption_maximize.left, kCaptionHeight);
+    layout.title = D2D1::RectF(layout.caption_icon.right + 10.0F, 10.0F, layout.caption_minimize.left - 24.0F, 34.0F);
+    layout.subtitle = D2D1::RectF(layout.caption_icon.right + 10.0F, 28.0F, layout.caption_minimize.left - 24.0F, 44.0F);
+    layout.content_clip = D2D1::RectF(0.0F, kCaptionHeight, width, height);
 
-    const float inner_left = layout.card.left + 24.0F;
-    const float inner_right = layout.card.right - 24.0F;
-    const float top = layout.content_clip.top + 8.0F - page_scroll_offset;
     const float label_height = 18.0F;
+    const auto scrolled_control_rect = [&](const std::shared_ptr<UIElement>& element) {
+        D2D1_RECT_F rect = control_rect(element);
+        rect.top -= page_scroll_offset;
+        rect.bottom -= page_scroll_offset;
+        return rect;
+    };
 
-    layout.text_box = control_rect(controls.text_box);
+    layout.button = scrolled_control_rect(controls.primary_button);
+    layout.text_box = scrolled_control_rect(controls.text_box);
     layout.text_box_label = label_rect_above(layout.text_box, label_height);
     layout.text_box_text = inset_rect(layout.text_box, 14.0F, 8.0F);
 
-    layout.rich_text_box = control_rect(controls.rich_text_box);
+    layout.rich_text_box = scrolled_control_rect(controls.rich_text_box);
     layout.rich_text_label = label_rect_above(layout.rich_text_box, label_height);
     layout.rich_text_viewport = inset_rect(layout.rich_text_box, 14.0F, 12.0F);
 
-    layout.check_box = control_rect(controls.check_box);
+    layout.check_box = scrolled_control_rect(controls.check_box);
 
-    layout.combo_box = control_rect(controls.combo_box);
+    layout.toggle_switch = scrolled_control_rect(controls.toggle_switch);
+    layout.toggle_label = label_rect_above(layout.toggle_switch, label_height);
+
+    layout.combo_box = scrolled_control_rect(controls.combo_box);
     layout.combo_label = label_rect_above(layout.combo_box, label_height);
     if (controls.combo_box && controls.combo_box->is_dropdown_open()) {
         const float item_height = 36.0F;
@@ -324,82 +360,81 @@ OverlayLayout compute_layout(
         }
     }
 
-    layout.slider = control_rect(controls.slider);
+    layout.radio_group = scrolled_control_rect(controls.radio_group);
+    layout.radio_label = label_rect_above(layout.radio_group, label_height);
+    if (controls.radio_group != nullptr) {
+        const auto& items = controls.radio_group->items();
+        layout.radio_items.reserve(items.size());
+        const float segment_width = items.empty() ? rect_width(layout.radio_group) : rect_width(layout.radio_group) / static_cast<float>(items.size());
+        for (std::size_t index = 0; index < items.size(); ++index) {
+            layout.radio_items.push_back(D2D1::RectF(
+                layout.radio_group.left + static_cast<float>(index) * segment_width,
+                layout.radio_group.top,
+                layout.radio_group.left + static_cast<float>(index + 1U) * segment_width,
+                layout.radio_group.bottom));
+        }
+    }
+
+    layout.slider = scrolled_control_rect(controls.slider);
     layout.slider_label = label_rect_above(layout.slider, label_height);
     layout.slider_track = D2D1::RectF(layout.slider.left + 16.0F, layout.slider.top + 18.0F, layout.slider.right - 76.0F, layout.slider.top + 24.0F);
 
-    layout.text_block = control_rect(controls.text_block);
+    layout.text_block = scrolled_control_rect(controls.text_block);
     layout.text_block_label = label_rect_above(layout.text_block, label_height);
-    layout.label_chip = D2D1::RectF(layout.text_block.right - 170.0F, layout.text_block.top + 8.0F, layout.text_block.right - 10.0F, layout.text_block.top + 30.0F);
+    layout.label_chip = scrolled_control_rect(controls.label);
+    layout.badge = scrolled_control_rect(controls.badge);
+    layout.divider = scrolled_control_rect(controls.divider);
 
-    layout.image = control_rect(controls.image);
+    layout.image = scrolled_control_rect(controls.image);
     layout.image_label = label_rect_above(layout.image, label_height);
 
-    layout.card_preview = control_rect(controls.card);
-    layout.list_view = control_rect(controls.list_view);
+    layout.card_preview = scrolled_control_rect(controls.card);
+    layout.preview_header = inset_rect(layout.card_preview, 12.0F, 12.0F);
+    layout.tab_control = scrolled_control_rect(controls.tab_control);
+    if (rect_has_area(layout.tab_control)) {
+        layout.tab_body = D2D1::RectF(layout.tab_control.left + 12.0F, layout.tab_control.top + 44.0F, layout.tab_control.right - 12.0F, layout.tab_control.bottom - 12.0F);
+        layout.animation_demo = D2D1::RectF(layout.tab_body.left, layout.tab_body.bottom - 28.0F, layout.tab_body.right, layout.tab_body.bottom);
+    }
+    const D2D1_RECT_F expander_rect = scrolled_control_rect(controls.expander);
+    layout.expander_header = rect_has_area(expander_rect)
+        ? D2D1::RectF(expander_rect.left, expander_rect.top, expander_rect.right, min_value(expander_rect.bottom, expander_rect.top + 34.0F))
+        : D2D1::RectF(0.0F, 0.0F, 0.0F, 0.0F);
+    layout.expander_body = rect_has_area(expander_rect)
+        ? D2D1::RectF(expander_rect.left + 4.0F, layout.expander_header.bottom + 6.0F, expander_rect.right - 4.0F, expander_rect.bottom - 4.0F)
+        : D2D1::RectF(0.0F, 0.0F, 0.0F, 0.0F);
+
+    const D2D1_RECT_F progress_rect = scrolled_control_rect(controls.progress);
+    if (rect_has_area(progress_rect)) {
+        layout.progress_label = D2D1::RectF(progress_rect.left, progress_rect.top + 2.0F, progress_rect.left + 54.0F, progress_rect.bottom - 2.0F);
+        layout.progress_decrease = D2D1::RectF(progress_rect.left + 62.0F, progress_rect.top + 6.0F, progress_rect.left + 88.0F, progress_rect.bottom - 6.0F);
+        layout.progress_increase = D2D1::RectF(progress_rect.right - 26.0F, progress_rect.top + 6.0F, progress_rect.right, progress_rect.bottom - 6.0F);
+        layout.progress_bar = D2D1::RectF(layout.progress_decrease.right + 8.0F, progress_rect.top + 12.0F, layout.progress_increase.left - 8.0F, progress_rect.bottom - 12.0F);
+    }
+
+    layout.loading_badge = scrolled_control_rect(controls.loading);
+    layout.popup_preview = scrolled_control_rect(controls.popup);
+
+    layout.list_view = scrolled_control_rect(controls.list_view);
     layout.list_view_label = label_rect_above(layout.list_view, label_height);
-    layout.items_control = control_rect(controls.items_control);
+    layout.items_control = scrolled_control_rect(controls.items_control);
     layout.items_control_label = label_rect_above(layout.items_control, label_height);
-    layout.scroll_viewer = control_rect(controls.scroll_viewer);
+    layout.scroll_viewer = scrolled_control_rect(controls.scroll_viewer);
     layout.scroll_viewer_label = label_rect_above(layout.scroll_viewer, label_height);
-    layout.footer = control_rect(controls.log_box);
+    layout.footer = scrolled_control_rect(controls.log_box);
     layout.footer_label = label_rect_above(layout.footer, label_height);
 
     layout.left_column = D2D1::RectF(
-        layout.text_box.left,
-        top,
-        max_value(layout.slider.right, layout.rich_text_box.right),
+        min_value(layout.text_box.left, min_value(layout.check_box.left, layout.toggle_switch.left)),
+        min_value(layout.text_box.top, layout.rich_text_box.top),
+        max_value(layout.slider.right, max_value(layout.combo_box.right, layout.radio_group.right)),
         max_value(layout.slider.bottom, layout.rich_text_box.bottom));
     layout.right_column = D2D1::RectF(
-        layout.text_block.left,
-        top,
-        max_value(layout.card_preview.right, layout.image.right),
-        max_value(layout.card_preview.bottom, layout.image.bottom));
+        min_value(layout.text_block.left, layout.image.left),
+        min_value(layout.text_block.top, layout.image.top),
+        max_value(layout.popup_preview.right, max_value(layout.card_preview.right, layout.items_control.right)),
+        max_value(layout.footer.bottom, max_value(layout.card_preview.bottom, layout.items_control.bottom)));
 
     layout.scroll_viewport = inset_rect(layout.scroll_viewer, 12.0F, 12.0F);
-    const D2D1_RECT_F preview_inner = inset_rect(layout.card_preview, 12.0F, 12.0F);
-    const float preview_h = rect_height(preview_inner);
-    const float progress_row_height = 28.0F;
-    const float bottom_row_height = 28.0F;
-    const float bottom_reserved = progress_row_height + bottom_row_height + 18.0F;
-    float preview_cursor = preview_inner.top;
-
-    layout.preview_header = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 52.0F);
-    preview_cursor = layout.preview_header.bottom + 8.0F;
-
-    layout.tab_control = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 32.0F);
-    preview_cursor = layout.tab_control.bottom + 8.0F;
-
-    const float tab_body_height = clamp_value(preview_h * 0.18F, 44.0F, 60.0F);
-    layout.tab_body = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + tab_body_height);
-    preview_cursor = layout.tab_body.bottom + 8.0F;
-
-    layout.animation_demo = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 28.0F);
-    preview_cursor = layout.animation_demo.bottom + 8.0F;
-
-    layout.expander_header = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 28.0F);
-    preview_cursor = layout.expander_header.bottom + 6.0F;
-
-    const float progress_top_limit = preview_inner.bottom - bottom_reserved;
-    if (controls.expander != nullptr && controls.expander->expanded()) {
-        const float available_expander_height = max_value(0.0F, progress_top_limit - 8.0F - preview_cursor);
-        const float expander_body_height = min_value(available_expander_height, clamp_value(preview_h * 0.20F, 48.0F, 72.0F));
-        layout.expander_body = D2D1::RectF(preview_inner.left + 4.0F, preview_cursor, preview_inner.right - 4.0F, preview_cursor + expander_body_height);
-        preview_cursor = layout.expander_body.bottom + 8.0F;
-    } else {
-        layout.expander_body = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.left, preview_cursor);
-    }
-
-    const float progress_top = min_value(preview_cursor, progress_top_limit);
-    layout.progress_label = D2D1::RectF(preview_inner.left, progress_top + 2.0F, preview_inner.left + 54.0F, progress_top + 24.0F);
-    layout.progress_decrease = D2D1::RectF(layout.progress_label.right + 6.0F, progress_top, layout.progress_label.right + 32.0F, progress_top + progress_row_height);
-    layout.progress_increase = D2D1::RectF(preview_inner.right - 26.0F, progress_top, preview_inner.right, progress_top + progress_row_height);
-    layout.progress_bar = D2D1::RectF(layout.progress_decrease.right + 8.0F, progress_top + 6.0F, layout.progress_increase.left - 8.0F, progress_top + 24.0F);
-
-    const float status_top = progress_top + progress_row_height + 8.0F;
-    layout.loading_badge = D2D1::RectF(preview_inner.left, status_top, preview_inner.left + 210.0F, status_top + bottom_row_height);
-    layout.popup_preview = D2D1::RectF(preview_inner.right - 132.0F, status_top, preview_inner.right, status_top + bottom_row_height);
-
     layout.list_viewport = inset_rect(layout.list_view, 8.0F, 8.0F);
     layout.items_control_viewport = inset_rect(layout.items_control, 8.0F, 8.0F);
     layout.footer_viewport = inset_rect(layout.footer, 10.0F, 10.0F);
@@ -445,6 +480,15 @@ void draw_editor_caret(
 }
 
 HitResult hit_test(const OverlayLayout& layout, float x, float y) {
+    if (point_in_rect(layout.caption_close, x, y)) {
+        return {.target = HitTarget::CaptionClose};
+    }
+    if (point_in_rect(layout.caption_maximize, x, y)) {
+        return {.target = HitTarget::CaptionMaximize};
+    }
+    if (point_in_rect(layout.caption_minimize, x, y)) {
+        return {.target = HitTarget::CaptionMinimize};
+    }
     if (point_in_rect(layout.button, x, y)) {
         return {.target = HitTarget::PrimaryButton};
     }
@@ -456,6 +500,9 @@ HitResult hit_test(const OverlayLayout& layout, float x, float y) {
     }
     if (point_in_rect(layout.check_box, x, y)) {
         return {.target = HitTarget::CheckBox};
+    }
+    if (point_in_rect(layout.toggle_switch, x, y)) {
+        return {.target = HitTarget::ToggleSwitch};
     }
     if (point_in_rect(layout.combo_box, x, y)) {
         return {.target = HitTarget::ComboBoxHeader};
@@ -469,6 +516,11 @@ HitResult hit_test(const OverlayLayout& layout, float x, float y) {
     for (std::size_t index = 0; index < layout.combo_items.size(); ++index) {
         if (point_in_rect(layout.combo_items[index], x, y)) {
             return {.target = HitTarget::ComboBoxItem, .combo_index = static_cast<int>(index)};
+        }
+    }
+    for (std::size_t index = 0; index < layout.radio_items.size(); ++index) {
+        if (point_in_rect(layout.radio_items[index], x, y)) {
+            return {.target = HitTarget::RadioGroupOption, .radio_index = static_cast<int>(index)};
         }
     }
     if (point_in_rect(layout.scroll_viewer_thumb, x, y)) {
@@ -788,6 +840,185 @@ void draw_scrollviewer_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* 
     context->FillRoundedRectangle(D2D1::RoundedRect(thumb, 4.0F, 4.0F), brush);
 }
 
+D2D1_COLOR_F badge_fill_color(BadgeTone tone) {
+    switch (tone) {
+    case BadgeTone::Primary:
+        return D2D1::ColorF(0.93F, 0.96F, 1.0F, 1.0F);
+    case BadgeTone::Success:
+        return D2D1::ColorF(0.91F, 0.97F, 0.92F, 1.0F);
+    case BadgeTone::Warning:
+        return D2D1::ColorF(1.0F, 0.96F, 0.88F, 1.0F);
+    case BadgeTone::Danger:
+        return D2D1::ColorF(1.0F, 0.92F, 0.92F, 1.0F);
+    case BadgeTone::Neutral:
+    default:
+        return D2D1::ColorF(0.95F, 0.96F, 0.98F, 1.0F);
+    }
+}
+
+D2D1_COLOR_F badge_text_color(BadgeTone tone) {
+    switch (tone) {
+    case BadgeTone::Primary:
+        return D2D1::ColorF(0.21F, 0.53F, 0.93F, 1.0F);
+    case BadgeTone::Success:
+        return D2D1::ColorF(0.22F, 0.56F, 0.28F, 1.0F);
+    case BadgeTone::Warning:
+        return D2D1::ColorF(0.77F, 0.48F, 0.06F, 1.0F);
+    case BadgeTone::Danger:
+        return D2D1::ColorF(0.80F, 0.22F, 0.22F, 1.0F);
+    case BadgeTone::Neutral:
+    default:
+        return D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F);
+    }
+}
+
+void draw_caption_button(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    IDWriteTextFormat* format,
+    const D2D1_RECT_F& rect,
+    const wchar_t* glyph,
+    bool hovered,
+    bool pressed,
+    bool destructive = false) {
+    if (!rect_has_area(rect) || context == nullptr || brush == nullptr || format == nullptr || glyph == nullptr) {
+        return;
+    }
+
+    const D2D1_COLOR_F fill = destructive
+        ? (pressed ? D2D1::ColorF(0.90F, 0.18F, 0.18F, 1.0F) : (hovered ? D2D1::ColorF(0.96F, 0.30F, 0.30F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)))
+        : (pressed ? D2D1::ColorF(0.88F, 0.90F, 0.94F, 1.0F) : (hovered ? D2D1::ColorF(0.94F, 0.96F, 0.99F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)));
+    if (fill.a > 0.0F) {
+        fill_rounded_rect(context, brush, inset_rect(rect, 4.0F, 6.0F), fill, 8.0F);
+    }
+    draw_text_line(
+        context,
+        brush,
+        format,
+        glyph,
+        rect,
+        destructive && hovered ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.30F, 0.33F, 0.37F, 1.0F),
+        DWRITE_TEXT_ALIGNMENT_CENTER);
+}
+
+void draw_toggle_switch_control(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    IDWriteTextFormat* format,
+    const D2D1_RECT_F& rect,
+    bool checked,
+    bool hovered,
+    bool focused) {
+    if (!rect_has_area(rect) || context == nullptr || brush == nullptr) {
+        return;
+    }
+    (void)format;
+
+    const D2D1_RECT_F track = inset_rect(rect, 6.0F, 6.0F);
+    fill_rounded_rect(
+        context,
+        brush,
+        track,
+        checked ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered ? D2D1::ColorF(0.84F, 0.87F, 0.92F, 1.0F) : D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F)),
+        rect_height(track) * 0.5F);
+    if (focused) {
+        stroke_rounded_rect(context, brush, inset_rect(track, -2.0F, -2.0F), D2D1::ColorF(0.75F, 0.84F, 1.0F, 1.0F), 2.0F, rect_height(track) * 0.5F);
+    }
+
+    const float thumb_radius = max_value(8.0F, rect_height(track) * 0.5F - 3.0F);
+    const float thumb_center_x = checked ? track.right - thumb_radius - 4.0F : track.left + thumb_radius + 4.0F;
+    const float thumb_center_y = (track.top + track.bottom) * 0.5F;
+    brush->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
+    context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(thumb_center_x, thumb_center_y), thumb_radius, thumb_radius), brush);
+}
+
+void draw_radio_group_control(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    IDWriteTextFormat* format,
+    const RadioGroup& radio_group,
+    const OverlayLayout& layout,
+    int hovered_index,
+    bool focused) {
+    if (context == nullptr || brush == nullptr || format == nullptr || !rect_has_area(layout.radio_group)) {
+        return;
+    }
+
+    fill_rounded_rect(context, brush, layout.radio_group, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 10.0F);
+    stroke_rounded_rect(
+        context,
+        brush,
+        layout.radio_group,
+        focused ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : D2D1::ColorF(0.89F, 0.91F, 0.94F, 1.0F),
+        focused ? 2.0F : 1.0F,
+        10.0F);
+
+    const auto selected = radio_group.selected_index();
+    const auto& items = radio_group.items();
+    for (std::size_t index = 0; index < layout.radio_items.size() && index < items.size(); ++index) {
+        const D2D1_RECT_F item_rect = inset_rect(layout.radio_items[index], 3.0F, 4.0F);
+        const bool active = selected.has_value() && *selected == index;
+        fill_rounded_rect(
+            context,
+            brush,
+            item_rect,
+            active ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (hovered_index == static_cast<int>(index) ? D2D1::ColorF(0.95F, 0.97F, 1.0F, 1.0F) : D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F)),
+            8.0F);
+        draw_text_line(
+            context,
+            brush,
+            format,
+            utf8_to_wstring(items[index]),
+            item_rect,
+            active ? D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F) : D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F),
+            DWRITE_TEXT_ALIGNMENT_CENTER);
+    }
+}
+
+void draw_badge_control(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    IDWriteTextFormat* format,
+    const Badge& badge,
+    const D2D1_RECT_F& rect) {
+    if (context == nullptr || brush == nullptr || format == nullptr || !rect_has_area(rect)) {
+        return;
+    }
+
+    fill_rounded_rect(context, brush, rect, badge_fill_color(badge.tone()), rect_height(rect) * 0.5F);
+    draw_text_line(context, brush, format, utf8_to_wstring(badge.text()), rect, badge_text_color(badge.tone()), DWRITE_TEXT_ALIGNMENT_CENTER);
+}
+
+void draw_divider_control(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    const Divider& divider,
+    const D2D1_RECT_F& rect) {
+    if (context == nullptr || brush == nullptr || !rect_has_area(rect)) {
+        return;
+    }
+
+    brush->SetColor(D2D1::ColorF(0.90F, 0.92F, 0.95F, 1.0F));
+    if (divider.orientation() == DividerOrientation::Vertical) {
+        const float center_x = (rect.left + rect.right) * 0.5F;
+        context->DrawLine(D2D1::Point2F(center_x, rect.top), D2D1::Point2F(center_x, rect.bottom), brush, 1.0F);
+    } else {
+        const float center_y = (rect.top + rect.bottom) * 0.5F;
+        context->DrawLine(D2D1::Point2F(rect.left, center_y), D2D1::Point2F(rect.right, center_y), brush, 1.0F);
+    }
+}
+
+void apply_dwm_frame(HWND hwnd) {
+    if (hwnd == nullptr) {
+        return;
+    }
+
+    const BOOL dark_mode = FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
+    const MARGINS margins {0, 0, 1, 0};
+    DwmExtendFrameIntoClientArea(hwnd, &margins);
+}
+
 void draw_image_placeholder(
     ID2D1DeviceContext* context,
     ID2D1SolidColorBrush* brush,
@@ -1026,7 +1257,7 @@ void WindowRenderTarget::set_interactive_controls(InteractiveControls controls) 
         && interactive_controls_.check_box != nullptr
         && interactive_controls_.combo_box != nullptr
         && interactive_controls_.slider != nullptr;
-    focused_control_index_ = interactive_mode_enabled_ ? kTextBoxFocusIndex : 0;
+    focused_control_index_ = interactive_mode_enabled_ && interactive_controls_.text_box != nullptr ? kTextBoxFocusIndex : 0;
     sync_focus_state();
 }
 
@@ -1042,10 +1273,16 @@ bool WindowRenderTarget::initialize() {
     if (render_manager_->backend() == RenderBackend::DirectX && initialize_dx11_dcomp_target()) {
         using_dx11_dcomp_ = true;
         ready_ = true;
+        apply_dwm_frame(window_host_->hwnd());
+        window_host_->refresh_frame();
         return true;
     }
 
     ready_ = bridge_.bind_target_handle(window_host_->hwnd());
+    if (ready_) {
+        apply_dwm_frame(window_host_->hwnd());
+        window_host_->refresh_frame();
+    }
     return ready_;
 }
 
@@ -1101,18 +1338,24 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         const std::vector<std::wstring>& items = overlay_scene_.items;
         const OverlayLayout layout = compute_layout(width, height, interactive_controls_, combo_box_scroll_offset_, page_scroll_offset_);
         const HitResult hovered = pointer_inside ? hit_test(layout, pointer_x, pointer_y) : HitResult {};
+        const bool caption_minimize_hovered = hovered.target == HitTarget::CaptionMinimize;
+        const bool caption_maximize_hovered = hovered.target == HitTarget::CaptionMaximize;
+        const bool caption_close_hovered = hovered.target == HitTarget::CaptionClose;
         button_hovered_ = hovered.target == HitTarget::PrimaryButton;
         text_box_hovered_ = hovered.target == HitTarget::TextBox;
         rich_text_box_hovered_ = hovered.target == HitTarget::RichTextBox;
         check_box_hovered_ = hovered.target == HitTarget::CheckBox;
+        toggle_switch_hovered_ = hovered.target == HitTarget::ToggleSwitch;
         combo_box_hovered_ = hovered.target == HitTarget::ComboBoxHeader || hovered.target == HitTarget::ComboBoxItem
             || hovered.target == HitTarget::ComboBoxThumb || hovered.target == HitTarget::ComboBoxScrollBar;
+        radio_group_hovered_ = hovered.target == HitTarget::RadioGroupOption;
         slider_hovered_ = hovered.target == HitTarget::Slider;
         scroll_viewer_hovered_ = hovered.target == HitTarget::ScrollViewer || hovered.target == HitTarget::ScrollViewerThumb || hovered.target == HitTarget::ScrollViewerScrollBar;
         list_view_hovered_ = hovered.target == HitTarget::ListView || hovered.target == HitTarget::ListViewThumb || hovered.target == HitTarget::ListViewScrollBar;
         items_control_hovered_ = hovered.target == HitTarget::ItemsControl || hovered.target == HitTarget::ItemsControlThumb || hovered.target == HitTarget::ItemsControlScrollBar;
         log_box_hovered_ = hovered.target == HitTarget::LogBox || hovered.target == HitTarget::LogBoxThumb || hovered.target == HitTarget::LogBoxScrollBar;
         hovered_combo_index_ = hovered.target == HitTarget::ComboBoxItem ? hovered.combo_index : -1;
+        hovered_radio_index_ = hovered.target == HitTarget::RadioGroupOption ? hovered.radio_index : -1;
         hovered_item_index_ = hovered_combo_index_;
 
         if (d2d_context_ == nullptr || d2d_target_bitmap_ == nullptr || d2d_brush_ == nullptr) {
@@ -1127,9 +1370,27 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 ? layout.card
                 : D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F);
             if (interactive_mode_enabled_) {
-                fill_rounded_rect(d2d_context_, d2d_brush_, card_rect, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 10.0F);
-                fill_rounded_rect(d2d_context_, d2d_brush_, layout.title_band, D2D1::ColorF(0.86F, 0.93F, 1.0F, 1.0F), 10.0F);
-                stroke_rounded_rect(d2d_context_, d2d_brush_, layout.title_band, D2D1::ColorF(0.72F, 0.84F, 0.98F, 1.0F), 1.0F, 10.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, card_rect, D2D1::ColorF(0.98F, 0.99F, 1.0F, 1.0F), 0.0F);
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.title_band, D2D1::ColorF(0.99F, 0.99F, 1.0F, 0.96F), 0.0F);
+                d2d_brush_->SetColor(D2D1::ColorF(0.88F, 0.91F, 0.95F, 1.0F));
+                d2d_context_->DrawLine(
+                    D2D1::Point2F(layout.title_band.left, layout.title_band.bottom - 0.5F),
+                    D2D1::Point2F(layout.title_band.right, layout.title_band.bottom - 0.5F),
+                    d2d_brush_,
+                    1.0F);
+
+                fill_rounded_rect(d2d_context_, d2d_brush_, layout.caption_icon, D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F), 7.0F);
+                draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"F", layout.caption_icon, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), DWRITE_TEXT_ALIGNMENT_CENTER);
+                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_minimize, L"-", caption_minimize_hovered, false);
+                draw_caption_button(
+                    d2d_context_,
+                    d2d_brush_,
+                    item_text_format_,
+                    layout.caption_maximize,
+                    window_host_->window_state() == WindowState::Maximized ? L"[]" : L"O",
+                    caption_maximize_hovered,
+                    false);
+                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_close, L"X", caption_close_hovered, false, true);
             } else {
                 d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
                 const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(card_rect, 4.0F, 4.0F);
@@ -1144,7 +1405,20 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 const D2D1_RECT_F title_rect = interactive_mode_enabled_
                     ? layout.title
                     : D2D1::RectF(width * 0.13F, height * 0.14F, width * 0.85F, height * 0.22F);
-                draw_centered_text(d2d_context_, d2d_brush_, text_format_, title, title_rect);
+                if (interactive_mode_enabled_) {
+                    draw_text_line(d2d_context_, d2d_brush_, text_format_, title, title_rect, D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+                } else {
+                    draw_centered_text(d2d_context_, d2d_brush_, text_format_, title, title_rect);
+                }
+            }
+            if (interactive_mode_enabled_ && item_text_format_ != nullptr) {
+                draw_text_line(
+                    d2d_context_,
+                    d2d_brush_,
+                    item_text_format_,
+                    L"Flex-only layout | custom caption | DWM-preserved window behavior",
+                    layout.subtitle,
+                    D2D1::ColorF(0.48F, 0.50F, 0.54F, 1.0F));
             }
 
             d2d_context_->PushAxisAlignedClip(layout.content_clip, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -1152,17 +1426,6 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
             if (interactive_mode_enabled_ && interactive_controls_.text_box != nullptr && interactive_controls_.check_box != nullptr
                 && interactive_controls_.combo_box != nullptr && interactive_controls_.slider != nullptr
                 && interactive_controls_.primary_button != nullptr) {
-                if (helper_text_format_ != nullptr) {
-                    draw_wrapped_text(
-                        d2d_context_,
-                        d2d_brush_,
-                        dwrite_factory_,
-                        helper_text_format_,
-                        L"布局容器默认透明且无边框，标题区独立着色；交互控件继续保持接近 Element Plus 的浅色表单、蓝色 focus ring 与明确反馈。",
-                        layout.subtitle,
-                        D2D1::ColorF(0.38F, 0.40F, 0.43F, 1.0F));
-                }
-
                 D2D1_COLOR_F button_color = D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F);
                 if (button_pressed_) {
                     button_color = D2D1::ColorF(0.20F, 0.49F, 0.80F, 1.0F);
@@ -1221,6 +1484,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     D2D1::RectF(layout.check_box.left + 50.0F, layout.check_box.top, layout.check_box.right - 16.0F, layout.check_box.bottom),
                     D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
 
+                if (interactive_controls_.toggle_switch != nullptr) {
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ToggleSwitch", layout.toggle_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_toggle_switch_control(
+                        d2d_context_,
+                        d2d_brush_,
+                        item_text_format_,
+                        layout.toggle_switch,
+                        interactive_controls_.toggle_switch->checked(),
+                        toggle_switch_hovered_,
+                        focused_control_index_ == kToggleSwitchFocusIndex);
+                }
+
                 draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"ComboBox", layout.combo_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
                 fill_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F), 4.0F);
                 stroke_rounded_rect(d2d_context_, d2d_brush_, layout.combo_box, focused_control_index_ == kComboBoxFocusIndex ? D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F) : (combo_box_hovered_ ? D2D1::ColorF(0.75F, 0.77F, 0.80F, 1.0F) : D2D1::ColorF(0.86F, 0.88F, 0.91F, 1.0F)), focused_control_index_ == kComboBoxFocusIndex ? 2.0F : 1.0F, 4.0F);
@@ -1232,6 +1507,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     utf8_to_wstring(interactive_controls_.combo_box->selected_text()),
                     D2D1::RectF(layout.combo_box.left + 14.0F, layout.combo_box.top, layout.combo_box.right - 42.0F, layout.combo_box.bottom),
                     D2D1::ColorF(0.19F, 0.20F, 0.22F, 1.0F));
+
+                if (interactive_controls_.radio_group != nullptr) {
+                    draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"RadioGroup", layout.radio_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
+                    draw_radio_group_control(
+                        d2d_context_,
+                        d2d_brush_,
+                        item_text_format_,
+                        *interactive_controls_.radio_group,
+                        layout,
+                        hovered_radio_index_,
+                        focused_control_index_ == kRadioGroupFocusIndex);
+                }
 
                 draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Slider", layout.slider_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
                 fill_rounded_rect(d2d_context_, d2d_brush_, layout.slider, D2D1::ColorF(0.99F, 0.99F, 1.0F, 1.0F), 8.0F);
@@ -1270,6 +1557,13 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                             D2D1::ColorF(0.25F, 0.62F, 1.0F, 1.0F),
                             DWRITE_TEXT_ALIGNMENT_CENTER);
                     }
+                    if (interactive_controls_.badge != nullptr) {
+                        draw_badge_control(d2d_context_, d2d_brush_, item_text_format_, *interactive_controls_.badge, layout.badge);
+                    }
+                }
+
+                if (interactive_controls_.divider != nullptr) {
+                    draw_divider_control(d2d_context_, d2d_brush_, *interactive_controls_.divider, layout.divider);
                 }
 
                 draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"Image", layout.image_label, D2D1::ColorF(0.56F, 0.58F, 0.62F, 1.0F));
@@ -1665,7 +1959,32 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
 
     const auto size = window_host_->client_size();
     const OverlayLayout layout = compute_layout(size.width > 0.0F ? size.width : 1280.0F, size.height > 0.0F ? size.height : 720.0F, interactive_controls_, combo_box_scroll_offset_, page_scroll_offset_);
+    const auto is_focus_available = [&](std::size_t index) {
+        switch (index) {
+        case kPrimaryButtonFocusIndex:
+            return interactive_controls_.primary_button != nullptr;
+        case kTextBoxFocusIndex:
+            return interactive_controls_.text_box != nullptr;
+        case kRichTextBoxFocusIndex:
+            return interactive_controls_.rich_text_box != nullptr;
+        case kCheckBoxFocusIndex:
+            return interactive_controls_.check_box != nullptr;
+        case kToggleSwitchFocusIndex:
+            return interactive_controls_.toggle_switch != nullptr;
+        case kComboBoxFocusIndex:
+            return interactive_controls_.combo_box != nullptr;
+        case kRadioGroupFocusIndex:
+            return interactive_controls_.radio_group != nullptr;
+        case kSliderFocusIndex:
+            return interactive_controls_.slider != nullptr;
+        default:
+            return false;
+        }
+    };
     const auto update_focus = [&](std::size_t index) {
+        if (!is_focus_available(index)) {
+            return;
+        }
         focused_control_index_ = min_value(index, kInteractiveFocusCount - 1U);
         sync_focus_state();
         reset_caret_blink();
@@ -1673,9 +1992,15 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
     };
     const auto focus_next = [&](bool reverse) {
         const std::size_t count = kInteractiveFocusCount;
-        focused_control_index_ = reverse
-            ? (focused_control_index_ + count - 1U) % count
-            : (focused_control_index_ + 1U) % count;
+        for (std::size_t step = 0; step < count; ++step) {
+            const std::size_t candidate = reverse
+                ? (focused_control_index_ + count - 1U - step) % count
+                : (focused_control_index_ + 1U + step) % count;
+            if (is_focus_available(candidate)) {
+                focused_control_index_ = candidate;
+                break;
+            }
+        }
         sync_focus_state();
         reset_caret_blink();
         window_host_->request_render();
@@ -1699,7 +2024,19 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
     };
     const auto clamp_page_offset = [&](float candidate) {
         const float viewport_height = max_value(1.0F, rect_height(layout.content_clip));
-        const float virtual_height = max_value(viewport_height, layout.footer.bottom - layout.content_clip.top + 12.0F);
+        const auto control_bottom = [](const std::shared_ptr<UIElement>& element) {
+            if (element == nullptr) {
+                return 0.0F;
+            }
+            const Rect bounds = element->absolute_bounds();
+            return bounds.y + bounds.height;
+        };
+        const float content_bottom = max_value(
+            control_bottom(interactive_controls_.log_box),
+            max_value(
+                control_bottom(interactive_controls_.scroll_viewer),
+                max_value(control_bottom(interactive_controls_.items_control), control_bottom(interactive_controls_.popup))));
+        const float virtual_height = max_value(viewport_height, content_bottom - layout.content_clip.top + 24.0F);
         return clamp_value(candidate, 0.0F, max_value(0.0F, virtual_height - viewport_height));
     };
     const auto ensure_combo_selection_visible = [&]() {
@@ -1940,6 +2277,86 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
     };
 
     switch (msg) {
+    case WM_DWMCOMPOSITIONCHANGED:
+        apply_dwm_frame(window_host_->hwnd());
+        window_host_->refresh_frame();
+        return false;
+    case WM_ACTIVATE:
+        apply_dwm_frame(window_host_->hwnd());
+        window_host_->request_render();
+        return false;
+    case WM_NCCALCSIZE:
+        result = 0;
+        return true;
+    case WM_NCHITTEST: {
+        LRESULT dwm_result = 0;
+        if (DwmDefWindowProc(window_host_->hwnd(), msg, wparam, lparam, &dwm_result)) {
+            if (dwm_result != HTMINBUTTON && dwm_result != HTMAXBUTTON && dwm_result != HTCLOSE) {
+                result = dwm_result;
+                return true;
+            }
+        }
+
+        POINT screen_point {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+        POINT client_point = screen_point;
+        ScreenToClient(window_host_->hwnd(), &client_point);
+        const float x = static_cast<float>(client_point.x);
+        const float y = static_cast<float>(client_point.y);
+
+        if (point_in_rect(layout.caption_minimize, x, y) || point_in_rect(layout.caption_maximize, x, y) || point_in_rect(layout.caption_close, x, y)) {
+            result = HTCLIENT;
+            return true;
+        }
+
+        if (window_host_->window_state() != WindowState::Maximized && window_host_->window_state() != WindowState::Fullscreen) {
+            const float resize_border = max_value(6.0F, 8.0F * window_host_->config().dpi_scale);
+            const bool on_left = x >= 0.0F && x < resize_border;
+            const bool on_right = x <= size.width && x > size.width - resize_border;
+            const bool on_top = y >= 0.0F && y < resize_border;
+            const bool on_bottom = y <= size.height && y > size.height - resize_border;
+
+            if (on_top && on_left) {
+                result = HTTOPLEFT;
+                return true;
+            }
+            if (on_top && on_right) {
+                result = HTTOPRIGHT;
+                return true;
+            }
+            if (on_bottom && on_left) {
+                result = HTBOTTOMLEFT;
+                return true;
+            }
+            if (on_bottom && on_right) {
+                result = HTBOTTOMRIGHT;
+                return true;
+            }
+            if (on_left) {
+                result = HTLEFT;
+                return true;
+            }
+            if (on_right) {
+                result = HTRIGHT;
+                return true;
+            }
+            if (on_top) {
+                result = HTTOP;
+                return true;
+            }
+            if (on_bottom) {
+                result = HTBOTTOM;
+                return true;
+            }
+        }
+
+        if (y >= layout.title_band.top && y <= layout.title_band.bottom && x >= layout.title.left && x <= layout.caption_minimize.left - 8.0F) {
+            result = HTCAPTION;
+            return true;
+        }
+
+        result = HTCLIENT;
+        return true;
+    }
     case WM_GETDLGCODE:
         result = DLGC_WANTARROWS | DLGC_WANTCHARS | DLGC_WANTTAB;
         return true;
@@ -1976,14 +2393,17 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         text_box_hovered_ = hit.target == HitTarget::TextBox;
         rich_text_box_hovered_ = hit.target == HitTarget::RichTextBox;
         check_box_hovered_ = hit.target == HitTarget::CheckBox;
+        toggle_switch_hovered_ = hit.target == HitTarget::ToggleSwitch;
         combo_box_hovered_ = hit.target == HitTarget::ComboBoxHeader || hit.target == HitTarget::ComboBoxItem
             || hit.target == HitTarget::ComboBoxThumb || hit.target == HitTarget::ComboBoxScrollBar;
+        radio_group_hovered_ = hit.target == HitTarget::RadioGroupOption;
         slider_hovered_ = hit.target == HitTarget::Slider;
         scroll_viewer_hovered_ = hit.target == HitTarget::ScrollViewer || hit.target == HitTarget::ScrollViewerThumb || hit.target == HitTarget::ScrollViewerScrollBar;
         list_view_hovered_ = hit.target == HitTarget::ListView || hit.target == HitTarget::ListViewThumb || hit.target == HitTarget::ListViewScrollBar;
         items_control_hovered_ = hit.target == HitTarget::ItemsControl || hit.target == HitTarget::ItemsControlThumb || hit.target == HitTarget::ItemsControlScrollBar;
         log_box_hovered_ = hit.target == HitTarget::LogBox || hit.target == HitTarget::LogBoxThumb || hit.target == HitTarget::LogBoxScrollBar;
         hovered_combo_index_ = hit.target == HitTarget::ComboBoxItem ? hit.combo_index : -1;
+        hovered_radio_index_ = hit.target == HitTarget::RadioGroupOption ? hit.radio_index : -1;
         hovered_item_index_ = hovered_combo_index_;
         if (slider_dragging_ && (wparam & MK_LBUTTON) == 0) {
             slider_dragging_ = false;
@@ -2020,6 +2440,28 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             return true;
         }
         switch (hit.target) {
+        case HitTarget::CaptionMinimize:
+            if (GetCapture() == window_host_->hwnd()) {
+                ReleaseCapture();
+            }
+            window_host_->set_window_state(WindowState::Minimized);
+            result = 0;
+            return true;
+        case HitTarget::CaptionMaximize:
+            if (GetCapture() == window_host_->hwnd()) {
+                ReleaseCapture();
+            }
+            window_host_->set_window_state(
+                window_host_->window_state() == WindowState::Maximized ? WindowState::Normal : WindowState::Maximized);
+            result = 0;
+            return true;
+        case HitTarget::CaptionClose:
+            if (GetCapture() == window_host_->hwnd()) {
+                ReleaseCapture();
+            }
+            PostMessageW(window_host_->hwnd(), WM_CLOSE, 0, 0);
+            result = 0;
+            return true;
         case HitTarget::PrimaryButton:
             focused_scroll_target_ = DragScrollTarget::None;
             update_focus(kPrimaryButtonFocusIndex);
@@ -2046,6 +2488,14 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             interactive_controls_.check_box->toggle();
             close_combo_box();
             break;
+        case HitTarget::ToggleSwitch:
+            focused_scroll_target_ = DragScrollTarget::None;
+            update_focus(kToggleSwitchFocusIndex);
+            if (interactive_controls_.toggle_switch != nullptr) {
+                interactive_controls_.toggle_switch->toggle();
+            }
+            close_combo_box();
+            break;
         case HitTarget::ComboBoxHeader:
             focused_scroll_target_ = DragScrollTarget::None;
             update_focus(kComboBoxFocusIndex);
@@ -2059,6 +2509,14 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             focused_scroll_target_ = DragScrollTarget::None;
             update_focus(kComboBoxFocusIndex);
             interactive_controls_.combo_box->set_selected_index(static_cast<std::size_t>(hit.combo_index));
+            close_combo_box();
+            break;
+        case HitTarget::RadioGroupOption:
+            focused_scroll_target_ = DragScrollTarget::None;
+            update_focus(kRadioGroupFocusIndex);
+            if (interactive_controls_.radio_group != nullptr && hit.radio_index >= 0) {
+                interactive_controls_.radio_group->set_selected_index(static_cast<std::size_t>(hit.radio_index));
+            }
             close_combo_box();
             break;
         case HitTarget::ComboBoxThumb:
@@ -2489,6 +2947,15 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
             }
         }
 
+        if (focused_control_index_ == kToggleSwitchFocusIndex && interactive_controls_.toggle_switch != nullptr) {
+            if (wparam == VK_SPACE || wparam == VK_RETURN) {
+                interactive_controls_.toggle_switch->toggle();
+                window_host_->request_render();
+                result = 0;
+                return true;
+            }
+        }
+
         if (focused_control_index_ == kComboBoxFocusIndex) {
             if (wparam == VK_SPACE || wparam == VK_RETURN) {
                 interactive_controls_.combo_box->toggle_dropdown();
@@ -2511,6 +2978,21 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
                 interactive_controls_.combo_box->open_dropdown();
                 interactive_controls_.combo_box->select_previous();
                 ensure_combo_selection_visible();
+                window_host_->request_render();
+                result = 0;
+                return true;
+            }
+        }
+
+        if (focused_control_index_ == kRadioGroupFocusIndex && interactive_controls_.radio_group != nullptr) {
+            if (wparam == VK_LEFT || wparam == VK_UP) {
+                interactive_controls_.radio_group->select_previous();
+                window_host_->request_render();
+                result = 0;
+                return true;
+            }
+            if (wparam == VK_RIGHT || wparam == VK_DOWN || wparam == VK_SPACE || wparam == VK_RETURN) {
+                interactive_controls_.radio_group->select_next();
                 window_host_->request_render();
                 result = 0;
                 return true;
@@ -2565,8 +3047,14 @@ void WindowRenderTarget::sync_focus_state() {
     if (interactive_controls_.check_box) {
         interactive_controls_.check_box->set_focused(focused_control_index_ == kCheckBoxFocusIndex);
     }
+    if (interactive_controls_.toggle_switch) {
+        interactive_controls_.toggle_switch->set_focused(focused_control_index_ == kToggleSwitchFocusIndex);
+    }
     if (interactive_controls_.combo_box) {
         interactive_controls_.combo_box->set_focused(focused_control_index_ == kComboBoxFocusIndex);
+    }
+    if (interactive_controls_.radio_group) {
+        interactive_controls_.radio_group->set_focused(focused_control_index_ == kRadioGroupFocusIndex);
     }
     if (interactive_controls_.slider) {
         interactive_controls_.slider->set_focused(focused_control_index_ == kSliderFocusIndex);

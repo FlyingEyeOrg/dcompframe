@@ -22,3 +22,7 @@
 #include "dcompframe/controls/combo_box.h"
 #include "dcompframe/controls/slider.h"
 #include "dcompframe/controls/card.h"
+#include "dcompframe/controls/toggle_switch.h"
+#include "dcompframe/controls/radio_group.h"
+#include "dcompframe/controls/badge.h"
+#include "dcompframe/controls/divider.h"

@@ -8,7 +8,7 @@
 #include "dcompframe/controls/controls.h"
 #include "dcompframe/controls/style.h"
 #include "dcompframe/input/input_manager.h"
-#include "dcompframe/layout/grid_panel.h"
+#include "dcompframe/layout/flex_panel.h"
 #include "dcompframe/render_manager.h"
 #include "dcompframe/tools/window_render_target.h"
 #include "dcompframe/window_host.h"
@@ -112,11 +112,11 @@ POINT compute_scrollbar_point(const UIElement& control, float bottom_inset) {
     return point_from_rect(bounds, bounds.width - track_x_inset, bounds.height - bottom_inset);
 }
 
-POINT compute_tab_control_point(const Card& card) {
-    const Rect bounds = card.bounds();
-    const float inner_left = bounds.x + 12.0F;
-    const float inner_top = bounds.y + 12.0F + 52.0F + 8.0F;
-    const float inner_width = bounds.width - 24.0F;
+POINT compute_tab_control_point(const TabControl& tab_control) {
+    const Rect bounds = tab_control.bounds();
+    const float inner_left = bounds.x;
+    const float inner_top = bounds.y;
+    const float inner_width = bounds.width;
     const float tab_width = inner_width / 4.0F;
     POINT point {};
     point.x = static_cast<LONG>(inner_left + tab_width * 1.5F);
@@ -124,20 +124,11 @@ POINT compute_tab_control_point(const Card& card) {
     return point;
 }
 
-POINT compute_progress_increase_point(const Card& card) {
-    const Rect bounds = card.bounds();
-    const float inner_left = bounds.x + 12.0F;
-    const float inner_top = bounds.y + 12.0F;
-    const float inner_right = bounds.x + bounds.width - 12.0F;
-    const float inner_bottom = bounds.y + bounds.height - 12.0F;
-    const float preview_inner_height = inner_bottom - inner_top;
-    const float progress_top_limit = inner_bottom - (28.0F + 28.0F + 18.0F);
-    const float preview_cursor_after_expander = inner_top + 52.0F + 8.0F + 32.0F + 8.0F
-        + clamp_value(preview_inner_height * 0.18F, 44.0F, 60.0F) + 8.0F + 28.0F + 8.0F + 28.0F + 6.0F;
-    const float progress_top = min_value(preview_cursor_after_expander, progress_top_limit);
+POINT compute_progress_increase_point(const Progress& progress) {
+    const Rect bounds = progress.bounds();
     POINT point {};
-    point.x = static_cast<LONG>(inner_right - 15.0F);
-    point.y = static_cast<LONG>(progress_top + 15.0F);
+    point.x = static_cast<LONG>(bounds.x + bounds.width - 13.0F);
+    point.y = static_cast<LONG>(bounds.y + bounds.height * 0.5F);
     return point;
 }
 
@@ -151,7 +142,7 @@ TEST(IntegrationTests, WindowRenderAnimationAndInputFlow) {
     ASSERT_TRUE(host.create(L"IntegrationHost", 800, 600));
     host.set_visible(true);
 
-    auto root = std::make_shared<GridPanel>(1, 1);
+    auto root = std::make_shared<FlexPanel>(FlexDirection::Column);
     auto card = std::make_shared<Card>();
     auto action = std::make_shared<Button>("Go");
     card->set_primary_action(action);
@@ -355,6 +346,10 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
     auto image = std::make_shared<Image>();
     auto card = std::make_shared<Card>();
     assign_demo_test_bounds(host.client_size(), text_box, rich_text_box, check_box, combo_box, slider, scroll_viewer, list_view, items_control, text_block, image, card, log_box);
+    const Rect card_bounds = card->bounds();
+    tab_control->set_bounds(Rect {.x = card_bounds.x, .y = card_bounds.y + card_bounds.height + 14.0F, .width = card_bounds.width, .height = 140.0F});
+    expander->set_bounds(Rect {.x = card_bounds.x, .y = tab_control->bounds().y + tab_control->bounds().height + 14.0F, .width = card_bounds.width, .height = 104.0F});
+    progress->set_bounds(Rect {.x = card_bounds.x, .y = expander->bounds().y + expander->bounds().height + 14.0F, .width = 280.0F, .height = 42.0F});
 
     target.set_interactive_controls(WindowRenderTarget::InteractiveControls {
         .primary_button = button,
@@ -377,7 +372,7 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
 
     ASSERT_TRUE(target.initialize());
 
-    const POINT tab_point = compute_tab_control_point(*card);
+    const POINT tab_point = compute_tab_control_point(*tab_control);
     const LPARAM tab_lparam = MAKELPARAM(tab_point.x, tab_point.y);
 
     LRESULT result = 0;
@@ -386,7 +381,7 @@ TEST(IntegrationTests, WindowRenderTargetProcessesTabExpanderAndScrollbarTrackCl
     ASSERT_TRUE(tab_control->selected_index().has_value());
     EXPECT_EQ(*tab_control->selected_index(), 1U);
 
-    const POINT progress_plus_point = compute_progress_increase_point(*card);
+    const POINT progress_plus_point = compute_progress_increase_point(*progress);
     bool progress_updated = false;
     for (int dx = -18; dx <= 18 && !progress_updated; dx += 6) {
         for (int dy = -18; dy <= 18 && !progress_updated; dy += 6) {

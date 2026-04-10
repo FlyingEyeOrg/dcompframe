@@ -41,13 +41,17 @@ public:
         std::shared_ptr<TextBox> text_box;
         std::shared_ptr<RichTextBox> rich_text_box;
         std::shared_ptr<CheckBox> check_box;
+        std::shared_ptr<ToggleSwitch> toggle_switch;
         std::shared_ptr<ComboBox> combo_box;
+        std::shared_ptr<RadioGroup> radio_group;
         std::shared_ptr<Slider> slider;
         std::shared_ptr<ScrollViewer> scroll_viewer;
         std::shared_ptr<ListView> list_view;
         std::shared_ptr<ItemsControl> items_control;
         std::shared_ptr<TextBlock> text_block;
         std::shared_ptr<Label> label;
+        std::shared_ptr<Badge> badge;
+        std::shared_ptr<Divider> divider;
         std::shared_ptr<Image> image;
         std::shared_ptr<Progress> progress;
         std::shared_ptr<Loading> loading;
@@ -129,6 +133,8 @@ private:
     bool combo_box_pressed_ = false;
     bool slider_hovered_ = false;
     bool check_box_hovered_ = false;
+    bool toggle_switch_hovered_ = false;
+    bool radio_group_hovered_ = false;
     bool text_box_hovered_ = false;
     bool rich_text_box_hovered_ = false;
     bool scroll_viewer_hovered_ = false;
@@ -137,6 +143,7 @@ private:
     bool log_box_hovered_ = false;
     int hovered_item_index_ = -1;
     int hovered_combo_index_ = -1;
+    int hovered_radio_index_ = -1;
     int button_click_count_ = 0;
     float combo_box_scroll_offset_ = 0.0F;
     float page_scroll_offset_ = 0.0F;

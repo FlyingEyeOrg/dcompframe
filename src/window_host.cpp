@@ -20,6 +20,16 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
     if (self != nullptr) {
         LRESULT handler_result = 0;
         switch (msg) {
+        case WM_NCCALCSIZE:
+        case WM_NCHITTEST:
+        case WM_NCLBUTTONDBLCLK:
+        case WM_NCMOUSELEAVE:
+        case WM_DWMCOMPOSITIONCHANGED:
+        case WM_ACTIVATE:
+            if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
+                return handler_result;
+            }
+            break;
         case WM_SIZE:
             self->on_size_changed(LOWORD(lparam), HIWORD(lparam));
             if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
@@ -28,6 +38,17 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             return 0;
         case WM_DPICHANGED:
             self->apply_dpi(LOWORD(wparam));
+            if (lparam != 0) {
+                const RECT* suggested_rect = reinterpret_cast<const RECT*>(lparam);
+                SetWindowPos(
+                    hwnd,
+                    nullptr,
+                    suggested_rect->left,
+                    suggested_rect->top,
+                    suggested_rect->right - suggested_rect->left,
+                    suggested_rect->bottom - suggested_rect->top,
+                    SWP_NOZORDER | SWP_NOACTIVATE);
+            }
             if (self->dispatch_message(msg, wparam, lparam, handler_result)) {
                 return handler_result;
             }
@@ -103,6 +124,11 @@ bool WindowHost::create(std::wstring title, int width, int height) {
 
     ensure_window_class_registered();
 
+    const UINT dpi = GetDpiForSystem();
+    config_.dpi_scale = static_cast<float>(dpi) / 96.0F;
+    RECT window_rect {0, 0, width, height};
+    AdjustWindowRectExForDpi(&window_rect, config_.style, FALSE, config_.ex_style, dpi);
+
     hwnd_ = CreateWindowExW(
         config_.ex_style,
         kWindowClassName,
@@ -110,8 +136,8 @@ bool WindowHost::create(std::wstring title, int width, int height) {
         config_.style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        width,
-        height,
+        window_rect.right - window_rect.left,
+        window_rect.bottom - window_rect.top,
         nullptr,
         nullptr,
         GetModuleHandleW(nullptr),
@@ -123,6 +149,7 @@ bool WindowHost::create(std::wstring title, int width, int height) {
 
     ++g_window_count;
     created_ = true;
+    apply_dpi(GetDpiForWindow(hwnd_));
     RECT client_rect {};
     if (GetClientRect(hwnd_, &client_rect)) {
         on_size_changed(client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
@@ -173,6 +200,7 @@ void WindowHost::set_window_state(WindowState state) {
         switch (state) {
         case WindowState::Normal:
             SetWindowLongW(hwnd_, GWL_STYLE, static_cast<LONG>(saved_window_style_));
+            refresh_frame();
             ShowWindow(hwnd_, SW_RESTORE);
             break;
         case WindowState::Minimized:
@@ -184,6 +212,7 @@ void WindowHost::set_window_state(WindowState state) {
         case WindowState::Fullscreen:
             saved_window_style_ = static_cast<DWORD>(GetWindowLongW(hwnd_, GWL_STYLE));
             SetWindowLongW(hwnd_, GWL_STYLE, static_cast<LONG>(WS_POPUP | WS_VISIBLE));
+            refresh_frame();
             ShowWindow(hwnd_, SW_MAXIMIZE);
             break;
         }
@@ -300,6 +329,21 @@ bool WindowHost::dispatch_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESUL
     }
 
     return message_handler_(msg, wparam, lparam, result);
+}
+
+void WindowHost::refresh_frame() {
+    if (hwnd_ == nullptr) {
+        return;
+    }
+
+    SetWindowPos(
+        hwnd_,
+        nullptr,
+        0,
+        0,
+        0,
+        0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
 }  // namespace dcompframe

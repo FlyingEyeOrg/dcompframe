@@ -36,7 +36,7 @@
 
 ## UIElement / LayoutManager
 
-职责：维护视觉树、可视属性与脏标记，提供基础布局策略。
+职责：维护视觉树、可视属性与脏标记，提供 Flex-only 基础布局策略。
 
 - 子节点增删、父子关系维护。
 - 事件分发支持捕获、目标、冒泡阶段。
@@ -44,7 +44,7 @@
 - `UIElement::measure()`：根据 intrinsic size 和显式 `desired_size` 计算元素所需尺寸，并缓存 `measured_size`。
 - `UIElement::hit_test()`：从视觉树递归查找最深命中子节点，支持 `hit_test_visible` 开关。
 - 脏标记：变更时自动向上级传播。
-- `LayoutManager`：支持 `Stack` / `Grid` / `Flex` 策略。
+- `LayoutManager`：仅保留 `Flex` 策略。
 
 ## FlexPanel
 
@@ -55,25 +55,9 @@
 - 子元素支持 `flex_grow`、`flex_shrink`、`flex_basis`、`order`、`align_self`。
 - `measure()` 负责 line 拆分和内容需求计算；`arrange()` 负责剩余空间解析和最终 bounds 分配。
 
-## GridPanel
+## 旧布局模块（已移除）
 
-职责：基于行列将子元素映射到矩形网格。
-
-- 支持行列设置。
-- 支持子元素单元格与跨度设置。
-- `measure()` 阶段根据 child 内容贡献计算列宽和行高。
-- `arrange()` 阶段在测量结果基础上分配剩余空间并写回每个子元素边界。
-
-## StackPanel
-
-职责：按方向堆叠子元素并支持间距与换行。
-
-- 当前实现已收敛为 `FlexPanel` 兼容适配层。
-- `Vertical`：按 Y 轴顺序排布。
-- `Horizontal`：按 X 轴排布，可在溢出时换行。
-- `measure()` 阶段负责累计主轴尺寸和交叉轴最大尺寸。
-- `arrange()` 阶段负责主轴空间分配，支持 grow/shrink 和交叉轴对齐。
-- 默认行为：容器填满父容器，交叉轴对子项做拉伸。
+职责：无。`GridPanel` / `StackPanel` 已从主库与构建中删除，仅保留历史文档痕迹用于说明架构收敛过程。
 
 ## 控件层
 
@@ -95,9 +79,13 @@
 - `ItemsControl`：支持列表项集合、选中索引、项间距、内部滚动偏移、可见范围计算与滚动条拖拽，可作为 `ScrollViewer` 内容源，默认按垂直堆叠布局呈现。
 - `ScrollViewer`：支持滚动偏移、惯性滚动与滚动条拖拽，默认不参与焦点轮转。
 - `CheckBox`：支持勾选态与选中样式。
+- `ToggleSwitch`：支持布尔开关、焦点态与变更回调。
 - `ComboBox`：支持数据项、选中索引与选中文本读取。
+- `RadioGroup`：支持分组选项、选中索引与前后切换。
 - `Slider`：支持范围和数值设置。
 - `Label`：轻量标签控件，用于状态文案和可访问名称承载。
+- `Badge`：支持 Primary/Success/Warning/Danger 等 tone。
+- `Divider`：支持横向/纵向分隔线。
 - `Progress`：支持范围、当前值、确定/不确定模式。
 - `Loading`：支持激活态、overlay 模式与状态文案。
 - `TabControl`：支持 tab 集合、选中索引和前后切换。
@@ -130,6 +118,8 @@
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
+	- 当前 caption 区由 render target 直接绘制，并通过 `WM_NCCALCSIZE/WM_NCHITTEST` 与 `WindowHost` 协同保留 DWM frame 特性。
+	- 控件渲染与命中以真实控件 bounds 为主，不再依赖 preview card 内部派生几何作为主布局来源。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
 	- demo 主内容区按纵向分区重排：标题区固定，表单区、列表区、滚动区依次堆叠，避免页面滚动内容覆盖标题。
 	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件，并在顶层顺序重绘以避免被遮挡。

@@ -49,6 +49,7 @@ public:
     [[nodiscard]] bool is_visible() const;
     [[nodiscard]] HWND hwnd() const;
     [[nodiscard]] bool dispatch_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result);
+    void refresh_frame();
 
 private:
     WindowConfig config_;

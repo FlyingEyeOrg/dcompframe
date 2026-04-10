@@ -7,7 +7,7 @@
 - 渲染层：`RenderManager`、`CompositionBridge`
 - 窗口层：`WindowHost`
 - UI 核心层：`UIElement`、`LayoutManager`
-- 布局层：`FlexPanel`、`StackPanel(兼容)`、`GridPanel(legacy)`
+- 布局层：`FlexPanel`
 - 控件层：`Panel`、`TextBlock`、`Image`、`Button`、`Card`、`Theme`
 - 动画层：`AnimationManager`
 - 工具辅助层：`ResourceManager`、`DeviceRecovery`、`DiagnosticsCenter`、`WindowRenderTarget`
@@ -104,10 +104,14 @@
 ## 10. 布局系统收敛策略
 
 - 布局系统以 `FlexPanel` 为唯一推荐容器模型。
-- `StackPanel` 仅作为兼容适配层保留。
-- `GridPanel` 仅作为历史兼容能力保留，不再作为后续页面布局首选。
+- `GridPanel` / `StackPanel` 已从主库与构建中移除，后续页面和示例禁止再依赖旧布局入口。
 - 面板容器默认填满父容器，减少显式尺寸配置负担。
-- `StackPanel` 交叉轴默认拉伸，主轴按子项期望尺寸堆叠，行为与 WPF 设计理念保持一致。
+
+## 10.1 自定义标题栏决策
+
+- 窗口标题栏走自定义 non-client 路径，但继续保留 DWM 的阴影、Snap、Resize 和系统 frame 行为。
+- `WindowRenderTarget` 负责 caption 区视觉和 caption 按钮命中；`WindowHost` 负责 DPI 感知窗口创建、frame 刷新和窗口状态切换。
+- `WM_NCCALCSIZE` / `WM_NCHITTEST` / `WM_DPICHANGED` 必须按官方 Win32/DWM 语义处理，避免出现高 DPI、最大化和 frame 刷新错误。
 
 ## 11. UI 需求基线约束
 
@@ -187,3 +191,9 @@
 - 命中测试统一通过 `UIElement::hit_test()` 从元素树最深可命中节点开始。
 - 窗口鼠标消息由 `InputManager` 负责映射为 capture -> target -> bubble 路由。
 - render target 不再直接绕过元素树向业务控件派发主点击事件。
+
+## 23. 真实边界渲染决策
+
+- `WindowRenderTarget` 不再维护“preview card 内二次推导布局”作为主几何来源。
+- `TabControl`、`Expander`、`Progress`、`Popup`、`Label`、`Badge` 等控件均应直接读取自己的真实 bounds 进行绘制和命中。
+- 页面级滚动只允许对真实 bounds 做统一偏移，不再重建一套独立的 demo overlay 坐标系。

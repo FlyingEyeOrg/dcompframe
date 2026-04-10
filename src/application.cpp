@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <filesystem>
 
+#include <windows.h>
+
 #include <fmt/core.h>
 
 namespace dcompframe {
@@ -16,6 +18,10 @@ bool Window::initialize(const AppConfig& config) {
         return false;
     }
 
+    host_.set_message_handler([this](UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result) {
+        return render_target_.handle_window_message(msg, wparam, lparam, result);
+    });
+
     if (!build(config)) {
         host_.destroy();
         return false;
@@ -27,11 +33,10 @@ bool Window::initialize(const AppConfig& config) {
         return false;
     }
 
-    host_.set_message_handler([this](UINT msg, WPARAM wparam, LPARAM lparam, LRESULT& result) {
-        return render_target_.handle_window_message(msg, wparam, lparam, result);
-    });
     host_.set_visible(true);
-    host_.apply_dpi(144);
+    if (host_.hwnd() != nullptr) {
+        host_.apply_dpi(GetDpiForWindow(host_.hwnd()));
+    }
     host_.request_render();
     return true;
 }
@@ -122,6 +127,8 @@ Application::~Application() {
 }
 
 bool Application::initialize(std::string config_path) {
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     const auto config_status = AppConfigLoader::load_from_file(config_path, config_);
     if (!config_status.ok()) {
         fmt::print("Config load warning: {}\n", config_status.message);

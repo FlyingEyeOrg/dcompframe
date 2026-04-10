@@ -1,5 +1,15 @@
 # 2026-04-10 分析补记
 
+## Flex-only + Custom Caption 分析（2026-04-10）
+
+- 本轮真正解决的不是“再修一次 demo 重叠”，而是把两个根因一起拆掉：
+	- 旧布局入口仍然存在，团队仍可能继续写 `Grid/Stack`。
+	- 渲染层仍维护一套 preview-card 派生几何，和真实控件边界脱节。
+- 删除 `GridPanel` / `StackPanel` 主路径后，布局约束终于统一到 `FlexPanel`；补上 `padding`、`min/max`、`space-evenly` 后，Flex 栈已经足以承接 demo 页面。
+- `WindowRenderTarget` 改为直接消费 `TabControl`、`Expander`、`Progress`、`Popup` 等控件的真实 bounds，意味着“控件在布局树里在哪里，就在那里绘制和命中”，不再依赖 card 内部数学推导。
+- 自定义标题栏的价值也不在样式，而在行为闭环：`WM_NCCALCSIZE`、`WM_NCHITTEST`、caption 按钮、Per-Monitor DPI 和 `SWP_FRAMECHANGED` 终于进入同一条链路。
+- 当前剩余风险已从“布局/命中模型分裂”下降为“后续新增复杂控件时是否继续坚持真实 bounds 驱动”，这是流程约束问题，不再是基础设施缺口。
+
 - 编译失败主因不是业务逻辑错误，而是 MSVC 并发编译下的 PDB 写入冲突，以及控件拆分过程中遗留的截断源文件。
 - 当前收口方案保留独立控件头提升可维护性，但仍以 `src/controls/controls.cpp` 作为唯一实现单元，避免半拆分状态继续扩散。
 - UI 风格层面明确区分两类职责：`GridPanel` / `StackPanel` / `Panel` 维持 WPF 容器语义，其余控件统一映射为 Element Plus 的浅色表单视觉系统。

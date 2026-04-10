@@ -2,6 +2,16 @@
 
 ## 已完成
 
+- 2026-04-10（Flex-only 收口 + 自定义 DWM 标题栏 + 常用控件补齐）
+  - 彻底移除旧布局代码：`GridPanel` / `StackPanel` 头文件与实现已从主库和构建目标删除，`LayoutManager` 收敛为 Flex-only。
+  - `FlexPanel` 补齐 `padding`、`min/max size`、`space-evenly`、更稳定的 wrap/line 分配逻辑，布局边界直接驱动 render/hit-test。
+  - `WindowHost` / `Application` 修复 DPI 与 frame 行为：启用 Per-Monitor V2，窗口创建使用 `AdjustWindowRectExForDpi`，`WM_DPICHANGED` 应用建议矩形，frame 刷新统一经 `SWP_FRAMECHANGED`。
+  - `WindowRenderTarget` 改为基于控件真实 bounds 绘制交互层，并新增自定义 DWM caption 区、caption 按钮命中、窗口拖拽与 resize hit-test。
+  - 新增常用控件：`ToggleSwitch`、`RadioGroup`、`Badge`、`Divider`，并全部接入 demo 与渲染层。
+  - `demo/main.cpp` 重写为更明确的 Flex 树：表单列、预览列、状态行、集合区全部独立持有控件边界，避免旧 preview card 内派生几何导致的遮挡。
+  - 测试与集成用例已同步 Flex-only 几何模型，验证页签点击、进度条按钮、滚动条轨道点击、wrap 与递归布局。
+  - 验证：`cmake --build --preset vs2022-x64-debug`、`ctest --preset vs2022-x64-debug-tests` 通过，结果 `57/57`。
+
 - 2026-04-10（FlexPanel + 命中测试路由 + Flexbox Only 规范）
   - 新增 `FlexPanel`，布局能力对齐 Web Flexbox：direction、wrap、grow、shrink、basis、gap、align/justify/content。
   - `UIElement` 新增 `flex_basis`、`order`、`align_self`、`hit_test_visible`、`contains_point()`、`hit_test()`。

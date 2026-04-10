@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "dcompframe/layout/flex_panel.h"
 #include "dcompframe/render_manager.h"
 #include "dcompframe/tools/window_render_target.h"
 #include "dcompframe/ui_element.h"
@@ -9,11 +10,11 @@
 
 namespace dcompframe::tests {
 
-TEST(LayoutManagerTests, StackStrategyAppliesSequentialBounds) {
+TEST(LayoutManagerTests, FlexStrategyAppliesSequentialBounds) {
     LayoutManager manager;
-    manager.set_strategy(LayoutStrategy::Stack);
+    manager.set_strategy(LayoutStrategy::Flex);
 
-    auto root = std::make_shared<UIElement>("root");
+    auto root = std::make_shared<FlexPanel>(FlexDirection::Column);
     auto child_a = std::make_shared<UIElement>("a");
     auto child_b = std::make_shared<UIElement>("b");
 

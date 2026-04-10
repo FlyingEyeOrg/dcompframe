@@ -107,16 +107,17 @@ Panel::Panel() : StyledElement("panel") {
 void Panel::arrange(const Size& available_size) {
     const Rect current_bounds = bounds();
     set_bounds(Rect {.x = current_bounds.x, .y = current_bounds.y, .width = available_size.width, .height = available_size.height});
+    const Thickness padding = this->padding();
     for (const auto& child : children()) {
         const Thickness margin = child->margin();
         const Size child_available {
-            .width = max_value(0.0F, available_size.width - margin.left - margin.right),
-            .height = max_value(0.0F, available_size.height - margin.top - margin.bottom),
+            .width = max_value(0.0F, available_size.width - padding.left - padding.right - margin.left - margin.right),
+            .height = max_value(0.0F, available_size.height - padding.top - padding.bottom - margin.top - margin.bottom),
         };
         child->measure(child_available);
         child->set_bounds(Rect {
-            .x = margin.left,
-            .y = margin.top,
+            .x = padding.left + margin.left,
+            .y = padding.top + margin.top,
             .width = child_available.width,
             .height = child_available.height,
         });
@@ -126,11 +127,16 @@ void Panel::arrange(const Size& available_size) {
 
 Size Panel::measure(const Size& available_size) {
     Size panel_size = UIElement::measure(available_size);
+    const Thickness padding = this->padding();
     for (const auto& child : children()) {
         const Thickness margin = child->margin();
-        const Size child_size = child->measure(available_size);
-        panel_size.width = max_value(panel_size.width, margin.left + child_size.width + margin.right);
-        panel_size.height = max_value(panel_size.height, margin.top + child_size.height + margin.bottom);
+        const Size child_available {
+            .width = max_value(0.0F, available_size.width - padding.left - padding.right - margin.left - margin.right),
+            .height = max_value(0.0F, available_size.height - padding.top - padding.bottom - margin.top - margin.bottom),
+        };
+        const Size child_size = child->measure(child_available);
+        panel_size.width = max_value(panel_size.width, padding.left + margin.left + child_size.width + margin.right + padding.right);
+        panel_size.height = max_value(panel_size.height, padding.top + margin.top + child_size.height + margin.bottom + padding.bottom);
     }
     set_measured_size(clamp_size_to_available(panel_size, available_size));
     return measured_size();
@@ -1257,6 +1263,147 @@ bool Slider::step_by(float delta_steps) {
 
 void Slider::set_on_value_changed(ValueChangedHandler handler) {
     on_value_changed_ = std::move(handler);
+}
+
+ToggleSwitch::ToggleSwitch() : StyledElement("toggle_switch") {
+    set_focusable(true);
+}
+
+void ToggleSwitch::set_checked(bool checked) {
+    if (checked_ == checked) {
+        return;
+    }
+
+    checked_ = checked;
+    set_state(checked_ ? ControlState::Selected : ControlState::Normal);
+    mark_dirty();
+    if (on_checked_changed_) {
+        on_checked_changed_(checked_);
+    }
+}
+
+bool ToggleSwitch::checked() const {
+    return checked_;
+}
+
+bool ToggleSwitch::toggle() {
+    set_checked(!checked_);
+    return checked_;
+}
+
+void ToggleSwitch::set_on_checked_changed(CheckedChangedHandler handler) {
+    on_checked_changed_ = std::move(handler);
+}
+
+RadioGroup::RadioGroup() : StyledElement("radio_group") {
+    set_focusable(true);
+    set_text_alignment(TextHorizontalAlignment::Left, TextVerticalAlignment::Center);
+}
+
+void RadioGroup::set_items(std::vector<std::string> items) {
+    items_ = std::move(items);
+    if (selected_index_ && *selected_index_ >= items_.size()) {
+        selected_index_.reset();
+    }
+    mark_dirty();
+    notify_selection_changed();
+}
+
+const std::vector<std::string>& RadioGroup::items() const {
+    return items_;
+}
+
+void RadioGroup::set_selected_index(std::size_t index) {
+    if (index < items_.size()) {
+        selected_index_ = index;
+    } else {
+        selected_index_.reset();
+    }
+    mark_dirty();
+    notify_selection_changed();
+}
+
+std::optional<std::size_t> RadioGroup::selected_index() const {
+    return selected_index_;
+}
+
+std::string RadioGroup::selected_text() const {
+    if (!selected_index_ || *selected_index_ >= items_.size()) {
+        return {};
+    }
+
+    return items_[*selected_index_];
+}
+
+bool RadioGroup::select_next() {
+    if (items_.empty()) {
+        return false;
+    }
+
+    const std::size_t next_index = selected_index_ ? ((*selected_index_ + 1U) % items_.size()) : 0U;
+    if (selected_index_ && *selected_index_ == next_index) {
+        return false;
+    }
+
+    set_selected_index(next_index);
+    return true;
+}
+
+bool RadioGroup::select_previous() {
+    if (items_.empty()) {
+        return false;
+    }
+
+    const std::size_t previous_index = selected_index_
+        ? ((*selected_index_ + items_.size() - 1U) % items_.size())
+        : 0U;
+    if (selected_index_ && *selected_index_ == previous_index) {
+        return false;
+    }
+
+    set_selected_index(previous_index);
+    return true;
+}
+
+void RadioGroup::set_on_selection_changed(SelectionChangedHandler handler) {
+    on_selection_changed_ = std::move(handler);
+}
+
+void RadioGroup::notify_selection_changed() {
+    if (on_selection_changed_) {
+        on_selection_changed_(selected_index_, selected_text());
+    }
+}
+
+Badge::Badge(std::string text) : StyledElement("badge"), text_(std::move(text)) {}
+
+void Badge::set_text(std::string text) {
+    text_ = std::move(text);
+    mark_dirty();
+}
+
+const std::string& Badge::text() const {
+    return text_;
+}
+
+void Badge::set_tone(BadgeTone tone) {
+    tone_ = tone;
+    mark_dirty();
+}
+
+BadgeTone Badge::tone() const {
+    return tone_;
+}
+
+Divider::Divider() : StyledElement("divider") {}
+
+void Divider::set_orientation(DividerOrientation orientation) {
+    orientation_ = orientation;
+    mark_dirty();
+}
+
+DividerOrientation Divider::orientation() const {
+    return orientation_;
 }
 
 Card::Card() : StyledElement("card") {}

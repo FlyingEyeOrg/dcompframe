@@ -36,6 +36,33 @@ bool is_reverse(FlexDirection direction) {
     return direction == FlexDirection::RowReverse || direction == FlexDirection::ColumnReverse;
 }
 
+float resolve_min_main(FlexDirection direction, const UIElement& child) {
+    return is_horizontal(direction) ? child.min_size().width : child.min_size().height;
+}
+
+float resolve_max_main(FlexDirection direction, const UIElement& child) {
+    return is_horizontal(direction) ? child.max_size().width : child.max_size().height;
+}
+
+float resolve_min_cross(FlexDirection direction, const UIElement& child) {
+    return is_horizontal(direction) ? child.min_size().height : child.min_size().width;
+}
+
+float resolve_max_cross(FlexDirection direction, const UIElement& child) {
+    return is_horizontal(direction) ? child.max_size().height : child.max_size().width;
+}
+
+float clamp_flex_dimension(float value, float min_value, float max_value) {
+    float result = std::max(0.0F, value);
+    if (min_value > 0.0F) {
+        result = std::max(result, min_value);
+    }
+    if (max_value >= 0.0F) {
+        result = std::min(result, max_value);
+    }
+    return result;
+}
+
 float main_extent(FlexDirection direction, const Size& size) {
     return is_horizontal(direction) ? size.width : size.height;
 }
@@ -116,8 +143,9 @@ FlexItemState measure_flex_item(
         .measured_size = measured_size,
     };
     item.base_main = child->has_flex_basis() ? child->flex_basis() : main_extent(direction, measured_size);
+    item.base_main = clamp_flex_dimension(item.base_main, resolve_min_main(direction, *child), resolve_max_main(direction, *child));
     item.target_main = item.base_main;
-    item.target_cross = cross_extent(direction, measured_size);
+    item.target_cross = clamp_flex_dimension(cross_extent(direction, measured_size), resolve_min_cross(direction, *child), resolve_max_cross(direction, *child));
     item.outer_base_main = leading_margin(direction, margin) + item.base_main + trailing_margin(direction, margin);
     item.outer_cross = cross_leading_margin(direction, margin) + item.target_cross + cross_trailing_margin(direction, margin);
     return item;
@@ -154,7 +182,15 @@ void resolve_line_flex(
             item.target_main = std::max(0.0F, item.base_main + free_space * (shrink_weight / total_shrink_weight));
         }
 
-        item.target_cross = cross_extent(direction, item.measured_size);
+        item.target_main = clamp_flex_dimension(
+            item.target_main,
+            resolve_min_main(direction, *item.child),
+            resolve_max_main(direction, *item.child));
+
+        item.target_cross = clamp_flex_dimension(
+            cross_extent(direction, item.measured_size),
+            resolve_min_cross(direction, *item.child),
+            resolve_max_cross(direction, *item.child));
         item.outer_cross = cross_leading_margin(direction, item.margin) + item.target_cross
             + cross_trailing_margin(direction, item.margin);
         line.used_main += leading_margin(direction, item.margin) + item.target_main
@@ -241,6 +277,8 @@ float compute_leading_space(FlexJustifyContent justify_content, float remaining_
         return 0.0F;
     case FlexJustifyContent::SpaceAround:
         return item_count > 0U ? (remaining_space / static_cast<float>(item_count)) * 0.5F : 0.0F;
+    case FlexJustifyContent::SpaceEvenly:
+        return item_count > 0U ? remaining_space / static_cast<float>(item_count + 1U) : 0.0F;
     }
 
     return 0.0F;
@@ -264,6 +302,8 @@ float compute_between_spacing(
         return item_count > 1U ? gap + remaining_space / static_cast<float>(item_count - 1U) : gap;
     case FlexJustifyContent::SpaceAround:
         return item_count > 0U ? gap + remaining_space / static_cast<float>(item_count) : gap;
+    case FlexJustifyContent::SpaceEvenly:
+        return item_count > 0U ? gap + remaining_space / static_cast<float>(item_count + 1U) : gap;
     }
 
     return gap;
@@ -286,6 +326,8 @@ float compute_cross_leading_space(FlexAlignContent align_content, float remainin
         return 0.0F;
     case FlexAlignContent::SpaceAround:
         return line_count > 0U ? (remaining_space / static_cast<float>(line_count)) * 0.5F : 0.0F;
+    case FlexAlignContent::SpaceEvenly:
+        return line_count > 0U ? remaining_space / static_cast<float>(line_count + 1U) : 0.0F;
     }
 
     return 0.0F;
@@ -310,6 +352,8 @@ float compute_cross_between_spacing(
         return line_count > 1U ? gap + remaining_space / static_cast<float>(line_count - 1U) : gap;
     case FlexAlignContent::SpaceAround:
         return line_count > 0U ? gap + remaining_space / static_cast<float>(line_count) : gap;
+    case FlexAlignContent::SpaceEvenly:
+        return line_count > 0U ? gap + remaining_space / static_cast<float>(line_count + 1U) : gap;
     }
 
     return gap;
@@ -395,8 +439,13 @@ float FlexPanel::column_gap() const {
 }
 
 Size FlexPanel::measure(const Size& available_size) {
-    const auto items = ordered_items(direction_, children(), available_size);
-    const auto lines = build_flex_lines(direction_, wrap_, items, available_size, main_gap(direction_, row_gap_, column_gap_));
+    const Thickness padding = this->padding();
+    const Size inner_available {
+        .width = std::max(0.0F, available_size.width - padding.left - padding.right),
+        .height = std::max(0.0F, available_size.height - padding.top - padding.bottom),
+    };
+    const auto items = ordered_items(direction_, children(), inner_available);
+    const auto lines = build_flex_lines(direction_, wrap_, items, inner_available, main_gap(direction_, row_gap_, column_gap_));
 
     float measured_main = 0.0F;
     float measured_cross = 0.0F;
@@ -409,7 +458,12 @@ Size FlexPanel::measure(const Size& available_size) {
         }
     }
 
-    const Size desired_size = apply_container_desired_size(*this, make_size(direction_, measured_main, measured_cross));
+    const Size desired_size = apply_container_desired_size(
+        *this,
+        make_size(
+            direction_,
+            measured_main + (is_horizontal(direction_) ? padding.left + padding.right : padding.top + padding.bottom),
+            measured_cross + (is_horizontal(direction_) ? padding.top + padding.bottom : padding.left + padding.right)));
     set_measured_size(clamp_size_to_available(desired_size, available_size));
     return measured_size();
 }
@@ -418,13 +472,18 @@ void FlexPanel::arrange(const Size& available_size) {
     const Rect current_bounds = bounds();
     set_bounds(Rect {.x = current_bounds.x, .y = current_bounds.y, .width = available_size.width, .height = available_size.height});
 
-    auto lines = build_flex_lines(direction_, wrap_, ordered_items(direction_, children(), available_size), available_size, main_gap(direction_, row_gap_, column_gap_));
+    const Thickness padding = this->padding();
+    const Size inner_available {
+        .width = std::max(0.0F, available_size.width - padding.left - padding.right),
+        .height = std::max(0.0F, available_size.height - padding.top - padding.bottom),
+    };
+    auto lines = build_flex_lines(direction_, wrap_, ordered_items(direction_, children(), inner_available), inner_available, main_gap(direction_, row_gap_, column_gap_));
     if (lines.empty()) {
         return;
     }
 
-    const float available_main = main_extent(direction_, available_size);
-    const float available_cross = cross_extent(direction_, available_size);
+    const float available_main = main_extent(direction_, inner_available);
+    const float available_cross = cross_extent(direction_, inner_available);
     const float line_gap = cross_gap(direction_, row_gap_, column_gap_);
 
     if (lines.size() == 1U && std::isfinite(available_cross)) {
@@ -482,6 +541,10 @@ void FlexPanel::arrange(const Size& available_size) {
             if (align_self == FlexAlignSelf::Stretch) {
                 arranged_cross = cross_available_for_item;
             }
+            arranged_cross = clamp_flex_dimension(
+                arranged_cross,
+                resolve_min_cross(direction_, *item.child),
+                resolve_max_cross(direction_, *item.child));
 
             float cross_offset = cross_leading_margin(direction_, item.margin);
             if (align_self == FlexAlignSelf::Center) {
@@ -502,8 +565,8 @@ void FlexPanel::arrange(const Size& available_size) {
             }
 
             const Size arranged_size = make_size(direction_, item.target_main, arranged_cross);
-            const float origin_x = is_horizontal(direction_) ? item_main_origin : line_cross_origin + cross_offset;
-            const float origin_y = is_horizontal(direction_) ? line_cross_origin + cross_offset : item_main_origin;
+            const float origin_x = (is_horizontal(direction_) ? item_main_origin : line_cross_origin + cross_offset) + padding.left;
+            const float origin_y = (is_horizontal(direction_) ? line_cross_origin + cross_offset : item_main_origin) + padding.top;
 
             item.child->set_bounds(Rect {
                 .x = origin_x,

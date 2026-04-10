@@ -11,8 +11,6 @@
 namespace dcompframe {
 
 enum class LayoutStrategy {
-    Stack,
-    Grid,
     Flex
 };
 
@@ -41,7 +39,8 @@ enum class FlexJustifyContent {
     End,
     Center,
     SpaceBetween,
-    SpaceAround
+    SpaceAround,
+    SpaceEvenly
 };
 
 enum class FlexAlignItems {
@@ -57,6 +56,7 @@ enum class FlexAlignContent {
     Center,
     SpaceBetween,
     SpaceAround,
+    SpaceEvenly,
     Stretch
 };
 
@@ -81,7 +81,7 @@ public:
     void apply_layout(const std::shared_ptr<class UIElement>& root, const Size& available_size) const;
 
 private:
-    LayoutStrategy strategy_ = LayoutStrategy::Grid;
+    LayoutStrategy strategy_ = LayoutStrategy::Flex;
 };
 
 class UIElement : public std::enable_shared_from_this<UIElement> {
@@ -129,6 +129,12 @@ public:
 
     void set_margin(const Thickness& margin);
     [[nodiscard]] Thickness margin() const;
+    void set_padding(const Thickness& padding);
+    [[nodiscard]] Thickness padding() const;
+    void set_min_size(const Size& min_size);
+    [[nodiscard]] Size min_size() const;
+    void set_max_size(const Size& max_size);
+    [[nodiscard]] Size max_size() const;
 
     void set_transform(float translate_x, float translate_y, float scale_x, float scale_y, float rotation_deg);
     [[nodiscard]] Point translation() const;
@@ -166,6 +172,9 @@ private:
     Size measured_size_ {};
     Rect clip_rect_ {};
     Thickness margin_ {};
+    Thickness padding_ {};
+    Size min_size_ {};
+    Size max_size_ {.width = -1.0F, .height = -1.0F};
     Point translation_ {};
     Point scale_ {1.0F, 1.0F};
     float rotation_deg_ = 0.0F;

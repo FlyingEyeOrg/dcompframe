@@ -173,3 +173,15 @@
 
 - 窗口 pointer 消息必须先命中元素树，再进入 capture -> target -> bubble 路由。
 - render target 不应绕过元素树直接向业务控件分发主点击逻辑。
+
+## 33. 自定义标题栏原则
+
+- 自定义标题栏不是单纯的绘制问题，必须同时覆盖 `WM_NCCALCSIZE`、`WM_NCHITTEST`、`WM_DPICHANGED` 和 frame 刷新路径。
+- caption 区视觉、caption 按钮命中和系统窗口状态切换必须保持一致，不能只做“看起来像标题栏”的半实现。
+- DWM 能力优先保留：阴影、Snap、最大化/还原、resize hit-test 不能因自定义 caption 被破坏。
+
+## 34. 真实边界驱动原则
+
+- render target 绘制和 hit-test 必须优先消费控件真实 bounds，而不是在渲染层重建另一套页面几何。
+- 页面级滚动只能作为真实 bounds 的统一偏移量，不得再次派生 preview-only 布局模型。
+- 当 demo 结构已经由 Flex 树表达时，渲染层不得再维护与之冲突的内部排版公式。
