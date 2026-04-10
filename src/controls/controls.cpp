@@ -502,6 +502,19 @@ bool RichTextBox::delete_forward() {
     return true;
 }
 
+void RichTextBox::set_scroll_offset(float scroll_offset) {
+    scroll_offset_ = max_value(0.0F, scroll_offset);
+    mark_dirty();
+}
+
+float RichTextBox::scroll_offset() const {
+    return scroll_offset_;
+}
+
+void RichTextBox::scroll_by(float delta) {
+    set_scroll_offset(scroll_offset_ + delta);
+}
+
 void RichTextBox::replace_selection_with(const std::string& replacement) {
     const auto [start, end] = selection();
     std::wstring wide = utf8_to_wstring(rich_text_);
@@ -665,9 +678,7 @@ std::pair<std::size_t, std::size_t> ItemsControl::visible_range(float scroll_off
     return {min_value(begin, items_.size()), end};
 }
 
-ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {
-    set_focusable(true);
-}
+ScrollViewer::ScrollViewer() : StyledElement("scroll_viewer") {}
 
 void ScrollViewer::set_scroll_offset(float x, float y) {
     offset_ = Point {.x = max_value(0.0F, x), .y = max_value(0.0F, y)};

@@ -124,6 +124,9 @@ TEST(ControlsTests, RichTextBoxSupportsEditingSelectionAndCaretMovement) {
     rich_text_box.move_caret_left();
     EXPECT_TRUE(rich_text_box.backspace());
     EXPECT_EQ(rich_text_box.rich_text(), "Line1\nBoy\nLine3");
+
+    rich_text_box.scroll_by(36.0F);
+    EXPECT_FLOAT_EQ(rich_text_box.scroll_offset(), 36.0F);
 }
 
 TEST(ControlsTests, ListViewAndItemsControlTrackScrollOffsets) {
@@ -137,6 +140,9 @@ TEST(ControlsTests, ListViewAndItemsControlTrackScrollOffsets) {
     items_control.set_item_spacing(4.0F);
     items_control.scroll_by(18.0F);
     EXPECT_FLOAT_EQ(items_control.scroll_offset(), 18.0F);
+
+    ScrollViewer scroll_viewer;
+    EXPECT_FALSE(scroll_viewer.is_focusable());
 
     const auto visible = items_control.visible_range(items_control.scroll_offset(), 56.0F, 24.0F);
     EXPECT_LE(visible.first, visible.second);

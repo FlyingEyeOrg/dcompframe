@@ -2,6 +2,28 @@
 
 ## 已完成
 
+- 2026-04-10（第四轮输入与滚动修复）
+  - Demo 根容器切换为 `GridPanel`，运行时按窗口客户区尺寸重新 `arrange()`，内容区与外层卡片一起铺满窗口。
+  - 重新收口 overlay 自适应布局：右列列表区与底部 `ScrollViewer` 分区不再互相遮挡，`ItemsControl` 不再被底部滚动区覆盖。
+  - `TextBox` 交互链路复验并保留可编辑行为，继续支持鼠标定位、选区、退格/删除、复制粘贴与双向绑定。
+  - `RichTextBox` 新增内部 `scroll_offset`、鼠标滚轮滚动、拖拽选区裁剪、caret 可见性自动跟随，以及 `Up/Down/PageUp/PageDown` 多行导航。
+  - `ScrollViewer` 取消焦点参与，不再因鼠标离开仍依赖焦点继续滚动；新增可拖拽滚动条 thumb。
+  - `ListView` 与 `ItemsControl` 补齐拖拽滚动条 thumb，滚轮和拖拽两条链路统一走内部偏移。
+  - 回归测试新增 `RichTextBox` 滚动偏移和 `ScrollViewer` 非 focusable 校验。
+  - 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_tests`、`ctest --preset vs2022-x64-debug-tests --output-on-failure`、`cmake --build --preset vs2022-x64-debug --target dcompframe_demo` 全部通过。
+
+- 2026-04-10（第三轮 UI 收口与交互修复）
+  - 视觉继续向 Element Plus 收敛：`Card`、`ListView`、`ItemsControl` 的边框、分区、留白与浅色层次进一步统一，保持 `GridPanel` / `StackPanel` / `Panel` 的 WPF 容器语义不变。
+  - Demo 自适应优化：`WindowRenderTarget::compute_layout()` 改为按窗口宽高动态分配卡片、表单区、列表区和滚动区高度，内容可随窗口尺寸拉伸铺满。
+  - 修复 `ComboBox` 弹层被后续控件遮挡：dropdown 在主内容裁剪结束后以顶层 overlay 顺序重新绘制，不再被兄弟控件覆盖。
+  - 修复 `ScrollViewer` 可视高度过低：底部滚动区重新分配剩余空间，Demo 中可稳定显示更长内容。
+  - 完成 `RichTextBox` 可编辑化：新增光标、选区、插入、删除、快捷键与回车换行编辑模型，并与 `TextBox` 保持一致的退格语义。
+  - `ListView` 默认支持内容溢出滚动：新增内部 `scroll_offset`，鼠标滚轮与点击选中均按视口偏移工作。
+  - `ItemsControl` 默认切换为类 `StackPanel` 垂直排布，并在内容溢出时启用内部滚动与轻量滚动条。
+  - 字体统一：DirectWrite 文本格式默认字体族切换为 `Microsoft YaHei`，提升中文界面一致性。
+  - 新增测试 `ControlsTests.RichTextBoxSupportsEditingSelectionAndCaretMovement` 与 `ControlsTests.ListViewAndItemsControlTrackScrollOffsets`。
+  - 验证：`ctest --preset vs2022-x64-debug-tests --output-on-failure` 全量通过，结果 `43/43`。
+
 - 2026-04-10（Element Plus 交互层第二轮收口）
   - `WindowRenderTarget` 重新整理为左右分栏表单布局：保留 `GridPanel` / `StackPanel` / `Panel` 的 WPF 容器语义，交互控件展示统一收敛到 Element Plus 风格。
   - 修复 `CheckBox` 右侧文案异常换行：单行标签改用显式 `DWRITE_WORD_WRAPPING_NO_WRAP` 与更宽文本区域，不再被右侧窄列挤压。

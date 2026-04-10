@@ -39,6 +39,10 @@ public:
     bool backspace();
     bool delete_forward();
 
+    void set_scroll_offset(float scroll_offset);
+    [[nodiscard]] float scroll_offset() const;
+    void scroll_by(float delta);
+
 private:
     void replace_selection_with(const std::string& replacement);
     void clamp_selection();
@@ -47,6 +51,7 @@ private:
     std::size_t selection_start_ = 0;
     std::size_t selection_end_ = 0;
     std::size_t caret_position_ = 0;
+    float scroll_offset_ = 0.0F;
 };
 
 }  // namespace dcompframe

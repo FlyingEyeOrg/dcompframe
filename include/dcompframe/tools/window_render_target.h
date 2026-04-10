@@ -19,6 +19,13 @@
 
 namespace dcompframe {
 
+enum class DragScrollTarget {
+    None,
+    ScrollViewer,
+    ListView,
+    ItemsControl,
+};
+
 class WindowRenderTarget {
 public:
     struct OverlayScene {
@@ -110,12 +117,18 @@ private:
     bool check_box_hovered_ = false;
     bool text_box_hovered_ = false;
     bool rich_text_box_hovered_ = false;
+    bool scroll_viewer_hovered_ = false;
+    bool list_view_hovered_ = false;
+    bool items_control_hovered_ = false;
     int hovered_item_index_ = -1;
     int hovered_combo_index_ = -1;
     int button_click_count_ = 0;
     std::size_t focused_control_index_ = 0;
     std::optional<std::size_t> pressed_combo_index_ {};
     unsigned long long caret_blink_seed_ = 0;
+    DragScrollTarget drag_scroll_target_ = DragScrollTarget::None;
+    float drag_scroll_anchor_y_ = 0.0F;
+    float drag_scroll_origin_offset_ = 0.0F;
 };
 
 }  // namespace dcompframe

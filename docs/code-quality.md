@@ -138,3 +138,17 @@
   - 发现：上一轮脚本拆分把控件实现也切碎，导致源文件不完整、`Warp`/回退文档与代码状态不一致、部分颜色 alpha 被误改为圆角半径值。
   - 修复：恢复单一 `controls.cpp` 实现，只保留独立控件头；移除 DX11 初始化中的 WARP 回退；修正 Element Plus 风格控件的边框、焦点、悬停、下拉面板与文本颜色；删除截断残留 `src/controls/card.cpp`；同步后端数量测试。
   - 结果：通过。代码路径更短，渲染行为与文档一致。
+
+- 2026-04-10（第三轮 UI 收口与交互修复）：
+  - 检查项：RichTextBox 编辑模型、ComboBox 顶层弹层顺序、ListView/ItemsControl 内部滚动、响应式布局空间分配、中文字体统一。
+  - 发现：`RichTextBox` 仅具备只读展示能力；`ComboBox` 弹层虽为 overlay 但仍可能被后续控件覆盖；列表类控件缺少独立滚动状态；底部滚动区高度固定导致内容展示不足。
+  - 修复：补齐 `RichTextBox` 光标/选区/插入删除模型；dropdown 改为 clip 结束后顶层重绘；为 `ListView`/`ItemsControl` 增加 `scroll_offset` 和视口滚动；重算表单/滚动区自适应高度；统一 DirectWrite 字体族为 `Microsoft YaHei`。
+  - 测试覆盖：新增 `RichTextBox` 编辑语义与 `ListView/ItemsControl` 滚动偏移测试；全量回归 `43/43` 通过。
+  - 结果：通过。未发现新增资源泄漏、输入链路断裂或性能退化迹象。
+
+- 2026-04-10（第四轮输入与滚动修复）：
+  - 检查项：Grid 根容器接入、ScrollViewer hover 滚轮约束、三类滚动条拖拽、RichTextBox 多行导航与裁剪。
+  - 发现：`ScrollViewer` 进入焦点循环导致离开区域后仍可滚动；`RichTextBox` 缺少视口偏移导致长文本编辑越界；`ListView`/`ItemsControl` 缺少 thumb 拖拽；demo 垂直分区按固定高度切分造成遮挡。
+  - 修复：demo 接入 `GridPanel` 根容器并按窗口尺寸实时 `arrange()`；移除 `ScrollViewer` focusable；补齐 `ScrollViewer`/`ListView`/`ItemsControl` thumb 命中和拖拽；为 `RichTextBox` 增加内部滚动、上下行导航、caret 可见性同步与选区裁剪。
+  - 测试覆盖：全量 `43/43` 通过，demo 目标构建通过。
+  - 结果：通过。行为更符合桌面 UI 预期，未发现新增编译、测试或所有权问题。

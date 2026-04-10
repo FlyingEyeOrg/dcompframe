@@ -64,10 +64,10 @@
 - `Button`：支持回调点击与禁用态。
 - `Card`：支持标题、正文、图标、标签与主操作按钮组合。
 - `TextBox`：支持占位文本、可观察字符串绑定、文本选择和输入法组合提交。
-- `RichTextBox`：富文本输入控件，默认左上对齐。
-- `ListView`：支持数据项、选中索引、分组与可视范围计算。
-- `ItemsControl`：支持列表项集合、选中索引、项间距和可见范围计算，可作为 `ScrollViewer` 内容源。
-- `ScrollViewer`：支持滚动偏移与惯性滚动。
+- `RichTextBox`：富文本输入控件，默认左上对齐，支持光标、选区、插入、删除、全选、上下行导航与内部滚动偏移。
+- `ListView`：支持数据项、选中索引、分组、内部滚动偏移、可视范围计算与滚动条拖拽。
+- `ItemsControl`：支持列表项集合、选中索引、项间距、内部滚动偏移、可见范围计算与滚动条拖拽，可作为 `ScrollViewer` 内容源，默认按垂直堆叠布局呈现。
+- `ScrollViewer`：支持滚动偏移、惯性滚动与滚动条拖拽，默认不参与焦点轮转。
 - `CheckBox`：支持勾选态与选中样式。
 - `ComboBox`：支持数据项、选中索引与选中文本读取。
 - `Slider`：支持范围和数值设置。
@@ -99,11 +99,15 @@
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
-	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件。
+	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件，并在顶层顺序重绘以避免被遮挡。
 	- 单行表单标签与值使用 no-wrap 文本格式，富文本说明区域使用独立 wrap 文本格式。
 	- `ScrollViewer` 通过 `ItemsControl::visible_range()` 仅绘制 viewport 内可见项，并绘制轻量滚动 thumb。
+	- `ListView` 与 `ItemsControl` 均支持内部滚动、视口裁剪与轻量滚动条；`ItemsControl` 默认以类 `StackPanel` 的纵向列表方式渲染。
+	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。
+	- `RichTextBox` 采用内部滚动偏移 + 视口裁剪，长文本选择与 caret 绘制不会越出富文本框边界。
 	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。
 	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。
+	- DirectWrite 默认字体族统一为 `Microsoft YaHei`，改善中文界面统一性。
 	- overlay 按钮支持 hover/press/toggle 交互，按钮文字基于完整按钮矩形居中绘制。
 	- checkbox/combobox/slider/scrollviewer 补齐专属视觉特征绘制。
 	- D2D 初始化失败或 `EndDraw()` 运行时失败时，返回显式错误并记录诊断。

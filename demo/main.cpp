@@ -11,6 +11,7 @@
 
 #include "dcompframe/config/app_config.h"
 #include "dcompframe/controls/controls.h"
+#include "dcompframe/layout/grid_panel.h"
 #include "dcompframe/render_manager.h"
 #include "dcompframe/tools/window_render_target.h"
 #include "dcompframe/window_host.h"
@@ -29,6 +30,7 @@ struct DemoWindow {
     dcompframe::WindowHost host;
     dcompframe::WindowRenderTarget render_target;
     dcompframe::BindingContext binding_context;
+    std::shared_ptr<dcompframe::GridPanel> root_grid = std::make_shared<dcompframe::GridPanel>(12, 2);
     std::shared_ptr<dcompframe::Button> primary_button = std::make_shared<dcompframe::Button>("新建窗口");
     std::shared_ptr<dcompframe::TextBox> text_box = std::make_shared<dcompframe::TextBox>();
     std::shared_ptr<dcompframe::RichTextBox> rich_text_box = std::make_shared<dcompframe::RichTextBox>();
@@ -222,6 +224,30 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     card->set_tags({"Preview", "Control", "Card"});
     card->set_primary_action(primary_button);
 
+    root_grid->set_rows_cols(12, 2);
+    root_grid->add_child(text_box);
+    root_grid->set_grid_position(text_box, {.row = 0, .col = 0});
+    root_grid->add_child(rich_text_box);
+    root_grid->set_grid_position(rich_text_box, {.row = 1, .col = 0, .row_span = 3});
+    root_grid->add_child(check_box);
+    root_grid->set_grid_position(check_box, {.row = 4, .col = 0});
+    root_grid->add_child(combo_box);
+    root_grid->set_grid_position(combo_box, {.row = 5, .col = 0});
+    root_grid->add_child(slider);
+    root_grid->set_grid_position(slider, {.row = 6, .col = 0});
+    root_grid->add_child(text_block);
+    root_grid->set_grid_position(text_block, {.row = 0, .col = 1});
+    root_grid->add_child(image);
+    root_grid->set_grid_position(image, {.row = 1, .col = 1, .row_span = 2});
+    root_grid->add_child(card);
+    root_grid->set_grid_position(card, {.row = 3, .col = 1, .row_span = 2});
+    root_grid->add_child(list_view);
+    root_grid->set_grid_position(list_view, {.row = 5, .col = 1, .row_span = 2});
+    root_grid->add_child(items_control);
+    root_grid->set_grid_position(items_control, {.row = 7, .col = 1, .row_span = 2});
+    root_grid->add_child(scroll_viewer);
+    root_grid->set_grid_position(scroll_viewer, {.row = 9, .col = 0, .row_span = 3, .col_span = 2});
+
     primary_button->set_on_click([this] {
         if (app != nullptr) {
             app->render_manager().diagnostics().log(dcompframe::LogLevel::Info, fmt::format("Create window requested from window {}", id));
@@ -301,6 +327,9 @@ bool DemoWindow::render_if_requested() {
     if (!host.consume_redraw_request()) {
         return false;
     }
+
+    const auto size = host.client_size();
+    root_grid->arrange(dcompframe::Size {.width = size.width, .height = size.height});
 
     return render_target.render_frame(true);
 }

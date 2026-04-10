@@ -44,6 +44,8 @@
 36. `ControlsTests.TextAlignmentDefaultsToCenterExceptRichTextBox`
 37. `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`
 38. `ControlsTests.ItemsControlStoresItemsSelectionAndVisibleRange`
+39. `ControlsTests.RichTextBoxSupportsEditingSelectionAndCaretMovement`
+40. `ControlsTests.ListViewAndItemsControlTrackScrollOffsets`
 
 ## 覆盖点
 
@@ -59,6 +61,8 @@
 - 可靠性：soak baseline、资源峰值巡检、配置缺失与损坏故障注入
 - 架构能力：可插拔后端清单、命令缓冲与批量 drain
 - Element Plus 交互回归：TextBox 输入、ComboBox overlay、ItemsControl 可见范围、ScrollViewer 内容模型与滚轮链路
+- 第三轮交互回归：RichTextBox 可编辑模型、ListView/ItemsControl 内部滚动、ComboBox 顶层弹层遮挡修复、微软雅黑字体切换后的文本布局稳定性
+- 第四轮交互回归：RichTextBox 内部滚动与上下行导航、ScrollViewer hover 限定滚轮、三类滚动条 thumb 拖拽、GridPanel 根容器下的 demo 自适应布局
 
 ## 最近结果
 
@@ -71,3 +75,5 @@
 - 后端回归：`RenderManagerTests.BackendRegistryAndCommandBatchingWork` 已按当前实现收口为 3 个显式后端（`Simulated` / `DirectX` / `DirectX12` 预留）。
 - 文本编辑回归：`RichTextBox` 的 `move_caret_left() + backspace()` 语义已与 `TextBox` 保持一致，当前测试按“删除光标左侧字符”校验。
 - 本次交互回归重点：验证 `ItemsControl`、`ScrollViewer` 内容模型、TextBox 标准 Win32 输入链路、ComboBox overlay 布局不回流。
+- 本次第三轮回归重点：验证 `RichTextBox` 编辑能力、`ListView/ItemsControl` 默认滚动、响应式布局下滚动区高度分配和弹层顶层绘制顺序。
+- 本次第四轮回归重点：验证 `ScrollViewer` 取消焦点后不会离开区域继续滚动、`RichTextBox` 选区被裁剪在视口内，以及 `ListView/ItemsControl` 拖拽滚动条语义不破坏既有滚轮行为。
