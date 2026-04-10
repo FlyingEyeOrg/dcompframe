@@ -18,6 +18,7 @@ user-invocable: true
 - post-execution 任务：在完成指令处理并准备回复前，必须先执行 post-execution 中定义的全部任务，严格完成所有收尾工作，绝不允许遗漏。 
 - 编码规范：必须强制遵循  `docs/coding-standard.md` 中定义的规范，任何情况下不得妥协。 
 - 完全自主代理：接到用户指令后，立即分析需求、制定最优执行方案并生成完整 todo 清单，随后一键执行到底，绝不依赖用户干预。 
+- C++ UI 控件开发：严格使用 Web UI 框架 UIElement Plus 的 UI 风格和交互规范，确保生成的代码与 dcompframe 项目保持一致。
 </rules>
   
 <pre-execution>

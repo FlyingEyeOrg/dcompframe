@@ -34,6 +34,7 @@ struct DemoWindow {
     std::shared_ptr<dcompframe::CheckBox> check_box = std::make_shared<dcompframe::CheckBox>();
     std::shared_ptr<dcompframe::ComboBox> combo_box = std::make_shared<dcompframe::ComboBox>();
     std::shared_ptr<dcompframe::Slider> slider = std::make_shared<dcompframe::Slider>();
+    std::shared_ptr<dcompframe::ScrollViewer> scroll_viewer = std::make_shared<dcompframe::ScrollViewer>();
     DemoApplication* app = nullptr;
     std::size_t id = 0;
 };
@@ -168,7 +169,7 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
     binding_context.title.set(fmt::format("Window {}", id));
 
     check_box->set_checked((id % 2U) == 1U);
-    combo_box->set_items({"Overview", "Diagnostics", "Editor", "Preview"});
+    combo_box->set_items({"Overview", "Diagnostics", "Editor", "Preview", "Settings", "Account", "Advanced Options"});
     combo_box->set_selected_index(id % combo_box->items().size());
     slider->set_range(0.0F, 100.0F);
     slider->set_step(5.0F);
@@ -215,6 +216,7 @@ bool DemoWindow::initialize(const dcompframe::AppConfig& config, DemoApplication
         .check_box = check_box,
         .combo_box = combo_box,
         .slider = slider,
+        .scroll_viewer = scroll_viewer,
     });
     render_target.set_primary_action_handler([application] {
         if (application != nullptr) {

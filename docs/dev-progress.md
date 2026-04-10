@@ -2,6 +2,13 @@
 
 ## 已完成
 
+- 2026-04-10（UIElement3 风格升级与交互优化）
+  - 优化按钮居中：在 draw_centered_text 内部显式临时设置 DWRITE_TEXT_ALIGNMENT_CENTER 解决水平与垂直方向未能完全绝对居中的问题。
+  - CheckBox UI 升级：改绘为 24x24 矩形块，应用 WinUI 3 风格的蓝底白钩  标志；同时更新文本起始偏移量（label_offset），避免文本与 CheckBox 钩子重合并提供更好的布局展示。
+  - ComboBox 体验优化：为下拉项增加额外的上下 margin 与内边距 padding，彻底改善原布局带来的拥挤挤推感；在 Demo 中新增“Settings”、“Account”等选项以展示更丰富内容。
+  - Slider 居中与展示：缩短并居中了滑动轨道的两端边距使其规避在最右端；为 Slider 数值提供右对齐锚点 DWRITE_TEXT_ALIGNMENT_TRAILING，解决了滑块与部分文本展示不居中重合的问题。
+  - ScrollViewer：将其补充为 InteractiveControls 可视控件中的一员并补充到底部渲染区域进行绘制展示。
+
 - 2026-04-10（真交互与多窗口落地）
   - 实现真实多窗口创建与调度：Demo 主程序升级为应用级控制器，支持通过点击按钮动态创建新窗口。
   - TextBox 真实交互：支持字符输入（WM_CHAR）、选区高亮、光标导航（Left/Right/Home/End 等）、快捷键复制粘贴剪切（Ctrl+C/V/X/A）及 Backspace/Delete 功能。
@@ -104,4 +111,5 @@
 
 - 增加设备丢失/恢复的 8h 长稳压测与统计报表自动归档。
 - 按 `docs/future-todo.md` 持续推进剩余 P3 增强事项。
+
 

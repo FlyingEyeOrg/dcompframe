@@ -32,6 +32,7 @@ public:
         std::shared_ptr<CheckBox> check_box;
         std::shared_ptr<ComboBox> combo_box;
         std::shared_ptr<Slider> slider;
+        std::shared_ptr<ScrollViewer> scroll_viewer;
     };
 
     WindowRenderTarget(RenderManager* render_manager, WindowHost* window_host);
