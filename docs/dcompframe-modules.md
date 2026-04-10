@@ -34,7 +34,7 @@
 - 事件分发支持捕获、目标、冒泡阶段。
 - 属性：边界、透明度、裁剪、边距、平移、缩放、旋转、焦点。
 - 脏标记：变更时自动向上级传播。
-- `LayoutManager`：支持 `Absolute` / `Stack` / `Grid` 策略。
+- `LayoutManager`：支持 `Stack` / `Grid` 策略。
 
 ## GridPanel
 
@@ -50,28 +50,33 @@
 
 - `Vertical`：按 Y 轴顺序排布。
 - `Horizontal`：按 X 轴排布，可在溢出时换行。
+- 默认行为：容器填满父容器，交叉轴对子项做拉伸。
 
 ## 控件层
 
 职责：提供可复用基础控件与卡片组件。
 
 - `Panel`：容器控件。
+- `Panel::arrange`：按可用区域安排子元素，默认拉伸填满。
 - `TextBlock`：文本控件。
 - `Image`：图像资源引用控件。
 - `Button`：支持回调点击与禁用态。
 - `Card`：支持标题、正文、图标、标签与主操作按钮组合。
 - `TextBox`：支持占位文本、可观察字符串绑定、文本选择和输入法组合提交。
+- `RichTextBox`：富文本输入控件，默认左上对齐。
 - `ListView`：支持数据项、选中索引、分组与可视范围计算。
 - `ScrollViewer`：支持滚动偏移与惯性滚动。
 - `CheckBox`：支持勾选态与选中样式。
+- `ComboBox`：支持数据项、选中索引与选中文本读取。
 - `Slider`：支持范围和数值设置。
+- 文本对齐：除 `RichTextBox` 外默认水平/垂直居中。
 
 ## 样式与主题
 
 职责：统一管理控件视觉风格。
 
 - `Style`：背景色、前景色、边框、圆角等。
-- `Theme`：按 key 解析样式并支持 fallback。
+- `Theme`：按 key 解析样式，缺失 key 时直接抛异常（开发阶段无 fallback）。
 
 ## 动画层
 
@@ -91,9 +96,11 @@
 - `WindowRenderTarget`：窗口与提交桥接，记录呈现帧数。
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
+	- 父容器内容区使用 D2D clip，子元素溢出时自动裁剪。
 	- 背景清屏色基于窗口尺寸计算，窗口缩放时背景呈现同步变化。
-	- overlay 按钮支持 hover/press/toggle 交互，列表区域支持逐项 hover 高亮。
-	- D2D 初始化失败或 `EndDraw()` 运行时失败时，使用 DX11.1 `ClearView` 绘制几何控件块兜底，保持控件可见。
+	- overlay 按钮支持 hover/press/toggle 交互，按钮文字基于完整按钮矩形居中绘制。
+	- checkbox/combobox/slider/scrollviewer 补齐专属视觉特征绘制。
+	- D2D 初始化失败或 `EndDraw()` 运行时失败时，返回显式错误并记录诊断。
 	- `render_frame` 执行清屏、`Present` 与 `IDCompositionDevice::Commit`。
 	- 设备丢失时通过 `DeviceRecovery` 触发恢复并重建渲染目标视图。
 

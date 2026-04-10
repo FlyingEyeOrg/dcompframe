@@ -14,16 +14,16 @@ void LayoutManager::apply_layout(const std::shared_ptr<UIElement>& root, const S
         return;
     }
 
+    root->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+
     switch (strategy_) {
-    case LayoutStrategy::Absolute:
-        root->set_bounds(Rect {.x = root->bounds().x, .y = root->bounds().y, .width = available_size.width, .height = available_size.height});
-        break;
     case LayoutStrategy::Stack: {
         float cursor_y = 0.0F;
         for (const auto& child : root->children()) {
             const auto desired = child->desired_size();
-            child->set_bounds(Rect {.x = 0.0F, .y = cursor_y, .width = desired.width, .height = desired.height});
-            cursor_y += desired.height;
+            const float child_height = desired.height > 0.0F ? desired.height : 0.0F;
+            child->set_bounds(Rect {.x = 0.0F, .y = cursor_y, .width = available_size.width, .height = child_height});
+            cursor_y += child_height;
         }
         break;
     }
@@ -51,8 +51,18 @@ bool UIElement::add_child(const Ptr& child) {
         return false;
     }
 
+    if (std::find(children_.begin(), children_.end(), child) != children_.end()) {
+        return false;
+    }
+
+    const auto existing_parent = child->parent();
+    if (existing_parent && existing_parent.get() != this) {
+        return false;
+    }
+
     children_.push_back(child);
     child->parent_ = shared_from_this();
+    mark_dirty();
     return true;
 }
 
@@ -64,6 +74,7 @@ bool UIElement::remove_child(const Ptr& child) {
 
     (*it)->parent_.reset();
     children_.erase(it);
+    mark_dirty();
     return true;
 }
 

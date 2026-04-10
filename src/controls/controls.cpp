@@ -25,7 +25,28 @@ ControlState StyledElement::state() const {
     return state_;
 }
 
+void StyledElement::set_text_alignment(TextHorizontalAlignment horizontal, TextVerticalAlignment vertical) {
+    text_horizontal_alignment_ = horizontal;
+    text_vertical_alignment_ = vertical;
+    mark_dirty();
+}
+
+TextHorizontalAlignment StyledElement::text_horizontal_alignment() const {
+    return text_horizontal_alignment_;
+}
+
+TextVerticalAlignment StyledElement::text_vertical_alignment() const {
+    return text_vertical_alignment_;
+}
+
 Panel::Panel() : StyledElement("panel") {}
+
+void Panel::arrange(const Size& available_size) {
+    set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+    for (const auto& child : children()) {
+        child->set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+    }
+}
 
 TextBlock::TextBlock(std::string text) : StyledElement("text_block"), text_(std::move(text)) {}
 
@@ -159,6 +180,20 @@ void TextBox::bind_text(Observable<std::string>& observable) {
     set_text(observable.get());
 }
 
+RichTextBox::RichTextBox() : StyledElement("rich_text_box") {
+    set_focusable(true);
+    set_text_alignment(TextHorizontalAlignment::Left, TextVerticalAlignment::Top);
+}
+
+void RichTextBox::set_rich_text(std::string rich_text) {
+    rich_text_ = std::move(rich_text);
+    mark_dirty();
+}
+
+const std::string& RichTextBox::rich_text() const {
+    return rich_text_;
+}
+
 ListView::ListView() : StyledElement("list_view") {
     set_focusable(true);
 }
@@ -267,6 +302,42 @@ void CheckBox::set_checked(bool checked) {
 
 bool CheckBox::checked() const {
     return checked_;
+}
+
+ComboBox::ComboBox() : StyledElement("combo_box") {
+    set_focusable(true);
+}
+
+void ComboBox::set_items(std::vector<std::string> items) {
+    items_ = std::move(items);
+    if (selected_index_ && *selected_index_ >= items_.size()) {
+        selected_index_.reset();
+    }
+    mark_dirty();
+}
+
+const std::vector<std::string>& ComboBox::items() const {
+    return items_;
+}
+
+void ComboBox::set_selected_index(std::size_t index) {
+    if (index < items_.size()) {
+        selected_index_ = index;
+    } else {
+        selected_index_.reset();
+    }
+    mark_dirty();
+}
+
+std::optional<std::size_t> ComboBox::selected_index() const {
+    return selected_index_;
+}
+
+std::string ComboBox::selected_text() const {
+    if (!selected_index_ || *selected_index_ >= items_.size()) {
+        return {};
+    }
+    return items_[*selected_index_];
 }
 
 Slider::Slider() : StyledElement("slider") {

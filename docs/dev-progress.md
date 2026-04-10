@@ -2,6 +2,47 @@
 
 ## 已完成
 
+- 2026-04-10（渲染修复补丁）
+  - 修复容器溢出显示：overlay 卡片内容区增加裁剪，子元素超出父容器时不再外溢显示。
+  - 修复按钮文字未居中：按钮文本改为使用完整按钮矩形进行水平/垂直居中绘制。
+  - 增强控件可视特征：为 `CheckBox`、`ComboBox`、`Slider`、`ScrollViewer` 补齐专属 glyph/轨道/箭头/滚动条视觉。
+  - 回归验证：x64 Debug 测试 `37/37` 全部通过。
+
+- 2026-04-10（补丁）
+  - 修复“程序打开后直接退出”问题：当首选 DirectX 后端初始化失败时，demo 自动降级到 Simulated 后端继续运行。
+  - 对齐 Panel 布局语义：新增 `Panel::arrange`，默认让容器与其子元素填满可用区域，行为贴近 WPF Panel 容器用法。
+  - 新增测试 `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`。
+  - 回归验证：x64 Debug 测试 `37/37` 全部通过。
+
+- 2026-04-10（本次迭代）
+  - 移除开发阶段兜底逻辑：
+    - 移除 `RenderManager::initialize_with_backend(DirectX)` 的自动 WARP 降级。
+    - 移除 demo 中 DirectX 失败自动回退到 Simulated 的逻辑。
+    - 移除 `WindowRenderTarget` 的 DX11 几何 fallback 绘制，D2D 不可用/绘制失败改为显式失败。
+    - `Theme::resolve` 去除 fallback 参数，缺失样式 key 直接抛异常。
+  - 多窗口支持增强：
+    - `WindowHost` 改为按窗口计数控制 `PostQuitMessage`，仅最后一个窗口销毁时退出消息循环。
+    - 修复 DPI 消息读取错误（`WM_DPICHANGED` 使用 `LOWORD(wParam)`）。
+    - 修复窗口创建后 client size 初始化误差（改为 `GetClientRect`）。
+  - 布局系统收敛与容器行为更新：
+    - 布局系统仅保留 `Grid/Stack` 策略，移除 `Absolute`。
+    - `GridPanel`/`StackPanel` 默认填满父容器。
+    - `StackPanel` 在交叉轴默认拉伸子项（更接近 WPF StackPanel 体验）。
+  - 控件能力增强：
+    - 新增 `ComboBox`。
+    - 新增 `RichTextBox`，并作为“非居中”例外。
+    - `StyledElement` 新增文本水平/垂直对齐属性，默认居中。
+  - 文本对齐策略落地：
+    - 默认控件文本居中（水平+垂直）。
+    - `RichTextBox` 默认左上对齐。
+    - `WindowRenderTarget` 的 `DirectWrite TextFormat` 设置为居中对齐。
+  - 隐患 bug 修复：
+    - 修复 `UIElement::add_child` 重复挂载与跨父节点挂载隐患。
+    - `add_child/remove_child` 触发脏标记，避免布局或状态更新丢帧。
+  - 测试新增与回归：
+    - 新增 3 个测试（多窗口退出安全、ComboBox、文本对齐规则）。
+    - 全量测试通过：`36/36`（x64 Debug）。
+
 - 工程基础：完成 CMake + vcpkg + C++20 工程化配置。
 - 渲染层：
   - `RenderManager` 支持 `Simulated` / `DirectX` / `Warp` 后端初始化入口，并预留 `DirectX12` 插件位。

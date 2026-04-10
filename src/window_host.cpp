@@ -1,10 +1,13 @@
 #include "dcompframe/window_host.h"
 
+#include <atomic>
 #include <string>
 
 namespace dcompframe {
 
 namespace {
+
+std::atomic<int> g_window_count = 0;
 
 LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     auto* self = reinterpret_cast<WindowHost*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -20,7 +23,7 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             self->on_size_changed(LOWORD(lparam), HIWORD(lparam));
             return 0;
         case WM_DPICHANGED:
-            self->apply_dpi(HIWORD(wparam));
+            self->apply_dpi(LOWORD(wparam));
             return 0;
         case WM_MOUSEMOVE:
         case WM_LBUTTONDOWN:
@@ -31,8 +34,15 @@ LRESULT CALLBACK DCompFrameWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             DestroyWindow(hwnd);
             return 0;
         case WM_DESTROY:
-            PostQuitMessage(0);
             return 0;
+        case WM_NCDESTROY: {
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+            const int remained = --g_window_count;
+            if (remained <= 0) {
+                PostQuitMessage(0);
+            }
+            return 0;
+        }
         default:
             break;
         }
@@ -89,8 +99,14 @@ bool WindowHost::create(std::wstring title, int width, int height) {
         return false;
     }
 
+    ++g_window_count;
     created_ = true;
-    on_size_changed(width, height);
+    RECT client_rect {};
+    if (GetClientRect(hwnd_, &client_rect)) {
+        on_size_changed(client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
+    } else {
+        on_size_changed(width, height);
+    }
     return true;
 }
 

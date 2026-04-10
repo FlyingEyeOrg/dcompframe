@@ -29,7 +29,7 @@ public:
     static Theme make_brand();
 
     void set_style(std::string key, Style style);
-    [[nodiscard]] Style resolve(const std::string& key, const Style& fallback = {}) const;
+    [[nodiscard]] Style resolve(const std::string& key) const;
 
     void set_active_palette(std::string palette_name);
     [[nodiscard]] const std::string& active_palette() const;

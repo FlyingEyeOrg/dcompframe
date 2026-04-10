@@ -38,7 +38,6 @@ private:
     bool recreate_render_target_view();
     bool initialize_d2d_overlay();
     bool recreate_d2d_target();
-    void draw_dx11_overlay_fallback(float width, float height);
     void cleanup_dx11_dcomp_target();
 
     RenderManager* render_manager_ = nullptr;

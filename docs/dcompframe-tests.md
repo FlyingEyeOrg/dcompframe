@@ -26,19 +26,23 @@
 18. `LayoutManagerTests.StackStrategyAppliesSequentialBounds`
 19. `WindowRenderTargetTests.InitializeAndPresentFrames`
 20. `WindowHostTests.MessageLoopExitsWhenQuitPosted`
-21. `ThemeTests.BuiltinPalettesWork`
-22. `BindingTests.CardAndTextBoxBindingsUpdateState`
-23. `ControlExtensionTests.AdditionalControlsStoreAndExposeState`
-24. `InputManagerTests.FocusDoubleClickAndDragAreHandled`
-25. `ConfigTests.JsonConfigCanBeLoaded`
-26. `DiagnosticsTests.ExportReportAndMetricsWork`
-27. `IntegrationTests.WindowRenderAnimationAndInputFlow`
-28. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
-29. `ReliabilityTests.SoakBaselineLoopMaintainsConsistency`
-30. `ReliabilityTests.ResourcePeakPatrolStaysBoundedAfterReleaseCycles`
-31. `ReliabilityTests.FaultInjectionCoversDeviceLostConfigMissingAndCorruptJson`
-32. `TextBoxTests.CompositionAndSelectionWorkflow`
-33. `RenderManagerTests.BackendRegistryAndCommandBatchingWork`
+21. `WindowHostTests.DestroySingleWindowDoesNotQuitWhenOtherWindowAlive`
+22. `ThemeTests.BuiltinPalettesWork`
+23. `BindingTests.CardAndTextBoxBindingsUpdateState`
+24. `ControlExtensionTests.AdditionalControlsStoreAndExposeState`
+25. `InputManagerTests.FocusDoubleClickAndDragAreHandled`
+26. `ConfigTests.JsonConfigCanBeLoaded`
+27. `DiagnosticsTests.ExportReportAndMetricsWork`
+28. `IntegrationTests.WindowRenderAnimationAndInputFlow`
+29. `IntegrationTests.DeviceLossRecoveryStressLoopRemainsStable`
+30. `ReliabilityTests.SoakBaselineLoopMaintainsConsistency`
+31. `ReliabilityTests.ResourcePeakPatrolStaysBoundedAfterReleaseCycles`
+32. `ReliabilityTests.FaultInjectionCoversDeviceLostConfigMissingAndCorruptJson`
+33. `TextBoxTests.CompositionAndSelectionWorkflow`
+34. `RenderManagerTests.BackendRegistryAndCommandBatchingWork`
+35. `ControlsTests.ComboBoxStoresItemsAndSelectedText`
+36. `ControlsTests.TextAlignmentDefaultsToCenterExceptRichTextBox`
+37. `ControlsTests.PanelArrangeStretchesChildrenToAvailableSize`
 
 ## 覆盖点
 
@@ -57,7 +61,7 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：33/33 通过
-- 补充验证：`ctest --preset vs2022-x86-debug-tests`，33/33 通过
+- 结果：37/37 通过
+- 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。

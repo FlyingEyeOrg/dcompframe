@@ -11,7 +11,6 @@
 namespace dcompframe {
 
 enum class LayoutStrategy {
-    Absolute,
     Stack,
     Grid
 };
@@ -29,7 +28,7 @@ public:
     void apply_layout(const std::shared_ptr<class UIElement>& root, const Size& available_size) const;
 
 private:
-    LayoutStrategy strategy_ = LayoutStrategy::Absolute;
+    LayoutStrategy strategy_ = LayoutStrategy::Grid;
 };
 
 class UIElement : public std::enable_shared_from_this<UIElement> {

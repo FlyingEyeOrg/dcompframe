@@ -70,6 +70,11 @@ TEST(ControlExtensionTests, AdditionalControlsStoreAndExposeState) {
     EXPECT_TRUE(check.checked());
     EXPECT_EQ(check.state(), ControlState::Selected);
 
+    ComboBox combo;
+    combo.set_items({"Overview", "Diagnostics", "Settings"});
+    combo.set_selected_index(2);
+    EXPECT_EQ(combo.selected_text(), "Settings");
+
     Slider slider;
     slider.set_range(0.0F, 1.0F);
     slider.set_value(3.5F);

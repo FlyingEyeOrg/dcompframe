@@ -14,6 +14,8 @@ void StackPanel::set_wrap_enabled(bool enabled) {
 }
 
 void StackPanel::arrange(const Size& available_size) {
+    set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+
     float cursor_x = 0.0F;
     float cursor_y = 0.0F;
     float line_max_extent = 0.0F;
@@ -22,8 +24,9 @@ void StackPanel::arrange(const Size& available_size) {
         const Size desired = child->desired_size();
 
         if (orientation_ == Orientation::Vertical) {
-            child->set_bounds(Rect {.x = 0.0F, .y = cursor_y, .width = desired.width, .height = desired.height});
-            cursor_y += desired.height + spacing_;
+            const float child_height = desired.height > 0.0F ? desired.height : 0.0F;
+            child->set_bounds(Rect {.x = 0.0F, .y = cursor_y, .width = available_size.width, .height = child_height});
+            cursor_y += child_height + spacing_;
             continue;
         }
 
@@ -33,10 +36,11 @@ void StackPanel::arrange(const Size& available_size) {
             line_max_extent = 0.0F;
         }
 
-        child->set_bounds(Rect {.x = cursor_x, .y = cursor_y, .width = desired.width, .height = desired.height});
-        cursor_x += desired.width + spacing_;
-        if (desired.height > line_max_extent) {
-            line_max_extent = desired.height;
+        const float child_width = desired.width > 0.0F ? desired.width : 0.0F;
+        child->set_bounds(Rect {.x = cursor_x, .y = cursor_y, .width = child_width, .height = available_size.height});
+        cursor_x += child_width + spacing_;
+        if (available_size.height > line_max_extent) {
+            line_max_extent = available_size.height;
         }
     }
 }

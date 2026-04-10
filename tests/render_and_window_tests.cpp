@@ -125,4 +125,20 @@ TEST(WindowHostTests, MessageLoopExitsWhenQuitPosted) {
     host.destroy();
 }
 
+TEST(WindowHostTests, DestroySingleWindowDoesNotQuitWhenOtherWindowAlive) {
+    WindowHost first;
+    WindowHost second;
+
+    ASSERT_TRUE(first.create(L"FirstWindow", 320, 240));
+    ASSERT_TRUE(second.create(L"SecondWindow", 320, 240));
+
+    first.destroy();
+
+    second.request_render();
+    const int rendered = second.run_message_loop([] { return true; }, 1);
+    EXPECT_EQ(rendered, 1);
+
+    second.destroy();
+}
+
 }  // namespace dcompframe::tests

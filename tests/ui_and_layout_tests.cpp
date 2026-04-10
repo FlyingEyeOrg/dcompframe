@@ -102,12 +102,12 @@ TEST(StackPanelTests, VerticalArrangeRespectsSpacing) {
 
     EXPECT_FLOAT_EQ(a_rect.x, 0.0F);
     EXPECT_FLOAT_EQ(a_rect.y, 0.0F);
-    EXPECT_FLOAT_EQ(a_rect.width, 40.0F);
+    EXPECT_FLOAT_EQ(a_rect.width, 200.0F);
     EXPECT_FLOAT_EQ(a_rect.height, 20.0F);
 
     EXPECT_FLOAT_EQ(b_rect.x, 0.0F);
     EXPECT_FLOAT_EQ(b_rect.y, 30.0F);
-    EXPECT_FLOAT_EQ(b_rect.width, 80.0F);
+    EXPECT_FLOAT_EQ(b_rect.width, 200.0F);
     EXPECT_FLOAT_EQ(b_rect.height, 30.0F);
 }
 
@@ -132,9 +132,11 @@ TEST(StackPanelTests, HorizontalArrangeWrapsWhenEnabled) {
 
     EXPECT_FLOAT_EQ(a_rect.x, 0.0F);
     EXPECT_FLOAT_EQ(a_rect.y, 0.0F);
+    EXPECT_FLOAT_EQ(a_rect.height, 200.0F);
 
     EXPECT_FLOAT_EQ(b_rect.x, 0.0F);
-    EXPECT_FLOAT_EQ(b_rect.y, 25.0F);
+    EXPECT_FLOAT_EQ(b_rect.y, 205.0F);
+    EXPECT_FLOAT_EQ(b_rect.height, 200.0F);
 }
 
 }  // namespace dcompframe::tests

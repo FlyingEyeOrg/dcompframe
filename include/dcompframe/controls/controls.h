@@ -21,6 +21,18 @@ enum class ControlState {
     Selected
 };
 
+enum class TextHorizontalAlignment {
+    Left,
+    Center,
+    Right
+};
+
+enum class TextVerticalAlignment {
+    Top,
+    Center,
+    Bottom
+};
+
 class StyledElement : public UIElement {
 public:
     explicit StyledElement(std::string name);
@@ -31,14 +43,22 @@ public:
     void set_state(ControlState state);
     [[nodiscard]] ControlState state() const;
 
+    void set_text_alignment(TextHorizontalAlignment horizontal, TextVerticalAlignment vertical);
+    [[nodiscard]] TextHorizontalAlignment text_horizontal_alignment() const;
+    [[nodiscard]] TextVerticalAlignment text_vertical_alignment() const;
+
 private:
     Style style_ {};
     ControlState state_ = ControlState::Normal;
+    TextHorizontalAlignment text_horizontal_alignment_ = TextHorizontalAlignment::Center;
+    TextVerticalAlignment text_vertical_alignment_ = TextVerticalAlignment::Center;
 };
 
 class Panel : public StyledElement {
 public:
     Panel();
+
+    void arrange(const Size& available_size);
 };
 
 class TextBlock : public StyledElement {
@@ -108,6 +128,17 @@ private:
     int text_binding_id_ = 0;
 };
 
+class RichTextBox : public StyledElement {
+public:
+    RichTextBox();
+
+    void set_rich_text(std::string rich_text);
+    [[nodiscard]] const std::string& rich_text() const;
+
+private:
+    std::string rich_text_;
+};
+
 struct ListGroup {
     std::string name;
     std::vector<std::string> items;
@@ -156,6 +187,22 @@ public:
 
 private:
     bool checked_ = false;
+};
+
+class ComboBox : public StyledElement {
+public:
+    ComboBox();
+
+    void set_items(std::vector<std::string> items);
+    [[nodiscard]] const std::vector<std::string>& items() const;
+
+    void set_selected_index(std::size_t index);
+    [[nodiscard]] std::optional<std::size_t> selected_index() const;
+    [[nodiscard]] std::string selected_text() const;
+
+private:
+    std::vector<std::string> items_;
+    std::optional<std::size_t> selected_index_ {};
 };
 
 class Slider : public StyledElement {

@@ -28,14 +28,9 @@ int main() {
     dcompframe::RenderManager render_manager;
     const auto backend = config.use_directx_backend ? dcompframe::RenderBackend::DirectX : dcompframe::RenderBackend::Simulated;
     if (!render_manager.initialize_with_backend(backend)) {
-        if (backend == dcompframe::RenderBackend::DirectX) {
-            fmt::print("DirectX backend init failed. Fallback to simulated backend.\n");
-            if (!render_manager.initialize_with_backend(dcompframe::RenderBackend::Simulated)) {
-                fmt::print("RenderManager fallback initialization failed.\n");
-                return 1;
-            }
-        } else {
-            fmt::print("RenderManager initialization failed.\n");
+        fmt::print("RenderManager initialization failed for backend={}, fallback to Simulated.\n", static_cast<int>(backend));
+        if (!render_manager.initialize_with_backend(dcompframe::RenderBackend::Simulated)) {
+            fmt::print("RenderManager initialization failed for Simulated backend.\n");
             return 1;
         }
     }
@@ -95,6 +90,10 @@ int main() {
     auto check_box = std::make_shared<dcompframe::CheckBox>();
     check_box->set_checked(true);
 
+    auto combo_box = std::make_shared<dcompframe::ComboBox>();
+    combo_box->set_items({"Overview", "Diagnostics", "Settings", "About"});
+    combo_box->set_selected_index(1);
+
     auto slider = std::make_shared<dcompframe::Slider>();
     slider->set_range(0.0F, 1.0F);
     slider->set_value(0.75F);
@@ -109,6 +108,7 @@ int main() {
     stack->add_child(text_box);
     stack->add_child(list_view);
     stack->add_child(check_box);
+    stack->add_child(combo_box);
     stack->add_child(slider);
     stack->add_child(scroll_viewer);
     stack->arrange(dcompframe::Size {.width = 420.0F, .height = 380.0F});
@@ -183,6 +183,7 @@ int main() {
             L"TextBox: DCompFrame Bound Title",
             L"ListView: Overview, Diagnostics, Settings, About",
             L"CheckBox: checked",
+            L"ComboBox: Diagnostics",
             L"Slider: value=0.75",
             L"ScrollViewer: offset=(16,48)",
         },

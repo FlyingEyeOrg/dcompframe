@@ -295,12 +295,6 @@ bool RenderManager::initialize_with_backend(RenderBackend backend) {
         if (FAILED(d3d_hr) && (create_flags & D3D11_CREATE_DEVICE_DEBUG) != 0U) {
             d3d_hr = create_device(D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
         }
-        if (FAILED(d3d_hr)) {
-            d3d_hr = create_device(D3D_DRIVER_TYPE_WARP, D3D11_CREATE_DEVICE_BGRA_SUPPORT);
-            if (SUCCEEDED(d3d_hr)) {
-                backend_ = RenderBackend::Warp;
-            }
-        }
     }
 
     if (raw_context != nullptr) {

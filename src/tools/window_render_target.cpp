@@ -3,7 +3,6 @@
 #include <d2d1helper.h>
 #include <dxgi.h>
 #include <iterator>
-#include <array>
 #include <algorithm>
 #include <cstdio>
 #include <string>
@@ -27,6 +26,76 @@ std::string hr_to_string(HRESULT hr) {
     char buffer[32] {};
     std::snprintf(buffer, sizeof(buffer), "0x%08X", static_cast<unsigned int>(hr));
     return std::string(buffer);
+}
+
+D2D1_RECT_F inset_rect(const D2D1_RECT_F& rect, float inset_x, float inset_y) {
+    return D2D1::RectF(rect.left + inset_x, rect.top + inset_y, rect.right - inset_x, rect.bottom - inset_y);
+}
+
+void draw_centered_text(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    IDWriteTextFormat* format,
+    const std::wstring& text,
+    const D2D1_RECT_F& rect) {
+    if (context == nullptr || brush == nullptr || format == nullptr || text.empty()) {
+        return;
+    }
+
+    context->DrawText(
+        text.c_str(),
+        static_cast<UINT32>(text.size()),
+        format,
+        rect,
+        brush);
+}
+
+void draw_checkbox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, bool checked) {
+    const D2D1_RECT_F box = D2D1::RectF(rect.left + 16.0F, rect.top + 10.0F, rect.left + 40.0F, rect.bottom - 10.0F);
+    brush->SetColor(D2D1::ColorF(0.13F, 0.18F, 0.28F, 1.0F));
+    context->FillRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush);
+    brush->SetColor(D2D1::ColorF(0.70F, 0.82F, 1.0F, 1.0F));
+    context->DrawRoundedRectangle(D2D1::RoundedRect(box, 4.0F, 4.0F), brush, 1.5F);
+
+    if (checked) {
+        brush->SetColor(D2D1::ColorF(0.12F, 0.90F, 0.68F, 1.0F));
+        context->DrawLine(D2D1::Point2F(box.left + 5.0F, box.top + 9.0F), D2D1::Point2F(box.left + 10.0F, box.bottom - 6.0F), brush, 2.5F);
+        context->DrawLine(D2D1::Point2F(box.left + 10.0F, box.bottom - 6.0F), D2D1::Point2F(box.right - 5.0F, box.top + 5.0F), brush, 2.5F);
+    }
+}
+
+void draw_combobox_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect) {
+    const float center_x = rect.right - 28.0F;
+    const float center_y = (rect.top + rect.bottom) * 0.5F;
+    brush->SetColor(D2D1::ColorF(0.72F, 0.82F, 1.0F, 1.0F));
+    context->DrawLine(D2D1::Point2F(center_x - 6.0F, center_y - 3.0F), D2D1::Point2F(center_x, center_y + 3.0F), brush, 2.0F);
+    context->DrawLine(D2D1::Point2F(center_x, center_y + 3.0F), D2D1::Point2F(center_x + 6.0F, center_y - 3.0F), brush, 2.0F);
+}
+
+void draw_slider_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, float value) {
+    const float track_left = rect.left + 18.0F;
+    const float track_right = rect.right - 18.0F;
+    const float center_y = (rect.top + rect.bottom) * 0.5F;
+    const float thumb_x = track_left + (track_right - track_left) * std::clamp(value, 0.0F, 1.0F);
+
+    brush->SetColor(D2D1::ColorF(0.18F, 0.24F, 0.34F, 1.0F));
+    context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(track_right, center_y), brush, 6.0F);
+    brush->SetColor(D2D1::ColorF(0.13F, 0.80F, 0.96F, 1.0F));
+    context->DrawLine(D2D1::Point2F(track_left, center_y), D2D1::Point2F(thumb_x, center_y), brush, 6.0F);
+    brush->SetColor(D2D1::ColorF(0.94F, 0.97F, 1.0F, 1.0F));
+    context->FillEllipse(D2D1::Ellipse(D2D1::Point2F(thumb_x, center_y), 8.0F, 8.0F), brush);
+}
+
+void draw_scrollviewer_glyph(ID2D1DeviceContext* context, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect) {
+    const D2D1_RECT_F viewport = D2D1::RectF(rect.left + 16.0F, rect.top + 10.0F, rect.right - 16.0F, rect.bottom - 10.0F);
+    brush->SetColor(D2D1::ColorF(0.12F, 0.17F, 0.27F, 1.0F));
+    context->FillRoundedRectangle(D2D1::RoundedRect(viewport, 6.0F, 6.0F), brush);
+    brush->SetColor(D2D1::ColorF(0.68F, 0.78F, 0.98F, 1.0F));
+    context->DrawRoundedRectangle(D2D1::RoundedRect(viewport, 6.0F, 6.0F), brush, 1.0F);
+
+    const D2D1_RECT_F thumb = D2D1::RectF(viewport.right - 8.0F, viewport.top + 6.0F, viewport.right - 4.0F, viewport.top + 22.0F);
+    brush->SetColor(D2D1::ColorF(0.12F, 0.80F, 0.96F, 1.0F));
+    context->FillRoundedRectangle(D2D1::RoundedRect(thumb, 2.0F, 2.0F), brush);
 }
 
 }  // namespace
@@ -141,8 +210,10 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         mouse_left_down_ = left_down;
         button_hovered_ = button_hovered;
 
+        const std::vector<std::wstring> items = overlay_scene_.items;
+
         int hovered_item_index = -1;
-        for (int i = 0; i < 5; ++i) {
+        for (std::size_t i = 0; i < items.size(); ++i) {
             const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
             const float bottom = top + 40.0F;
             if (pointer_inside
@@ -150,20 +221,24 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                 && pointer_x <= width * 0.70F
                 && pointer_y >= top
                 && pointer_y <= bottom) {
-                hovered_item_index = i;
+                hovered_item_index = static_cast<int>(i);
                 break;
             }
         }
         hovered_item_index_ = hovered_item_index;
 
-        if (d2d_context_ != nullptr && d2d_target_bitmap_ != nullptr && d2d_brush_ != nullptr) {
+        if (d2d_context_ == nullptr || d2d_target_bitmap_ == nullptr || d2d_brush_ == nullptr) {
+            render_manager_->diagnostics().log(LogLevel::Error, "D2D overlay context unavailable");
+            return false;
+        }
 
             d2d_context_->BeginDraw();
             d2d_context_->SetTransform(D2D1::Matrix3x2F::Identity());
 
             d2d_brush_->SetColor(D2D1::ColorF(0.10F, 0.16F, 0.26F, 1.0F));
+            const D2D1_RECT_F card_rect = D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F);
             const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(
-                D2D1::RectF(width * 0.1F, height * 0.1F, width * 0.9F, height * 0.65F),
+                card_rect,
                 20.0F,
                 20.0F);
             d2d_context_->FillRoundedRectangle(card, d2d_brush_);
@@ -173,31 +248,18 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
 
             d2d_brush_->SetColor(D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
             if (text_format_ != nullptr) {
-                const std::wstring title = overlay_scene_.title.empty()
-                    ? L"DCompFrame Demo - Real Control Overlay"
-                    : overlay_scene_.title;
-                d2d_context_->DrawText(
-                    title.c_str(),
-                    static_cast<UINT32>(title.size()),
-                    text_format_,
-                    D2D1::RectF(width * 0.13F, height * 0.14F, width * 0.85F, height * 0.22F),
-                    d2d_brush_);
+                const std::wstring title = overlay_scene_.title;
+                draw_centered_text(d2d_context_, d2d_brush_, text_format_, title, D2D1::RectF(width * 0.13F, height * 0.14F, width * 0.85F, height * 0.22F));
             }
 
-            const std::vector<std::wstring> items = overlay_scene_.items.empty()
-                ? std::vector<std::wstring> {
-                    L"TextBox: DCompFrame Bound Title",
-                    L"ListView: Overview / Diagnostics / Settings / About",
-                    L"CheckBox: checked",
-                    L"Slider: value=0.75",
-                    L"ScrollViewer: offset=(16,48)",
-                }
-                : overlay_scene_.items;
+            const D2D1_RECT_F content_clip_rect = inset_rect(card_rect, 14.0F, 14.0F);
+            d2d_context_->PushAxisAlignedClip(content_clip_rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             for (std::size_t i = 0; i < items.size(); ++i) {
                 const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
+                const D2D1_RECT_F control_rect = D2D1::RectF(width * 0.14F, top, width * 0.70F, top + 40.0F);
                 const D2D1_ROUNDED_RECT control = D2D1::RoundedRect(
-                    D2D1::RectF(width * 0.14F, top, width * 0.70F, top + 40.0F),
+                    control_rect,
                     10.0F,
                     10.0F);
                 const bool hovered = static_cast<int>(i) == hovered_item_index_;
@@ -207,14 +269,19 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                         : (i == 0 ? D2D1::ColorF(0.24F, 0.34F, 0.54F, 1.0F) : D2D1::ColorF(0.22F, 0.28F, 0.38F, 1.0F)));
                 d2d_context_->FillRoundedRectangle(control, d2d_brush_);
 
+                if (items[i].find(L"CheckBox:") == 0) {
+                    draw_checkbox_glyph(d2d_context_, d2d_brush_, control_rect, items[i].find(L"checked") != std::wstring::npos);
+                } else if (items[i].find(L"ComboBox:") == 0) {
+                    draw_combobox_glyph(d2d_context_, d2d_brush_, control_rect);
+                } else if (items[i].find(L"Slider:") == 0) {
+                    draw_slider_glyph(d2d_context_, d2d_brush_, control_rect, 0.75F);
+                } else if (items[i].find(L"ScrollViewer:") == 0) {
+                    draw_scrollviewer_glyph(d2d_context_, d2d_brush_, control_rect);
+                }
+
                 if (item_text_format_ != nullptr) {
                     d2d_brush_->SetColor(D2D1::ColorF(0.92F, 0.95F, 1.0F, 1.0F));
-                    d2d_context_->DrawText(
-                        items[i].c_str(),
-                        static_cast<UINT32>(items[i].size()),
-                        item_text_format_,
-                        D2D1::RectF(width * 0.16F, top + 9.0F, width * 0.68F, top + 34.0F),
-                        d2d_brush_);
+                    draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, items[i], D2D1::RectF(width * 0.16F, top + 4.0F, width * 0.68F, top + 36.0F));
                 }
             }
 
@@ -236,8 +303,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     1.0F);
             }
             d2d_brush_->SetColor(button_color);
+            const D2D1_RECT_F action_rect = D2D1::RectF(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F);
             const D2D1_ROUNDED_RECT action = D2D1::RoundedRect(
-                D2D1::RectF(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F),
+                action_rect,
                 12.0F,
                 12.0F);
             d2d_context_->FillRoundedRectangle(action, d2d_brush_);
@@ -247,24 +315,16 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     ? L"Started"
                     : (button_pressed_ ? L"Pressing" : L"Start");
                 d2d_brush_->SetColor(D2D1::ColorF(0.96F, 0.98F, 1.0F, 1.0F));
-                d2d_context_->DrawText(
-                    button_text.c_str(),
-                    static_cast<UINT32>(button_text.size()),
-                    item_text_format_,
-                    D2D1::RectF(width * 0.755F, height * 0.522F, width * 0.85F, height * 0.575F),
-                    d2d_brush_);
+                draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, button_text, action_rect);
             }
 
             if (item_text_format_ != nullptr && button_click_count_ > 0) {
                 const std::wstring status = L"Clicks: " + std::to_wstring(button_click_count_);
                 d2d_brush_->SetColor(D2D1::ColorF(0.76F, 0.86F, 1.0F, 1.0F));
-                d2d_context_->DrawText(
-                    status.c_str(),
-                    static_cast<UINT32>(status.size()),
-                    item_text_format_,
-                    D2D1::RectF(width * 0.74F, height * 0.60F, width * 0.88F, height * 0.66F),
-                    d2d_brush_);
+                draw_centered_text(d2d_context_, d2d_brush_, item_text_format_, status, D2D1::RectF(width * 0.72F, height * 0.60F, width * 0.89F, height * 0.66F));
             }
+
+            d2d_context_->PopAxisAlignedClip();
 
             const HRESULT end_draw_hr = d2d_context_->EndDraw();
             if (FAILED(end_draw_hr)) {
@@ -272,16 +332,12 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     safe_release(d2d_brush_);
                     safe_release(d2d_target_bitmap_);
                     if (!recreate_d2d_target()) {
-                        render_manager_->diagnostics().log(LogLevel::Warning, "D2D target recreation failed after EndDraw");
+                        render_manager_->diagnostics().log(LogLevel::Error, "D2D target recreation failed after EndDraw");
                     }
                 }
-                draw_dx11_overlay_fallback(width, height);
-                render_manager_->diagnostics().log(LogLevel::Warning, "D2D overlay draw failed (hr=" + hr_to_string(end_draw_hr) + "); DX11 fallback rendered controls");
+                render_manager_->diagnostics().log(LogLevel::Error, "D2D overlay draw failed (hr=" + hr_to_string(end_draw_hr) + ")");
+                return false;
             }
-        } else {
-            // Keep controls visible on DX11+DComp even when D2D initialization fails.
-            draw_dx11_overlay_fallback(width, height);
-        }
 
         const HRESULT present_hr = swap_chain_->Present(0, 0);
         if (present_hr == DXGI_ERROR_DEVICE_REMOVED || present_hr == DXGI_ERROR_DEVICE_RESET) {
@@ -319,50 +375,6 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
     }
 
     return committed;
-}
-
-void WindowRenderTarget::draw_dx11_overlay_fallback(float width, float height) {
-    if (d3d_context1_ == nullptr || render_target_view_ == nullptr) {
-        return;
-    }
-
-    ID3D11View* target_view = render_target_view_;
-    const auto clear_rect = [&](float left, float top, float right, float bottom, const std::array<float, 4>& color) {
-        const D3D11_RECT rect {
-            static_cast<LONG>(left),
-            static_cast<LONG>(top),
-            static_cast<LONG>(right),
-            static_cast<LONG>(bottom),
-        };
-        d3d_context1_->ClearView(target_view, color.data(), &rect, 1);
-    };
-
-    clear_rect(width * 0.10F, height * 0.10F, width * 0.90F, height * 0.65F, {0.10F, 0.16F, 0.26F, 1.0F});
-    std::array<float, 4> button_color = {0.10F, 0.55F, 0.95F, 1.0F};
-    if (button_toggled_) {
-        button_color = {0.06F, 0.68F, 0.48F, 1.0F};
-    }
-    if (button_pressed_) {
-        button_color = {button_color[0] * 0.8F, button_color[1] * 0.8F, button_color[2] * 0.8F, 1.0F};
-    } else if (button_hovered_) {
-        button_color = {
-            std::min(button_color[0] + 0.08F, 1.0F),
-            std::min(button_color[1] + 0.08F, 1.0F),
-            std::min(button_color[2] + 0.08F, 1.0F),
-            1.0F,
-        };
-    }
-    clear_rect(width * 0.73F, height * 0.50F, width * 0.86F, height * 0.58F, button_color);
-
-    for (int i = 0; i < 5; ++i) {
-        const float top = height * 0.25F + static_cast<float>(i) * 52.0F;
-        const std::array<float, 4> row_color = (i == hovered_item_index_)
-            ? std::array<float, 4> {0.30F, 0.45F, 0.70F, 1.0F}
-            : ((i == 0)
-                ? std::array<float, 4> {0.24F, 0.34F, 0.54F, 1.0F}
-                : std::array<float, 4> {0.22F, 0.28F, 0.38F, 1.0F});
-        clear_rect(width * 0.14F, top, width * 0.70F, top + 40.0F, row_color);
-    }
 }
 
 bool WindowRenderTarget::is_ready() const {
@@ -529,7 +541,9 @@ bool WindowRenderTarget::initialize_dx11_dcomp_target() {
     }
 
     if (!initialize_d2d_overlay()) {
-        render_manager_->diagnostics().log(LogLevel::Info, "D2D overlay unavailable; DX11 geometry fallback enabled");
+        render_manager_->diagnostics().log(LogLevel::Error, "D2D overlay initialization failed");
+        cleanup_dx11_dcomp_target();
+        return false;
     }
 
     return true;
@@ -634,6 +648,9 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
                 &text_format_);
             if (FAILED(format_hr) || text_format_ == nullptr) {
                 text_format_ = nullptr;
+            } else {
+                text_format_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                text_format_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
             }
 
             const HRESULT item_format_hr = dwrite_factory_->CreateTextFormat(
@@ -647,6 +664,9 @@ bool WindowRenderTarget::initialize_d2d_overlay() {
                 &item_text_format_);
             if (FAILED(item_format_hr) || item_text_format_ == nullptr) {
                 item_text_format_ = nullptr;
+            } else {
+                item_text_format_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                item_text_format_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
             }
         }
     }

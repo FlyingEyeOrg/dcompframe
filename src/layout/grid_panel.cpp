@@ -21,6 +21,8 @@ void GridPanel::set_grid_position(const Ptr& child, Cell cell) {
 }
 
 void GridPanel::arrange(const Size& available_size) {
+    set_bounds(Rect {.x = 0.0F, .y = 0.0F, .width = available_size.width, .height = available_size.height});
+
     const float cell_width = available_size.width / static_cast<float>(cols_);
     const float cell_height = available_size.height / static_cast<float>(rows_);
 

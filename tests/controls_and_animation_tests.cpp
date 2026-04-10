@@ -50,6 +50,61 @@ TEST(ControlsTests, CardStoresMetadataAndAction) {
     EXPECT_EQ(card->children().size(), 1U);
 }
 
+TEST(ControlsTests, ComboBoxStoresItemsAndSelectedText) {
+    ComboBox combo_box;
+    combo_box.set_items({"A", "B", "C"});
+    combo_box.set_selected_index(1);
+
+    ASSERT_TRUE(combo_box.selected_index().has_value());
+    EXPECT_EQ(*combo_box.selected_index(), 1U);
+    EXPECT_EQ(combo_box.selected_text(), "B");
+
+    combo_box.set_selected_index(42U);
+    EXPECT_FALSE(combo_box.selected_index().has_value());
+    EXPECT_TRUE(combo_box.selected_text().empty());
+}
+
+TEST(ControlsTests, TextAlignmentDefaultsToCenterExceptRichTextBox) {
+    TextBox text_box;
+    CheckBox check_box;
+    ComboBox combo_box;
+    RichTextBox rich_text_box;
+
+    EXPECT_EQ(text_box.text_horizontal_alignment(), TextHorizontalAlignment::Center);
+    EXPECT_EQ(text_box.text_vertical_alignment(), TextVerticalAlignment::Center);
+    EXPECT_EQ(check_box.text_horizontal_alignment(), TextHorizontalAlignment::Center);
+    EXPECT_EQ(check_box.text_vertical_alignment(), TextVerticalAlignment::Center);
+    EXPECT_EQ(combo_box.text_horizontal_alignment(), TextHorizontalAlignment::Center);
+    EXPECT_EQ(combo_box.text_vertical_alignment(), TextVerticalAlignment::Center);
+
+    EXPECT_EQ(rich_text_box.text_horizontal_alignment(), TextHorizontalAlignment::Left);
+    EXPECT_EQ(rich_text_box.text_vertical_alignment(), TextVerticalAlignment::Top);
+}
+
+TEST(ControlsTests, PanelArrangeStretchesChildrenToAvailableSize) {
+    auto panel = std::make_shared<Panel>();
+    auto child_a = std::make_shared<TextBlock>("A");
+    auto child_b = std::make_shared<Button>("B");
+
+    ASSERT_TRUE(panel->add_child(child_a));
+    ASSERT_TRUE(panel->add_child(child_b));
+
+    panel->arrange(Size {.width = 320.0F, .height = 180.0F});
+
+    const auto panel_rect = panel->bounds();
+    EXPECT_FLOAT_EQ(panel_rect.width, 320.0F);
+    EXPECT_FLOAT_EQ(panel_rect.height, 180.0F);
+
+    const auto a_rect = child_a->bounds();
+    const auto b_rect = child_b->bounds();
+    EXPECT_FLOAT_EQ(a_rect.x, 0.0F);
+    EXPECT_FLOAT_EQ(a_rect.y, 0.0F);
+    EXPECT_FLOAT_EQ(a_rect.width, 320.0F);
+    EXPECT_FLOAT_EQ(a_rect.height, 180.0F);
+    EXPECT_FLOAT_EQ(b_rect.width, 320.0F);
+    EXPECT_FLOAT_EQ(b_rect.height, 180.0F);
+}
+
 TEST(AnimationTests, PropertyAnimationUpdatesElementAndCompletes) {
     AnimationManager animation_manager;
     auto element = std::make_shared<UIElement>("anim_target");
