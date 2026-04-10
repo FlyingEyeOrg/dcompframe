@@ -46,6 +46,9 @@
 38. `ControlsTests.ItemsControlStoresItemsSelectionAndVisibleRange`
 39. `ControlsTests.RichTextBoxSupportsEditingSelectionAndCaretMovement`
 40. `ControlsTests.ListViewAndItemsControlTrackScrollOffsets`
+41. `ControlsTests.AdditionalControlsSupportCoreStateTransitions`
+42. `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`
+43. `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`
 
 ## 覆盖点
 
@@ -63,6 +66,7 @@
 - Element Plus 交互回归：TextBox 输入、ComboBox overlay、ItemsControl 可见范围、ScrollViewer 内容模型与滚轮链路
 - 第三轮交互回归：RichTextBox 可编辑模型、ListView/ItemsControl 内部滚动、ComboBox 顶层弹层遮挡修复、微软雅黑字体切换后的文本布局稳定性
 - 第四轮交互回归：RichTextBox 内部滚动与上下行导航、ScrollViewer hover 限定滚轮、三类滚动条 thumb 拖拽、GridPanel 根容器下的 demo 自适应布局
+- 第五轮 demo 交互回归：标题区与内容滚动区分离、TabControl 点击切换、滚动条轨道点击跳转、右侧动画示例可见性
 
 ## 最近结果
 
@@ -98,3 +102,13 @@
 	- 页面级滚动与内层滚动事件边界。
 	- Element Plus 字体/字号与白底视觉一致性。
 - 结果：现有 45 条测试继续全通过，未引入新增回归。
+
+## 本轮补充三（2026-04-10）
+
+- 新增用例：
+	- `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`
+- 覆盖目标：
+	- `TabControl` 鼠标点击切换。
+	- `ScrollViewer` / `ListView` / `ItemsControl` 滚动条轨道点击跳转。
+	- demo 纵向分区布局调整后，右侧预览区与底部滚动区交互不互相遮挡。
+- 最新结果：`ctest --preset vs2022-x64-debug-tests --output-on-failure`，`46/46` 通过。

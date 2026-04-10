@@ -2,6 +2,14 @@
 
 ## 已完成
 
+- 2026-04-10（demo 布局与交互收口：纵向分区、Tab、滚动条、动画示例）
+  - 将 demo 主内容区重排为纵向堆叠式分区：标题区与内容滚动区解耦，滚动时不再覆盖标题。
+  - 右侧预览卡片压缩内部布局，确保 `TabControl`、动画条、`Expander`、`Progress`、`Loading` 在常见窗口尺寸下可稳定展示。
+  - `WindowRenderTarget` 新增 `TabControl` 点击切换命中与滚动条轨道点击跳转逻辑，覆盖 `ScrollViewer`、`ListView`、`ItemsControl` 三类带滚动条控件。
+  - 为 demo 增补明确的动画示例，并扩展 `ListView` / `ItemsControl` / `ScrollViewer` 数据量，保证滚动与内容可见性可复现。
+  - 新增集成测试 `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`，覆盖页签切换和三类滚动条轨道点击。
+  - 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_tests` 与 `ctest --preset vs2022-x64-debug-tests --output-on-failure` 结果 `46/46` 全通过。
+
 - 2026-04-10（UI 体验修复：输入、下拉、布局与视觉一致性）
   - 修复 `TextBox` 光标高度异常与占位符文本裁剪：统一输入字体尺寸并调整文本内边距与 caret 高度。
   - 修复 `ComboBox` 展开内容异常：下拉展开时重置内部滚动偏移，避免历史偏移造成“展开即错位”。

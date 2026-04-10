@@ -105,11 +105,14 @@
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
+	- demo 主内容区按纵向分区重排：标题区固定，表单区、列表区、滚动区依次堆叠，避免页面滚动内容覆盖标题。
 	- 交互卡片布局改为左右表单分栏，`ComboBox` dropdown 使用 overlay 弹层，不再推挤后续控件，并在顶层顺序重绘以避免被遮挡。
 	- 单行表单标签与值使用 no-wrap 文本格式，富文本说明区域使用独立 wrap 文本格式。
 	- `ScrollViewer` 通过 `ItemsControl::visible_range()` 仅绘制 viewport 内可见项，并绘制轻量滚动 thumb。
 	- `ListView` 与 `ItemsControl` 均支持内部滚动、视口裁剪与轻量滚动条；`ItemsControl` 默认以类 `StackPanel` 的纵向列表方式渲染。
+	- `ScrollViewer`、`ListView`、`ItemsControl` 三类滚动条除 thumb 拖拽外，新增轨道点击跳转语义。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
+	- `TabControl` 新增鼠标点击切换，demo 预览卡片增加动画条与当前 tab 正文说明，避免“有控件无示例”。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。
 	- 页面级滚轮偏移新增兜底路径：当未命中内层滚动容器时，滚轮作用于窗口主内容偏移，支持向下扩展布局内容。
 	- 文本输入样式收口：`TextBox` 输入区内边距与 caret 高度统一，修复占位符裁剪和光标高度异常。
