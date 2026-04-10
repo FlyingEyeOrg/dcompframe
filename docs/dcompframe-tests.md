@@ -162,3 +162,10 @@
 	- `margin` 对布局结果产生实际影响。
 	- `WindowRenderTarget` 在使用真实控件边界后，页签、滚动条和输入命中仍然正确。
 - 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充九（2026-04-10）
+
+- 回归目标：
+	- 嵌套 `StackPanel` / `GridPanel` 在一次 root arrange 后即可完成递归布局。
+	- demo 不再需要逐层对子 panel 手工 arrange 才能获得正确边界。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。

@@ -2,6 +2,13 @@
 
 ## 已完成
 
+- 2026-04-10（递归 Arrange 布局优化）
+  - 参考 WPF Measure/Arrange 语义，把 `UIElement` 扩展为支持递归 `arrange`，由父容器分配布局槽位后，子容器自动继续布局其 children。
+  - `StackPanel` / `GridPanel` 改为在设置子元素 bounds 后立即递归 `arrange` 子容器，不再依赖 demo 侧手工逐层调用。
+  - demo 的 `arrange_demo_sections(...)` 已明显收缩为“设置 section/控件期望尺寸后调用一次 root arrange”。
+  - 新增嵌套容器布局测试，验证父偏移、margin 与递归布局链生效。
+  - 验证：x64 Debug demo 构建通过，`ctest --preset vs2022-x64-debug-tests` 结果 `49/49` 通过。
+
 - 2026-04-10（布局系统根因修复）
   - 修正 `StackPanel` / `GridPanel` 的 `Arrange` 语义：不再重置父容器已安排的坐标，开始正确保留容器偏移并应用 `margin`。
   - 为 `UIElement` 增加绝对边界计算能力，支持渲染层读取真实布局结果。

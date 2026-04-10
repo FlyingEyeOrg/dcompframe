@@ -15,7 +15,7 @@ public:
 
     void set_spacing(float spacing);
     void set_wrap_enabled(bool enabled);
-    void arrange(const Size& available_size);
+    void arrange(const Size& available_size) override;
 
 private:
     Orientation orientation_ = Orientation::Vertical;

@@ -39,6 +39,8 @@ public:
     explicit UIElement(std::string name = "");
     virtual ~UIElement() = default;
 
+    virtual void arrange(const Size& available_size);
+
     bool add_child(const Ptr& child);
     bool remove_child(const Ptr& child);
 

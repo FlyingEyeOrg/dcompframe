@@ -49,6 +49,10 @@ void GridPanel::arrange(const Size& available_size) {
             .width = std::max(0.0F, raw_width - margin.left - margin.right),
             .height = std::max(0.0F, raw_height - margin.top - margin.bottom),
         });
+        child->arrange(Size {
+            .width = std::max(0.0F, raw_width - margin.left - margin.right),
+            .height = std::max(0.0F, raw_height - margin.top - margin.bottom),
+        });
     }
 }
 

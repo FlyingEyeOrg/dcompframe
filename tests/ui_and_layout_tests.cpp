@@ -200,4 +200,44 @@ TEST(GridPanelTests, ArrangePreservesParentOffsetAndAppliesMargins) {
     EXPECT_FLOAT_EQ(absolute_right_rect.y, 16.0F);
 }
 
+TEST(LayoutPanelsTests, NestedPanelsArrangeChildrenRecursively) {
+    auto root = std::make_shared<StackPanel>(Orientation::Vertical);
+    auto grid = std::make_shared<GridPanel>(1, 2);
+    auto left_stack = std::make_shared<StackPanel>(Orientation::Vertical);
+    auto right_stack = std::make_shared<StackPanel>(Orientation::Vertical);
+    auto left_child = std::make_shared<UIElement>("left_child");
+    auto right_child = std::make_shared<UIElement>("right_child");
+
+    root->set_spacing(12.0F);
+    left_stack->set_spacing(10.0F);
+    right_stack->set_spacing(10.0F);
+    grid->set_desired_size(Size {.width = 300.0F, .height = 120.0F});
+    left_child->set_margin(Thickness {.left = 5.0F, .top = 24.0F, .right = 7.0F, .bottom = 0.0F});
+    right_child->set_margin(Thickness {.left = 3.0F, .top = 24.0F, .right = 9.0F, .bottom = 0.0F});
+    left_child->set_desired_size(Size {.width = 0.0F, .height = 40.0F});
+    right_child->set_desired_size(Size {.width = 0.0F, .height = 50.0F});
+
+    ASSERT_TRUE(root->add_child(grid));
+    ASSERT_TRUE(grid->add_child(left_stack));
+    ASSERT_TRUE(grid->add_child(right_stack));
+    grid->set_grid_position(left_stack, GridPanel::Cell {.row = 0, .col = 0});
+    grid->set_grid_position(right_stack, GridPanel::Cell {.row = 0, .col = 1});
+    ASSERT_TRUE(left_stack->add_child(left_child));
+    ASSERT_TRUE(right_stack->add_child(right_child));
+
+    root->arrange(Size {.width = 300.0F, .height = 200.0F});
+
+    const auto left_absolute = left_child->absolute_bounds();
+    const auto right_absolute = right_child->absolute_bounds();
+
+    EXPECT_FLOAT_EQ(left_absolute.x, 5.0F);
+    EXPECT_FLOAT_EQ(left_absolute.y, 24.0F);
+    EXPECT_FLOAT_EQ(left_absolute.width, 138.0F);
+    EXPECT_FLOAT_EQ(left_absolute.height, 40.0F);
+    EXPECT_FLOAT_EQ(right_absolute.x, 153.0F);
+    EXPECT_FLOAT_EQ(right_absolute.y, 24.0F);
+    EXPECT_FLOAT_EQ(right_absolute.width, 138.0F);
+    EXPECT_FLOAT_EQ(right_absolute.height, 50.0F);
+}
+
 }  // namespace dcompframe::tests

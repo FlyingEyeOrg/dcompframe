@@ -46,6 +46,11 @@ void LayoutManager::apply_layout(const std::shared_ptr<UIElement>& root, const S
 
 UIElement::UIElement(std::string name) : name_(std::move(name)) {}
 
+void UIElement::arrange(const Size& available_size) {
+    const Rect current_bounds = bounds_;
+    set_bounds(Rect {.x = current_bounds.x, .y = current_bounds.y, .width = available_size.width, .height = available_size.height});
+}
+
 bool UIElement::add_child(const Ptr& child) {
     if (!child || child.get() == this) {
         return false;

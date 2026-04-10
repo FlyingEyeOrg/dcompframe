@@ -36,6 +36,7 @@ void StackPanel::arrange(const Size& available_size) {
                 .width = child_width,
                 .height = child_height,
             });
+            child->arrange(Size {.width = child_width, .height = child_height});
             cursor_y += margin.top + child_height + margin.bottom + spacing_;
             continue;
         }
@@ -59,6 +60,7 @@ void StackPanel::arrange(const Size& available_size) {
             .width = child_width,
             .height = child_height,
         });
+        child->arrange(Size {.width = child_width, .height = child_height});
         cursor_x += total_width + spacing_;
         if (total_height > line_max_extent) {
             line_max_extent = total_height;

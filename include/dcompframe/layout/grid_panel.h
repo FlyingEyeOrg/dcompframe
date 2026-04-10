@@ -19,7 +19,7 @@ public:
 
     void set_rows_cols(int rows, int cols);
     void set_grid_position(const Ptr& child, Cell cell);
-    void arrange(const Size& available_size);
+    void arrange(const Size& available_size) override;
 
 private:
     int rows_ = 1;

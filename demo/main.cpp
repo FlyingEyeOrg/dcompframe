@@ -198,11 +198,14 @@ protected:
         root_stack_->add_child(collections_grid_);
         root_stack_->add_child(scroll_section_stack_);
         root_stack_->add_child(log_section_stack_);
+        root_stack_->set_spacing(18.0F);
 
         top_showcase_grid_->add_child(form_stack_);
         top_showcase_grid_->set_grid_position(form_stack_, {.row = 0, .col = 0});
         top_showcase_grid_->add_child(preview_stack_);
         top_showcase_grid_->set_grid_position(preview_stack_, {.row = 0, .col = 1});
+        form_stack_->set_spacing(14.0F);
+        preview_stack_->set_spacing(14.0F);
 
         form_stack_->add_child(text_box_section_);
         form_stack_->add_child(editor_section_);
@@ -318,83 +321,41 @@ protected:
 private:
     void arrange_demo_sections(const dcompframe::Size& size) {
         const DemoSectionMetrics metrics = compute_demo_section_metrics(size);
-        const float section_gap = 18.0F;
-        const float container_gap = 14.0F;
         const float title_gap = 6.0F;
         const float section_title_height = 18.0F;
 
-        root_stack_->set_spacing(section_gap);
         root_stack_->set_desired_size(size);
         top_showcase_grid_->set_desired_size({size.width, metrics.top_showcase_height});
         collections_grid_->set_desired_size({size.width, metrics.collections_height});
         scroll_section_stack_->set_desired_size({size.width, metrics.scroll_height});
         log_section_stack_->set_desired_size({size.width, metrics.footer_height});
-        root_stack_->arrange(size);
+        text_box_section_->set_desired_size({size.width, section_title_height + title_gap + 40.0F});
+        editor_section_->set_desired_size({size.width, section_title_height + title_gap + metrics.rich_text_height});
+        option_grid_->set_desired_size({size.width, 82.0F});
+        slider_section_->set_desired_size({size.width, section_title_height + title_gap + 40.0F});
+        text_box_->set_desired_size({0.0F, 40.0F});
+        rich_text_box_->set_desired_size({0.0F, metrics.rich_text_height});
+        check_box_->set_desired_size({0.0F, 40.0F});
+        combo_box_->set_desired_size({0.0F, 40.0F});
+        slider_->set_desired_size({0.0F, 40.0F});
 
-        const auto top_bounds = top_showcase_grid_->bounds();
-        const auto collections_bounds = collections_grid_->bounds();
-        const auto scroll_bounds = scroll_section_stack_->bounds();
-        const auto log_bounds = log_section_stack_->bounds();
-
-        top_showcase_grid_->arrange({top_bounds.width, top_bounds.height});
-        collections_grid_->arrange({collections_bounds.width, collections_bounds.height});
-
-        const auto form_bounds = form_stack_->bounds();
-        const auto preview_bounds = preview_stack_->bounds();
-        form_stack_->set_spacing(container_gap);
-        preview_stack_->set_spacing(container_gap);
-        form_stack_->set_desired_size({form_bounds.width, form_bounds.height});
-        preview_stack_->set_desired_size({preview_bounds.width, preview_bounds.height});
-
-        text_box_section_->set_desired_size({form_bounds.width, section_title_height + title_gap + 40.0F});
-        editor_section_->set_desired_size({form_bounds.width, section_title_height + title_gap + metrics.rich_text_height});
-        option_grid_->set_desired_size({form_bounds.width, 82.0F});
-        slider_section_->set_desired_size({form_bounds.width, section_title_height + title_gap + 40.0F});
-        text_box_->set_desired_size({form_bounds.width, 40.0F});
-        rich_text_box_->set_desired_size({form_bounds.width, metrics.rich_text_height});
-        slider_->set_desired_size({form_bounds.width, 40.0F});
-        form_stack_->arrange({form_bounds.width, form_bounds.height});
-
-        const auto option_bounds = option_grid_->bounds();
-        option_grid_->arrange({option_bounds.width, option_bounds.height});
-        const auto check_bounds = check_box_section_->bounds();
-        const auto combo_bounds = combo_box_section_->bounds();
-        check_box_->set_desired_size({check_bounds.width, 40.0F});
-        combo_box_->set_desired_size({combo_bounds.width, 40.0F});
-        check_box_section_->set_desired_size({check_bounds.width, check_bounds.height});
-        combo_box_section_->set_desired_size({combo_bounds.width, combo_bounds.height});
-        check_box_section_->arrange({check_bounds.width, check_bounds.height});
-        combo_box_section_->arrange({combo_bounds.width, combo_bounds.height});
-
-        text_box_section_->arrange({text_box_section_->bounds().width, text_box_section_->bounds().height});
-        editor_section_->arrange({editor_section_->bounds().width, editor_section_->bounds().height});
-        slider_section_->arrange({slider_section_->bounds().width, slider_section_->bounds().height});
-
-        text_block_section_->set_desired_size({preview_bounds.width, section_title_height + title_gap + metrics.text_block_height});
-        image_section_->set_desired_size({preview_bounds.width, section_title_height + title_gap + metrics.image_height});
+        text_block_section_->set_desired_size({size.width, section_title_height + title_gap + metrics.text_block_height});
+        image_section_->set_desired_size({size.width, section_title_height + title_gap + metrics.image_height});
         const float preview_card_height = max_value(
             220.0F,
-            preview_bounds.height - (section_title_height + title_gap + metrics.text_block_height)
-                - (section_title_height + title_gap + metrics.image_height) - container_gap * 2.0F);
-        card_section_->set_desired_size({preview_bounds.width, preview_card_height});
-        text_block_->set_desired_size({preview_bounds.width, metrics.text_block_height});
-        image_->set_desired_size({preview_bounds.width, metrics.image_height});
-        card_->set_desired_size({preview_bounds.width, preview_card_height});
-        preview_stack_->arrange({preview_bounds.width, preview_bounds.height});
-        text_block_section_->arrange({text_block_section_->bounds().width, text_block_section_->bounds().height});
-        image_section_->arrange({image_section_->bounds().width, image_section_->bounds().height});
-        card_section_->arrange({card_section_->bounds().width, card_section_->bounds().height});
+            metrics.top_showcase_height - (section_title_height + title_gap + metrics.text_block_height)
+                - (section_title_height + title_gap + metrics.image_height) - 28.0F);
+        card_section_->set_desired_size({size.width, preview_card_height});
+        text_block_->set_desired_size({0.0F, metrics.text_block_height});
+        image_->set_desired_size({0.0F, metrics.image_height});
+        card_->set_desired_size({0.0F, preview_card_height});
 
-        list_section_stack_->set_desired_size({list_section_stack_->bounds().width, collections_bounds.height});
-        items_section_stack_->set_desired_size({items_section_stack_->bounds().width, collections_bounds.height});
-        list_view_->set_desired_size({list_section_stack_->bounds().width, collections_bounds.height - section_title_height - title_gap});
-        items_control_->set_desired_size({items_section_stack_->bounds().width, collections_bounds.height - section_title_height - title_gap});
-        list_section_stack_->arrange({list_section_stack_->bounds().width, list_section_stack_->bounds().height});
-        items_section_stack_->arrange({items_section_stack_->bounds().width, items_section_stack_->bounds().height});
-        scroll_viewer_->set_desired_size({scroll_bounds.width, metrics.scroll_height - section_title_height - title_gap});
-        log_box_->set_desired_size({log_bounds.width, metrics.footer_height - section_title_height - title_gap});
-        scroll_section_stack_->arrange({scroll_bounds.width, scroll_bounds.height});
-        log_section_stack_->arrange({log_bounds.width, log_bounds.height});
+        list_view_->set_desired_size({0.0F, max_value(0.0F, metrics.collections_height - section_title_height - title_gap)});
+        items_control_->set_desired_size({0.0F, max_value(0.0F, metrics.collections_height - section_title_height - title_gap)});
+        scroll_viewer_->set_desired_size({0.0F, max_value(0.0F, metrics.scroll_height - section_title_height - title_gap)});
+        log_box_->set_desired_size({0.0F, max_value(0.0F, metrics.footer_height - section_title_height - title_gap)});
+
+        root_stack_->arrange(size);
     }
 
     dcompframe::BindingContext binding_context_ {};
