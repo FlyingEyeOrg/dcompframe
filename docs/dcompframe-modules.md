@@ -127,6 +127,9 @@
 	- `Panel` 默认样式透明无边框，保持布局容器语义。
 	- demo 分区布局改为先在总高度内分配，再绘制各 section，避免窗口收缩时的区域重叠。
 	- 新版 demo 布局进一步提升顶部表单区和 preview 卡片可用高度，减少底部滚动区对主交互面的挤压。
+	- 最新 demo 结构改为“外层 `StackPanel` section 栈 + 局部 `GridPanel` 双列”，每类控件拥有独立 section，渲染层同步按该结构排版。
+	- `UIElement` 新增绝对边界能力，`WindowRenderTarget` 改为读取真实控件边界而不是继续维护 demo 专用排版公式。
+	- `StackPanel` / `GridPanel` 已修正为保留父容器安排结果并应用 `margin` 的布局行为。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `TabControl` 新增鼠标点击切换，demo 预览卡片增加动画条与当前 tab 正文说明，避免“有控件无示例”。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。

@@ -2,6 +2,21 @@
 
 ## 已完成
 
+- 2026-04-10（布局系统根因修复）
+  - 修正 `StackPanel` / `GridPanel` 的 `Arrange` 语义：不再重置父容器已安排的坐标，开始正确保留容器偏移并应用 `margin`。
+  - 为 `UIElement` 增加绝对边界计算能力，支持渲染层读取真实布局结果。
+  - 移除 `window_render_target.cpp` 中的 demo 分区公式 `compute_demo_stack_metrics(...)`，改为直接消费控件真实边界。
+  - `demo/main.cpp` 中补齐各 section 控件的 `margin` 与 `desired_size`，使 `StackPanel` / `GridPanel` 的布局结果可直接用于绘制与命中测试。
+  - 更新布局单测与集成测试，验证布局面板与渲染层已按同一边界语义工作。
+  - 验证：x64 Debug demo 构建通过，`ctest --preset vs2022-x64-debug-tests` 结果 `49/49` 通过。
+
+- 2026-04-10（demo 容器化布局重排）
+  - demo 主体布局重构为“外层纵向 `StackPanel` section 栈 + 局部双列 `GridPanel`”。
+  - 顶部展示区拆分为左右两列：左列表单编辑区、右列预览区；中部集合区拆分为 `ListView` / `ItemsControl` 双列。
+  - `ScrollViewer` 与 `LogBox` 改为独立 section，不再与上方内容自由拼贴，降低版面混乱与重叠风险。
+  - `demo/main.cpp`、`src/tools/window_render_target.cpp` 与 `tests/integration_flow_tests.cpp` 已按同一 section 模型对齐。
+  - 验证：x64 Debug demo 构建通过，`ctest --preset vs2022-x64-debug-tests` 结果 `49/49` 通过。
+
 - 2026-04-10（滚动条状态恢复与 demo 版面重排）
   - 修复带滚动视图的 `ScrollBar` thumb 在鼠标松开后仍保持聚焦色的问题：`WM_LBUTTONUP`、`WM_CAPTURECHANGED`、`WM_CANCELMODE` 路径统一清理 `focused_scroll_target_` 并触发重绘。
   - 重构 demo overlay 布局比例：压缩底部 `ScrollViewer` / `LogBox` 区高度，把更多可用空间分配给上方表单区与右侧 preview 区。

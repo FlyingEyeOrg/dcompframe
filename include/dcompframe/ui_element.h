@@ -47,6 +47,7 @@ public:
 
     void set_bounds(const Rect& bounds);
     [[nodiscard]] Rect bounds() const;
+    [[nodiscard]] Rect absolute_bounds() const;
 
     void set_desired_size(const Size& desired_size);
     [[nodiscard]] Size desired_size() const;

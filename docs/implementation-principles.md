@@ -142,3 +142,13 @@
 
 - 使用 `SetCapture` 开始拖拽后，必须在 `ReleaseCapture` 或收到 `WM_CAPTURECHANGED` 时同步清理视觉捕获态。
 - 滚动条、滑块等拖拽控件的高亮色只能表达“当前正在操控”或“当前 hover”，不能在释放后残留。
+
+## 27. demo 容器优先原则
+
+- demo 页面结构必须先以 `StackPanel` / `GridPanel` 建立层次，再映射到 render target 的可视区块。
+- 不允许在 demo 已具备明确容器结构的前提下，继续依赖完全独立的自由切块式几何公式主导排版。
+
+## 28. WPF 风格 Arrange 原则
+
+- 子容器的 `Arrange` 是在父容器已确定的位置基础上细化自身内容，而不是重置为 `(0, 0)`。
+- 绝对可视边界应来自控件树的递归坐标累加，而不是 render target 重建一套平行坐标系。

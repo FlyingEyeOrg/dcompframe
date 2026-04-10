@@ -252,6 +252,26 @@ float compute_track_scroll_offset(const D2D1_RECT_F& viewport, const D2D1_RECT_F
     return clamp_value(ratio * max_offset, 0.0F, max_offset);
 }
 
+D2D1_RECT_F rect_from_bounds(const Rect& bounds) {
+    return D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height);
+}
+
+D2D1_RECT_F control_rect(const std::shared_ptr<UIElement>& element) {
+    if (element == nullptr) {
+        return D2D1::RectF(0.0F, 0.0F, 0.0F, 0.0F);
+    }
+
+    return rect_from_bounds(element->absolute_bounds());
+}
+
+D2D1_RECT_F label_rect_above(const D2D1_RECT_F& rect, float height = 18.0F, float gap = 6.0F) {
+    if (!rect_has_area(rect)) {
+        return D2D1::RectF(0.0F, 0.0F, 0.0F, 0.0F);
+    }
+
+    return D2D1::RectF(rect.left, rect.top - gap - height, rect.right, rect.top - gap);
+}
+
 OverlayLayout compute_layout(
     float width,
     float height,
@@ -271,82 +291,20 @@ OverlayLayout compute_layout(
     const float inner_left = layout.card.left + 24.0F;
     const float inner_right = layout.card.right - 24.0F;
     const float top = layout.content_clip.top + 8.0F - page_scroll_offset;
-    const float column_gap = 20.0F;
-    const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
-    const float control_height = 40.0F;
-    const float control_gap = 14.0F;
-    const float section_gap = 16.0F;
-    const float content_height = rect_height(layout.content_clip) - 8.0F;
-    const float available_sections = max_value(0.0F, content_height - section_gap * 3.0F);
-    float footer_box_height = clamp_value(available_sections * 0.10F, 72.0F, 96.0F);
-    float scroll_section_height = clamp_value(available_sections * 0.17F, 92.0F, 136.0F);
-    float list_section_height = clamp_value(available_sections * 0.18F, 104.0F, 148.0F);
-    auto shrink_section = [](float& value, float minimum, float& deficit) {
-        const float adjustable = max_value(0.0F, value - minimum);
-        const float delta = min_value(adjustable, deficit);
-        value -= delta;
-        deficit -= delta;
-    };
-    float upper_section_height = available_sections - footer_box_height - scroll_section_height - list_section_height;
-    if (upper_section_height < 360.0F) {
-        float deficit = 360.0F - upper_section_height;
-        shrink_section(list_section_height, 92.0F, deficit);
-        shrink_section(scroll_section_height, 80.0F, deficit);
-        shrink_section(footer_box_height, 64.0F, deficit);
-        upper_section_height = available_sections - footer_box_height - scroll_section_height - list_section_height;
-    }
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float upper_bottom = top + upper_section_height;
-    const float list_section_top = upper_bottom + section_gap;
-    const float list_section_bottom = list_section_top + list_section_height;
-    const float scroll_section_top = list_section_bottom + section_gap;
-    layout.scroll_viewer_label = D2D1::RectF(inner_left, scroll_section_top, inner_right, scroll_section_top + label_height);
-    layout.scroll_viewer = D2D1::RectF(inner_left, layout.scroll_viewer_label.bottom + 8.0F, inner_right, layout.scroll_viewer_label.bottom + 8.0F + scroll_section_height);
-    layout.footer_label = D2D1::RectF(inner_left, layout.scroll_viewer.bottom + section_gap, inner_right, layout.scroll_viewer.bottom + section_gap + label_height);
-    layout.footer = D2D1::RectF(inner_left, layout.footer_label.bottom + 8.0F, inner_right, layout.footer_label.bottom + 8.0F + footer_box_height);
-    layout.scroll_viewport = inset_rect(layout.scroll_viewer, 12.0F, 12.0F);
-    const float right_column_height = max_value(0.0F, upper_bottom - top);
-    const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
-    const float right_body_height = max_value(0.0F, right_column_height - fixed_right_spacing);
-    float text_block_height = clamp_value(right_body_height * 0.10F, 28.0F, 42.0F);
-    float image_height = clamp_value(right_body_height * 0.14F, 40.0F, 60.0F);
-    float preview_height = max_value(0.0F, right_body_height - text_block_height - image_height);
-    if (preview_height < 220.0F) {
-        float deficit = 220.0F - preview_height;
-        const float text_adjustable = max_value(0.0F, text_block_height - 26.0F);
-        const float text_delta = min_value(text_adjustable, deficit);
-        text_block_height -= text_delta;
-        deficit -= text_delta;
-        const float image_adjustable = max_value(0.0F, image_height - 34.0F);
-        const float image_delta = min_value(image_adjustable, deficit);
-        image_height -= image_delta;
-    }
 
-    layout.left_column = D2D1::RectF(inner_left, top, inner_left + left_width, upper_bottom);
-    layout.right_column = D2D1::RectF(layout.left_column.right + column_gap, top, inner_right, upper_bottom);
-
-    float left_cursor = layout.left_column.top;
-    layout.text_box_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
-    left_cursor += label_height + 6.0F;
-    layout.text_box = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + control_height);
+    layout.text_box = control_rect(controls.text_box);
+    layout.text_box_label = label_rect_above(layout.text_box, label_height);
     layout.text_box_text = inset_rect(layout.text_box, 14.0F, 8.0F);
-    left_cursor += control_height + control_gap;
 
-    layout.rich_text_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
-    left_cursor += label_height + 6.0F;
-    const float left_remaining_fixed = control_height + control_gap + (label_height + 6.0F) + control_height + control_gap + (label_height + 6.0F) + control_height;
-    const float rich_text_height = max_value(108.0F, upper_bottom - left_cursor - left_remaining_fixed);
-    layout.rich_text_box = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + rich_text_height);
+    layout.rich_text_box = control_rect(controls.rich_text_box);
+    layout.rich_text_label = label_rect_above(layout.rich_text_box, label_height);
     layout.rich_text_viewport = inset_rect(layout.rich_text_box, 14.0F, 12.0F);
-    left_cursor = layout.rich_text_box.bottom + control_gap;
 
-    layout.check_box = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + control_height);
-    left_cursor += control_height + control_gap;
+    layout.check_box = control_rect(controls.check_box);
 
-    layout.combo_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
-    left_cursor += label_height + 6.0F;
-    layout.combo_box = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + control_height);
+    layout.combo_box = control_rect(controls.combo_box);
+    layout.combo_label = label_rect_above(layout.combo_box, label_height);
     if (controls.combo_box && controls.combo_box->is_dropdown_open()) {
         const float item_height = 36.0F;
         const std::size_t visible_count = min_value<std::size_t>(controls.combo_box->items().size(), 8U);
@@ -365,27 +323,40 @@ OverlayLayout compute_layout(
             layout.combo_items.push_back(D2D1::RectF(layout.combo_dropdown.left + 4.0F, item_top, layout.combo_dropdown.right - 4.0F, item_top + item_height));
         }
     }
-    left_cursor += control_height + control_gap;
 
-    layout.slider_label = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + label_height);
-    left_cursor += label_height + 6.0F;
-    layout.slider = D2D1::RectF(layout.left_column.left, left_cursor, layout.left_column.right, left_cursor + control_height);
+    layout.slider = control_rect(controls.slider);
+    layout.slider_label = label_rect_above(layout.slider, label_height);
     layout.slider_track = D2D1::RectF(layout.slider.left + 16.0F, layout.slider.top + 18.0F, layout.slider.right - 76.0F, layout.slider.top + 24.0F);
-    left_cursor += control_height + control_gap;
 
-    float right_cursor = layout.right_column.top;
-    layout.text_block_label = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + label_height);
-    right_cursor += label_height + 6.0F;
-    layout.text_block = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + text_block_height);
+    layout.text_block = control_rect(controls.text_block);
+    layout.text_block_label = label_rect_above(layout.text_block, label_height);
     layout.label_chip = D2D1::RectF(layout.text_block.right - 170.0F, layout.text_block.top + 8.0F, layout.text_block.right - 10.0F, layout.text_block.top + 30.0F);
-    right_cursor += text_block_height + control_gap;
 
-    layout.image_label = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + label_height);
-    right_cursor += label_height + 6.0F;
-    layout.image = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, right_cursor + image_height);
-    right_cursor += image_height + control_gap;
+    layout.image = control_rect(controls.image);
+    layout.image_label = label_rect_above(layout.image, label_height);
 
-    layout.card_preview = D2D1::RectF(layout.right_column.left, right_cursor, layout.right_column.right, upper_bottom);
+    layout.card_preview = control_rect(controls.card);
+    layout.list_view = control_rect(controls.list_view);
+    layout.list_view_label = label_rect_above(layout.list_view, label_height);
+    layout.items_control = control_rect(controls.items_control);
+    layout.items_control_label = label_rect_above(layout.items_control, label_height);
+    layout.scroll_viewer = control_rect(controls.scroll_viewer);
+    layout.scroll_viewer_label = label_rect_above(layout.scroll_viewer, label_height);
+    layout.footer = control_rect(controls.log_box);
+    layout.footer_label = label_rect_above(layout.footer, label_height);
+
+    layout.left_column = D2D1::RectF(
+        layout.text_box.left,
+        top,
+        max_value(layout.slider.right, layout.rich_text_box.right),
+        max_value(layout.slider.bottom, layout.rich_text_box.bottom));
+    layout.right_column = D2D1::RectF(
+        layout.text_block.left,
+        top,
+        max_value(layout.card_preview.right, layout.image.right),
+        max_value(layout.card_preview.bottom, layout.image.bottom));
+
+    layout.scroll_viewport = inset_rect(layout.scroll_viewer, 12.0F, 12.0F);
     const D2D1_RECT_F preview_inner = inset_rect(layout.card_preview, 12.0F, 12.0F);
     const float preview_h = rect_height(preview_inner);
     const float progress_row_height = 28.0F;
@@ -393,17 +364,17 @@ OverlayLayout compute_layout(
     const float bottom_reserved = progress_row_height + bottom_row_height + 18.0F;
     float preview_cursor = preview_inner.top;
 
-    layout.preview_header = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 48.0F);
+    layout.preview_header = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 52.0F);
     preview_cursor = layout.preview_header.bottom + 8.0F;
 
-    layout.tab_control = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 30.0F);
+    layout.tab_control = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 32.0F);
     preview_cursor = layout.tab_control.bottom + 8.0F;
 
-    const float tab_body_height = clamp_value(preview_h * 0.16F, 40.0F, 56.0F);
+    const float tab_body_height = clamp_value(preview_h * 0.18F, 44.0F, 60.0F);
     layout.tab_body = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + tab_body_height);
     preview_cursor = layout.tab_body.bottom + 8.0F;
 
-    layout.animation_demo = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 24.0F);
+    layout.animation_demo = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 28.0F);
     preview_cursor = layout.animation_demo.bottom + 8.0F;
 
     layout.expander_header = D2D1::RectF(preview_inner.left, preview_cursor, preview_inner.right, preview_cursor + 28.0F);
@@ -412,7 +383,7 @@ OverlayLayout compute_layout(
     const float progress_top_limit = preview_inner.bottom - bottom_reserved;
     if (controls.expander != nullptr && controls.expander->expanded()) {
         const float available_expander_height = max_value(0.0F, progress_top_limit - 8.0F - preview_cursor);
-        const float expander_body_height = min_value(available_expander_height, clamp_value(preview_h * 0.22F, 56.0F, 88.0F));
+        const float expander_body_height = min_value(available_expander_height, clamp_value(preview_h * 0.20F, 48.0F, 72.0F));
         layout.expander_body = D2D1::RectF(preview_inner.left + 4.0F, preview_cursor, preview_inner.right - 4.0F, preview_cursor + expander_body_height);
         preview_cursor = layout.expander_body.bottom + 8.0F;
     } else {
@@ -429,12 +400,7 @@ OverlayLayout compute_layout(
     layout.loading_badge = D2D1::RectF(preview_inner.left, status_top, preview_inner.left + 210.0F, status_top + bottom_row_height);
     layout.popup_preview = D2D1::RectF(preview_inner.right - 132.0F, status_top, preview_inner.right, status_top + bottom_row_height);
 
-    const float list_column_width = (inner_right - inner_left - column_gap) * 0.5F;
-    layout.list_view_label = D2D1::RectF(inner_left, list_section_top, inner_left + list_column_width, list_section_top + label_height);
-    layout.list_view = D2D1::RectF(inner_left, layout.list_view_label.bottom + 8.0F, inner_left + list_column_width, list_section_bottom);
     layout.list_viewport = inset_rect(layout.list_view, 8.0F, 8.0F);
-    layout.items_control_label = D2D1::RectF(inner_left + list_column_width + column_gap, list_section_top, inner_right, list_section_top + label_height);
-    layout.items_control = D2D1::RectF(inner_left + list_column_width + column_gap, layout.items_control_label.bottom + 8.0F, inner_right, list_section_bottom);
     layout.items_control_viewport = inset_rect(layout.items_control, 8.0F, 8.0F);
     layout.footer_viewport = inset_rect(layout.footer, 10.0F, 10.0F);
 

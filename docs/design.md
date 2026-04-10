@@ -147,3 +147,16 @@
 - `ScrollBar` thumb 的高亮色只在拖拽或轨道点击操控期间存在，不应在鼠标释放后继续保留。
 - `WM_LBUTTONUP`、`WM_CAPTURECHANGED`、`WM_CANCELMODE` 必须统一清理滚动聚焦态并请求重绘。
 - 该策略与 Win32 官方鼠标捕获语义保持一致。
+
+## 17. demo section 布局决策
+
+- demo 页面不再采用自由切块式 overlay 分配，而是统一收敛为纵向 section 栈。
+- 每一种类型的控件使用一个独立 `StackPanel` section 承载，保证结构语义清晰。
+- 只有在“同一行双列展示”的场景下才使用 `GridPanel`，当前用于顶部左右两列和中部双列集合区。
+- `WindowRenderTarget` 的绘制几何必须和该 section 模型保持一一对应，禁止再维护另一套无结构的版面分配逻辑。
+
+## 18. 布局系统 Arrange 决策
+
+- `StackPanel` / `GridPanel` 的 `Arrange` 必须遵守 WPF 类似语义：父容器决定子元素在父坐标系中的最终位置，子容器再次 `Arrange` 时不能抹掉该偏移。
+- `margin` 参与实际排版，而不是仅作为样式字段存在。
+- 渲染层命中测试和绘制应尽量读取真实控件边界，避免维护第二套与布局系统脱节的坐标公式。

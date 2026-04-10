@@ -95,6 +95,18 @@ Rect UIElement::bounds() const {
     return bounds_;
 }
 
+Rect UIElement::absolute_bounds() const {
+    Rect result = bounds_;
+    auto current = parent_.lock();
+    while (current) {
+        const Rect parent_bounds = current->bounds();
+        result.x += parent_bounds.x;
+        result.y += parent_bounds.y;
+        current = current->parent();
+    }
+    return result;
+}
+
 void UIElement::set_desired_size(const Size& desired_size) {
     desired_size_ = desired_size;
     mark_dirty();

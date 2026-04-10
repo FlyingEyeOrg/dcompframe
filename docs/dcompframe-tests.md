@@ -146,3 +146,19 @@
 	- demo 版面重排后，preview、列表区、滚动区在常用窗口尺寸下不再显得拥挤。
 	- 既有页签、进度条、滚动条轨道点击交互不回归。
 - 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充七（2026-04-10）
+
+- 回归目标：
+	- demo 主体改为 `StackPanel` section 栈后，控件分组依然可正确交互。
+	- 双列 `GridPanel` 场景下的 `ComboBox`、`TabControl`、滚动条轨道点击命中点保持有效。
+	- 渲染层和测试中的几何推导与新版 section 布局一致。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充八（2026-04-10）
+
+- 回归目标：
+	- `StackPanel` / `GridPanel` 在二次 `Arrange` 后仍保留父容器偏移。
+	- `margin` 对布局结果产生实际影响。
+	- `WindowRenderTarget` 在使用真实控件边界后，页签、滚动条和输入命中仍然正确。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。

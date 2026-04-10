@@ -211,3 +211,21 @@
   - demo 页面把更多空间让给顶部主交互区，preview 卡片内部区块也完成去拥挤化。
   - 对照 Microsoft Learn：当前实现已符合 `SetCapture/ReleaseCapture/WM_CAPTURECHANGED` 的处理语义，并更接近桌面窗口布局“避免拥挤、避免不必要滚动”的指导。
 - 测试结果：`49/49` 全通过。
+
+## 本轮补充七（2026-04-10）
+
+- 检查项：demo section 结构清晰度、容器语义一致性、渲染层与测试几何对齐情况。
+- 修复结论：
+  - `demo/main.cpp` 已改为以 `StackPanel` 为主的 section 化布局，双列场景只使用 `GridPanel`。
+  - `window_render_target.cpp` 不再沿用原先那种自由拼贴式 section 比例，而是按新的 section 模型重排。
+  - `integration_flow_tests.cpp` 的点击坐标公式已同步到新布局，避免“测试点命中旧版面”。
+- 测试结果：`49/49` 全通过。
+
+## 本轮补充八（2026-04-10）
+
+- 检查项：布局面板 Arrange 语义、渲染层是否绕过布局系统、WPF 类似行为一致性。
+- 修复结论：
+  - 原问题根因并非单纯 demo 比例错误，而是 `StackPanel` / `GridPanel` 会在重新 `Arrange` 时抹掉父容器偏移，导致布局树坐标语义错误。
+  - 原 render target 还维护了一套 demo 专用分区算法，进一步掩盖了真实布局错误。
+  - 现已改为：布局面板保留父偏移并应用 `margin`；渲染层读取 `UIElement` 真实绝对边界；demo 专用布局公式从主项目代码移除。
+- 测试结果：`49/49` 全通过。

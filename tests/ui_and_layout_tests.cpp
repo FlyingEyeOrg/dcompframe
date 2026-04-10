@@ -132,11 +132,72 @@ TEST(StackPanelTests, HorizontalArrangeWrapsWhenEnabled) {
 
     EXPECT_FLOAT_EQ(a_rect.x, 0.0F);
     EXPECT_FLOAT_EQ(a_rect.y, 0.0F);
-    EXPECT_FLOAT_EQ(a_rect.height, 200.0F);
+    EXPECT_FLOAT_EQ(a_rect.width, 60.0F);
+    EXPECT_FLOAT_EQ(a_rect.height, 20.0F);
 
     EXPECT_FLOAT_EQ(b_rect.x, 0.0F);
-    EXPECT_FLOAT_EQ(b_rect.y, 205.0F);
-    EXPECT_FLOAT_EQ(b_rect.height, 200.0F);
+    EXPECT_FLOAT_EQ(b_rect.y, 25.0F);
+    EXPECT_FLOAT_EQ(b_rect.width, 60.0F);
+    EXPECT_FLOAT_EQ(b_rect.height, 20.0F);
+}
+
+TEST(StackPanelTests, ArrangePreservesParentOffsetAndRespectsMargin) {
+    auto stack = std::make_shared<StackPanel>(Orientation::Vertical);
+    auto child = std::make_shared<UIElement>("child");
+
+    child->set_desired_size(Size {.width = 40.0F, .height = 30.0F});
+    child->set_margin(Thickness {.left = 6.0F, .top = 8.0F, .right = 10.0F, .bottom = 4.0F});
+    ASSERT_TRUE(stack->add_child(child));
+
+    stack->set_bounds(Rect {.x = 40.0F, .y = 24.0F, .width = 0.0F, .height = 0.0F});
+    stack->arrange(Size {.width = 180.0F, .height = 120.0F});
+
+    const auto stack_rect = stack->bounds();
+    const auto child_rect = child->bounds();
+    const auto absolute_child_rect = child->absolute_bounds();
+
+    EXPECT_FLOAT_EQ(stack_rect.x, 40.0F);
+    EXPECT_FLOAT_EQ(stack_rect.y, 24.0F);
+    EXPECT_FLOAT_EQ(child_rect.x, 6.0F);
+    EXPECT_FLOAT_EQ(child_rect.y, 8.0F);
+    EXPECT_FLOAT_EQ(child_rect.width, 164.0F);
+    EXPECT_FLOAT_EQ(child_rect.height, 30.0F);
+    EXPECT_FLOAT_EQ(absolute_child_rect.x, 46.0F);
+    EXPECT_FLOAT_EQ(absolute_child_rect.y, 32.0F);
+}
+
+TEST(GridPanelTests, ArrangePreservesParentOffsetAndAppliesMargins) {
+    auto grid = std::make_shared<GridPanel>(1, 2);
+    auto left = std::make_shared<UIElement>("left");
+    auto right = std::make_shared<UIElement>("right");
+
+    left->set_margin(Thickness {.left = 4.0F, .top = 6.0F, .right = 8.0F, .bottom = 10.0F});
+    right->set_margin(Thickness {.left = 2.0F, .top = 4.0F, .right = 6.0F, .bottom = 8.0F});
+    ASSERT_TRUE(grid->add_child(left));
+    ASSERT_TRUE(grid->add_child(right));
+    grid->set_grid_position(left, GridPanel::Cell {.row = 0, .col = 0});
+    grid->set_grid_position(right, GridPanel::Cell {.row = 0, .col = 1});
+
+    grid->set_bounds(Rect {.x = 20.0F, .y = 12.0F, .width = 0.0F, .height = 0.0F});
+    grid->arrange(Size {.width = 200.0F, .height = 80.0F});
+
+    const auto grid_rect = grid->bounds();
+    const auto left_rect = left->bounds();
+    const auto right_rect = right->bounds();
+    const auto absolute_right_rect = right->absolute_bounds();
+
+    EXPECT_FLOAT_EQ(grid_rect.x, 20.0F);
+    EXPECT_FLOAT_EQ(grid_rect.y, 12.0F);
+    EXPECT_FLOAT_EQ(left_rect.x, 4.0F);
+    EXPECT_FLOAT_EQ(left_rect.y, 6.0F);
+    EXPECT_FLOAT_EQ(left_rect.width, 88.0F);
+    EXPECT_FLOAT_EQ(left_rect.height, 64.0F);
+    EXPECT_FLOAT_EQ(right_rect.x, 102.0F);
+    EXPECT_FLOAT_EQ(right_rect.y, 4.0F);
+    EXPECT_FLOAT_EQ(right_rect.width, 92.0F);
+    EXPECT_FLOAT_EQ(right_rect.height, 68.0F);
+    EXPECT_FLOAT_EQ(absolute_right_rect.x, 122.0F);
+    EXPECT_FLOAT_EQ(absolute_right_rect.y, 16.0F);
 }
 
 }  // namespace dcompframe::tests
