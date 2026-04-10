@@ -75,8 +75,18 @@
 
 ## 本轮最终收口（2026-04-10）
 
-- `Application` / `Window` 从 demo 迁移至主库，框架边界更清晰。
+- `Application` / `Window` 仍位于主库，但职责已从“demo 业务承载层”收敛为“生命周期与宿主骨架”。
+- demo 控件树、事件绑定和窗口标题全部回迁到 `demo/main.cpp`，框架边界恢复清晰。
 - 连续渲染触发条件收紧到动画态，空闲场景不持续刷帧。
 - 布局容器默认透明无边框，视觉职责下沉到具体控件。
-- 滚动交互统一补齐轨道点击与聚焦态（含 `LogBox`、`ComboBox dropdown`）。
-- 最新回归：`ctest --preset vs2022-x64-debug-tests`，`46/46` 通过。
+- demo 分区布局改为受总可用高度约束的分配模型，小窗口下不再互相覆盖。
+- 最新回归：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充六（2026-04-10）
+
+- 根据 Microsoft Learn 的 `SetCapture` / `ReleaseCapture` / `WM_CAPTURECHANGED` 语义，原实现存在一个明确缺口：释放鼠标后虽然停止了拖拽，但没有同步清理滚动聚焦态，因此颜色残留。
+- 根据 Windows UX Layout 指南，旧 demo 布局的问题不是“数学算错一点”，而是顶部核心交互区被底部滚动区过度挤压，整体显得 cramped。
+- 本轮通过两步修正：
+	- 拖拽结束和捕获变化时统一清空 `focused_scroll_target_` 并重绘。
+	- 调整顶部/中部/底部区域比例，把空间让回给表单区和 preview 卡片，同时限制 preview 内部各子块的最大高度。
+- 最新回归：`49/49` 通过。

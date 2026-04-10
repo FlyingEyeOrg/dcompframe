@@ -32,6 +32,60 @@ T clamp_value(const T& value, const T& low, const T& high) {
     return min_value(max_value(value, low), high);
 }
 
+struct DemoLayoutMetrics {
+    float upper_section_height = 0.0F;
+    float list_section_height = 0.0F;
+    float scroll_section_height = 0.0F;
+    float footer_box_height = 0.0F;
+    float text_block_height = 0.0F;
+    float image_height = 0.0F;
+};
+
+DemoLayoutMetrics compute_demo_layout_metrics(float content_height) {
+    DemoLayoutMetrics metrics;
+    const float section_gap = 16.0F;
+    const float available_sections = max_value(0.0F, content_height - section_gap * 3.0F);
+    metrics.footer_box_height = clamp_value(available_sections * 0.10F, 72.0F, 96.0F);
+    metrics.scroll_section_height = clamp_value(available_sections * 0.17F, 92.0F, 136.0F);
+    metrics.list_section_height = clamp_value(available_sections * 0.18F, 104.0F, 148.0F);
+
+    auto shrink_section = [](float& value, float minimum, float& deficit) {
+        const float adjustable = max_value(0.0F, value - minimum);
+        const float delta = min_value(adjustable, deficit);
+        value -= delta;
+        deficit -= delta;
+    };
+
+    metrics.upper_section_height = available_sections - metrics.footer_box_height - metrics.scroll_section_height - metrics.list_section_height;
+    if (metrics.upper_section_height < 360.0F) {
+        float deficit = 360.0F - metrics.upper_section_height;
+        shrink_section(metrics.list_section_height, 92.0F, deficit);
+        shrink_section(metrics.scroll_section_height, 80.0F, deficit);
+        shrink_section(metrics.footer_box_height, 64.0F, deficit);
+        metrics.upper_section_height = available_sections - metrics.footer_box_height - metrics.scroll_section_height - metrics.list_section_height;
+    }
+
+    const float label_height = 18.0F;
+    const float control_gap = 14.0F;
+    const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
+    const float right_body_height = max_value(0.0F, metrics.upper_section_height - fixed_right_spacing);
+    metrics.text_block_height = clamp_value(right_body_height * 0.10F, 28.0F, 42.0F);
+    metrics.image_height = clamp_value(right_body_height * 0.14F, 40.0F, 60.0F);
+    float preview_height = max_value(0.0F, right_body_height - metrics.text_block_height - metrics.image_height);
+    if (preview_height < 220.0F) {
+        float deficit = 220.0F - preview_height;
+        const float text_adjustable = max_value(0.0F, metrics.text_block_height - 26.0F);
+        const float text_delta = min_value(text_adjustable, deficit);
+        metrics.text_block_height -= text_delta;
+        deficit -= text_delta;
+        const float image_adjustable = max_value(0.0F, metrics.image_height - 34.0F);
+        const float image_delta = min_value(image_adjustable, deficit);
+        metrics.image_height -= image_delta;
+    }
+
+    return metrics;
+}
+
 POINT compute_combo_dropdown_point(const Size& size) {
     const float width = size.width > 0.0F ? size.width : 1280.0F;
     const float height = size.height > 0.0F ? size.height : 720.0F;
@@ -49,14 +103,9 @@ POINT compute_combo_dropdown_point(const Size& size) {
     const float label_height = 18.0F;
     const float control_height = 40.0F;
     const float control_gap = 14.0F;
-    const float section_gap = 16.0F;
-    const float content_clip_height = (card_bottom - 10.0F) - content_top;
-    const float content_height = content_clip_height - 8.0F;
-    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
-    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
-    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float content_height = ((card_bottom - 10.0F) - content_top) - 8.0F;
+    const DemoLayoutMetrics metrics = compute_demo_layout_metrics(content_height);
+    const float upper_bottom = top + metrics.upper_section_height;
 
     float left_cursor = top;
     left_cursor += label_height + 6.0F + control_height + control_gap;
@@ -91,17 +140,12 @@ POINT compute_list_scrollbar_point(const Size& size) {
     const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
     const float column_gap = 20.0F;
-    const float section_gap = 16.0F;
     const float label_height = 18.0F;
-    const float content_clip_height = (card_bottom - 10.0F) - content_top;
-    const float content_height = content_clip_height - 8.0F;
-    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
-    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
-    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
-    const float list_section_top = upper_bottom + section_gap;
-    const float list_section_bottom = list_section_top + list_section_height;
+    const float content_height = ((card_bottom - 10.0F) - content_top) - 8.0F;
+    const DemoLayoutMetrics metrics = compute_demo_layout_metrics(content_height);
+    const float upper_bottom = top + metrics.upper_section_height;
+    const float list_section_top = upper_bottom + 16.0F;
+    const float list_section_bottom = list_section_top + metrics.list_section_height;
     const float list_column_width = (inner_right - inner_left - column_gap) * 0.5F;
     const float list_top = list_section_top + label_height + 8.0F;
     const float viewport_top = list_top + 8.0F;
@@ -139,24 +183,19 @@ POINT compute_scroll_viewer_scrollbar_point(const Size& size) {
     const float title_band_bottom = card_top + 94.0F;
     const float content_top = title_band_bottom + 10.0F;
     const float top = content_top + 8.0F;
-    const float section_gap = 16.0F;
     const float label_height = 18.0F;
-    const float content_clip_height = (card_bottom - 10.0F) - content_top;
-    const float content_height = content_clip_height - 8.0F;
-    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
-    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
-    const float upper_bottom = top + max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
-    const float list_section_top = upper_bottom + section_gap;
-    const float list_section_bottom = list_section_top + list_section_height;
-    const float scroll_section_top = list_section_bottom + section_gap;
+    const float content_height = ((card_bottom - 10.0F) - content_top) - 8.0F;
+    const DemoLayoutMetrics metrics = compute_demo_layout_metrics(content_height);
+    const float upper_bottom = top + metrics.upper_section_height;
+    const float list_section_top = upper_bottom + 16.0F;
+    const float list_section_bottom = list_section_top + metrics.list_section_height;
+    const float scroll_section_top = list_section_bottom + 16.0F;
     const float scroll_viewer_top = scroll_section_top + label_height + 8.0F;
     const float viewport_right = inner_right - 12.0F;
 
     POINT point {};
     point.x = static_cast<LONG>(viewport_right - 3.0F);
-    point.y = static_cast<LONG>(scroll_viewer_top + scroll_section_height - 14.0F);
+    point.y = static_cast<LONG>(scroll_viewer_top + metrics.scroll_section_height - 14.0F);
     return point;
 }
 
@@ -176,21 +215,12 @@ POINT compute_tab_control_point(const Size& size) {
     const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
     const float control_gap = 14.0F;
-    const float section_gap = 16.0F;
-    const float content_clip_height = (card_bottom - 10.0F) - content_top;
-    const float content_height = content_clip_height - 8.0F;
-    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
-    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
-    const float upper_section_height = max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - section_gap * 3.0F);
+    const float content_height = ((card_bottom - 10.0F) - content_top) - 8.0F;
+    const DemoLayoutMetrics metrics = compute_demo_layout_metrics(content_height);
+    const float upper_section_height = metrics.upper_section_height;
     const float right_column_left = inner_left + left_width + column_gap;
-    const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
-    const float right_body_height = max_value(196.0F, upper_section_height - fixed_right_spacing);
-    const float text_block_height = clamp_value(right_body_height * 0.14F, 40.0F, 58.0F);
-    const float image_height = clamp_value(right_body_height * 0.18F, 56.0F, 86.0F);
-    const float card_preview_top = top + (label_height + 6.0F) + text_block_height + control_gap + (label_height + 6.0F) + image_height + control_gap;
-    const float tab_top = card_preview_top + 12.0F + 56.0F + 8.0F;
+    const float card_preview_top = top + (label_height + 6.0F) + metrics.text_block_height + control_gap + (label_height + 6.0F) + metrics.image_height + control_gap;
+    const float tab_top = card_preview_top + 12.0F + 48.0F + 8.0F;
     const float tab_left = right_column_left + 12.0F;
     const float tab_right = inner_right - 12.0F;
     const float tab_width = (tab_right - tab_left) / 4.0F;
@@ -217,26 +247,17 @@ POINT compute_progress_increase_point(const Size& size) {
     const float left_width = (inner_right - inner_left - column_gap) * 0.47F;
     const float label_height = 18.0F;
     const float control_gap = 14.0F;
-    const float content_clip_height = (card_bottom - 10.0F) - content_top;
-    const float content_height = content_clip_height - 8.0F;
-    const float footer_box_height = clamp_value(content_clip_height * 0.17F, 96.0F, 128.0F);
-    const float footer_height = label_height + 8.0F + footer_box_height;
-    const float scroll_section_height = clamp_value(content_height * 0.16F, 126.0F, 174.0F);
-    const float list_section_height = clamp_value(content_height * 0.23F, 150.0F, 210.0F);
-    const float upper_section_height = max_value(340.0F, content_height - scroll_section_height - list_section_height - footer_height - 16.0F * 3.0F);
-
-    const float fixed_right_spacing = (label_height + 6.0F) * 2.0F + control_gap * 2.0F;
-    const float right_body_height = max_value(196.0F, upper_section_height - fixed_right_spacing);
-    const float text_block_height = clamp_value(right_body_height * 0.14F, 40.0F, 58.0F);
-    const float image_height = clamp_value(right_body_height * 0.18F, 56.0F, 86.0F);
-    const float card_preview_top = top + (label_height + 6.0F) + text_block_height + control_gap + (label_height + 6.0F) + image_height + control_gap;
+    const float content_height = ((card_bottom - 10.0F) - content_top) - 8.0F;
+    const DemoLayoutMetrics metrics = compute_demo_layout_metrics(content_height);
+    const float upper_section_height = metrics.upper_section_height;
+    const float card_preview_top = top + (label_height + 6.0F) + metrics.text_block_height + control_gap + (label_height + 6.0F) + metrics.image_height + control_gap;
     const float card_preview_bottom = top + upper_section_height;
     const float preview_inner_top = card_preview_top + 12.0F;
     const float preview_inner_bottom = card_preview_bottom - 12.0F;
     const float preview_inner_height = preview_inner_bottom - preview_inner_top;
-    const float progress_top_limit = preview_inner_bottom - (30.0F + 30.0F + 16.0F);
-    const float preview_cursor_after_expander = preview_inner_top + 54.0F + 8.0F + 32.0F + 8.0F
-        + clamp_value(preview_inner_height * 0.14F, 42.0F, 62.0F) + 8.0F + 30.0F + 10.0F + 32.0F + 6.0F;
+    const float progress_top_limit = preview_inner_bottom - (28.0F + 28.0F + 18.0F);
+    const float preview_cursor_after_expander = preview_inner_top + 48.0F + 8.0F + 30.0F + 8.0F
+        + clamp_value(preview_inner_height * 0.16F, 40.0F, 56.0F) + 8.0F + 24.0F + 8.0F + 28.0F + 6.0F;
     const float progress_top = min_value(preview_cursor_after_expander, progress_top_limit);
     const float preview_inner_right = inner_right - 12.0F;
 

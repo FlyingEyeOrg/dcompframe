@@ -49,6 +49,12 @@
 41. `ControlsTests.AdditionalControlsSupportCoreStateTransitions`
 42. `IntegrationTests.WindowRenderTargetProcessesTextInputAndConsumesComboWheel`
 43. `IntegrationTests.WindowRenderTargetProcessesTabExpanderAndScrollbarTrackClicks`
+44. `WindowHostTests.DestroyNotificationClearsInternalState`
+45. `ControlsTests.TextBoxSupportsEditingSelectionAndTwoWayBinding`
+46. `ControlsTests.CheckBoxComboBoxAndSliderSupportInteractiveStateChanges`
+47. `WindowTests.SkeletonWindowInitializesWithoutDemoControls`
+48. `ApplicationTests.InitializeDoesNotCreateWindowUntilRequested`
+49. `ControlsTests.PanelDefaultsToTransparentBackgroundAndBorder`
 
 ## 覆盖点
 
@@ -71,7 +77,7 @@
 ## 最近结果
 
 - 运行命令：`ctest --preset vs2022-x64-debug-tests`
-- 结果：46/46 通过
+- 结果：49/49 通过
 - 补充验证：新增多窗口退出安全、ComboBox、文本对齐规则用例全部通过
 - 运行时复验：x64 Debug demo 启动后 `warning_count=0`，确认 D2D 运行时失败兜底后不再出现“只有背景色”。
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
@@ -120,3 +126,23 @@
 	- 滚动条轨道/滑块聚焦态与 LogBox 滚动链路。
 	- Preview 区重排后 Tab/Expander/Progress/Loading 交互不回归。
 - 结果：`ctest --preset vs2022-x64-debug-tests`，`46/46` 通过。
+
+## 本轮补充五（2026-04-10）
+
+- 新增用例：
+	- `WindowTests.SkeletonWindowInitializesWithoutDemoControls`
+	- `ApplicationTests.InitializeDoesNotCreateWindowUntilRequested`
+	- `ControlsTests.PanelDefaultsToTransparentBackgroundAndBorder`
+- 覆盖目标：
+	- 验证 `Application` / `Window` 已回到骨架层职责。
+	- 验证 `Panel` 默认透明无边框。
+	- 验证 demo 业务已回迁后，框架宿主仍可独立初始化与渲染。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。
+
+## 本轮补充六（2026-04-10）
+
+- 回归目标：
+	- 滚动条 thumb 在释放后恢复普通态，不残留聚焦色。
+	- demo 版面重排后，preview、列表区、滚动区在常用窗口尺寸下不再显得拥挤。
+	- 既有页签、进度条、滚动条轨道点击交互不回归。
+- 结果：`ctest --preset vs2022-x64-debug-tests`，`49/49` 通过。

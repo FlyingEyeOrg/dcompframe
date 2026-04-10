@@ -28,10 +28,11 @@
 
 ## Application / Window
 
-职责：承载 demo 运行期窗口管理与业务控件接线，避免 demo 入口文件承载框架实现。
+职责：提供应用生命周期与单窗口宿主骨架，不承载 demo 业务控件本身。
 
-- `Application`：配置加载、渲染管理器初始化、窗口创建、消息循环驱动与诊断导出。
-- `Window`：单窗口控件实例化、事件绑定、`WindowRenderTarget` 交互接线。
+- `Application`：配置加载、渲染管理器初始化/销毁、窗口创建、消息循环驱动、连续渲染节流与诊断导出。
+- `Window`：`WindowHost` + `WindowRenderTarget` 宿主、`build()` 扩展点、根内容与布局回调接线。
+- demo 层通过 `WindowFactory` 生成自己的 `DemoWindow`，在 demo 中完成控件创建和事件绑定。
 
 ## UIElement / LayoutManager
 
@@ -65,6 +66,8 @@
 
 - `Panel`：容器控件。
 - `Panel::arrange`：按可用区域安排子元素，默认拉伸填满。
+- `Panel` 默认背景透明、边框透明、边框厚度为 0。
+- `GridPanel` / `StackPanel` 仅负责排布，不绘制背景，因此默认保持透明布局语义。
 - 控件声明已从 `controls.h` 拆分为独立头文件，`controls.h` 仅保留聚合入口，降低头文件耦合。
 - `TextBlock`：文本控件。
 - `Image`：图像资源引用控件。
@@ -120,7 +123,10 @@
 	- `ScrollViewer`、`ListView`、`ItemsControl` 三类滚动条除 thumb 拖拽外，新增轨道点击跳转语义。
 	- `LogBox` 滚动条接入轨道点击、thumb 拖拽与聚焦态视觉。
 	- `ComboBox` dropdown 新增滚动条轨道/滑块命中与聚焦态。
+	- 滚动聚焦态在 `WM_LBUTTONUP` / `WM_CAPTURECHANGED` / `WM_CANCELMODE` 时统一恢复，避免 thumb 松开后残留选中色。
 	- `Panel` 默认样式透明无边框，保持布局容器语义。
+	- demo 分区布局改为先在总高度内分配，再绘制各 section，避免窗口收缩时的区域重叠。
+	- 新版 demo 布局进一步提升顶部表单区和 preview 卡片可用高度，减少底部滚动区对主交互面的挤压。
 	- 新增控件在 demo 右侧预览区完成可视接入：`Label` chip、`TabControl` 页签、`Expander` 折叠区、`Progress` 进度条、`Loading` 状态徽标、`Popup` 预览层。
 	- `TabControl` 新增鼠标点击切换，demo 预览卡片增加动画条与当前 tab 正文说明，避免“有控件无示例”。
 	- `ScrollViewer`、`ListView`、`ItemsControl` 的滚动条 thumb 支持鼠标拖拽，滚轮滚动严格依赖当前 hover 区域。

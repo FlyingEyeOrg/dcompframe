@@ -121,12 +121,13 @@
 - 右侧预览卡片内部采用紧凑排布，优先保证 `TabControl`、动画示例、`Expander` 和状态控件在 960x720 级别窗口中全部可见。
 - 列表型控件从右侧窄列中抽离为独立列表分区，以提高 `ListView` 与 `ItemsControl` 的有效可视高度。
 
-## 13. Application/Window 归位决策
+## 13. Application/Window 骨架化决策
 
-- `Application` 和 `Window` 不再放在 demo 源文件中，迁移到主库：
-	- 头文件：`include/dcompframe/application.h`
-	- 实现：`src/application.cpp`
-- `demo/main.cpp` 仅作为最小入口，调用主库 `Application`。
+- `Application` 和 `Window` 位于主库，但只保留骨架职责：
+	- `Application`：配置加载、渲染管理器生命周期、窗口集合、消息循环、诊断导出。
+	- `Window`：窗口宿主、渲染目标初始化、内容构建扩展点、布局回调扩展点。
+- demo 控件创建、控件绑定、按钮回调、窗口标题与根布局，不再放进主库，而是在 `demo/main.cpp` 中通过 `DemoWindow` 实现。
+- 这样可以避免框架边界被 demo 业务侵入，同时保留复用能力。
 
 ## 14. 连续渲染节流决策
 
@@ -134,3 +135,15 @@
 	- `Loading.active == true`
 	- `Progress.is_indeterminate == true`
 - 不再因为 `TabControl` 存在而持续渲染，减少空转帧和交互卡顿。
+
+## 15. demo 无重叠分区决策
+
+- demo 主内容区的各个 section 必须在总可用高度内完成分配，禁止通过多个固定最小高度相加的方式向下挤压。
+- 当窗口高度不足时，优先压缩列表区、滚动区和日志区，再保留预览区关键交互的最小可见高度。
+- 右侧 preview 区必须保证 `TabControl`、动画条、`Expander header`、`Progress`、`Loading` 不互相覆盖。
+
+## 16. 滚动条捕获态恢复决策
+
+- `ScrollBar` thumb 的高亮色只在拖拽或轨道点击操控期间存在，不应在鼠标释放后继续保留。
+- `WM_LBUTTONUP`、`WM_CAPTURECHANGED`、`WM_CANCELMODE` 必须统一清理滚动聚焦态并请求重绘。
+- 该策略与 Win32 官方鼠标捕获语义保持一致。

@@ -2,6 +2,23 @@
 
 ## 已完成
 
+- 2026-04-10（滚动条状态恢复与 demo 版面重排）
+  - 修复带滚动视图的 `ScrollBar` thumb 在鼠标松开后仍保持聚焦色的问题：`WM_LBUTTONUP`、`WM_CAPTURECHANGED`、`WM_CANCELMODE` 路径统一清理 `focused_scroll_target_` 并触发重绘。
+  - 重构 demo overlay 布局比例：压缩底部 `ScrollViewer` / `LogBox` 区高度，把更多可用空间分配给上方表单区与右侧 preview 区。
+  - 重构 preview 卡片内部布局：缩小非关键头部和图片区，限制 `Expander body` 的最大高度，避免 `TabControl`、进度条、Loading、Popup` 挤在一起。
+  - 依据 Microsoft Learn 官方文档复核鼠标捕获和窗口布局：确认释放捕获后需要反映新的捕获态；确认当前 demo 旧布局属于过度拥挤、未有效利用可用空间的问题。
+  - 验证：x64 Debug demo 构建通过，`ctest --preset vs2022-x64-debug-tests` 结果 `49/49` 通过。
+
+- 2026-04-10（骨架层回归与 demo 职责纠偏）
+  - `Application` 收敛为应用生命周期骨架：配置加载、渲染线程、窗口集合、消息循环、连续渲染节流、析构清理。
+  - `Window` 收敛为窗口宿主骨架：窗口创建、渲染目标初始化、根内容/布局回调/交互控件接线扩展点。
+  - demo 控件创建、事件绑定、根布局与窗口标题全部回迁到 `demo/main.cpp` 中的 `DemoWindow`。
+  - 明确 `GridPanel` / `StackPanel` 为透明布局容器；`Panel` 默认透明背景、透明边框、0 边框厚度。
+  - `WindowRenderTarget` 的 demo 分区算法改为“总高度内分配 + 空间不足时压缩非关键区块”，修复窗口收缩时的区域重叠。
+  - 新增框架设计文档 `docs/framework-design.md`，说明层次、原理与 demo 接入方式。
+  - 新增测试：`WindowTests.SkeletonWindowInitializesWithoutDemoControls`、`ApplicationTests.InitializeDoesNotCreateWindowUntilRequested`、`ControlsTests.PanelDefaultsToTransparentBackgroundAndBorder`。
+  - 验证：x64 Debug demo 构建通过，`ctest --preset vs2022-x64-debug-tests` 结果 `49/49` 通过。
+
 - 2026-04-10（按用户 12 项清单收口：布局/性能/控件/迁移）
   - 布局容器：`Panel` 默认样式改为透明背景 + 无边框。
   - 性能：`WindowRenderTarget::needs_continuous_rendering()` 仅在 `Loading active` 或 `Progress indeterminate` 时返回 true，移除仅 `TabControl` 即持续重绘的路径；渲染中移除 `overlay_scene_.items` 每帧拷贝。

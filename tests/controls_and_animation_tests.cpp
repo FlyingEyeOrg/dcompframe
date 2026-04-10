@@ -283,6 +283,15 @@ TEST(ControlsTests, PanelArrangeStretchesChildrenToAvailableSize) {
     EXPECT_FLOAT_EQ(b_rect.height, 180.0F);
 }
 
+TEST(ControlsTests, PanelDefaultsToTransparentBackgroundAndBorder) {
+    Panel panel;
+
+    const Style style = panel.style();
+    EXPECT_EQ(style.background.a, 0);
+    EXPECT_EQ(style.border.a, 0);
+    EXPECT_FLOAT_EQ(style.border_thickness, 0.0F);
+}
+
 TEST(AnimationTests, PropertyAnimationUpdatesElementAndCompletes) {
     AnimationManager animation_manager;
     auto element = std::make_shared<UIElement>("anim_target");

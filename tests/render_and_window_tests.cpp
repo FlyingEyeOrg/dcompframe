@@ -1,9 +1,33 @@
 #include <gtest/gtest.h>
 
+#include "dcompframe/application.h"
 #include "dcompframe/render_manager.h"
 #include "dcompframe/window_host.h"
 
 namespace dcompframe::tests {
+
+namespace {
+
+class SkeletonWindow final : public Window {
+public:
+    using Window::Window;
+
+    [[nodiscard]] bool build_called() const {
+        return build_called_;
+    }
+
+protected:
+    bool build(const AppConfig& config) override {
+        build_called_ = true;
+        (void)config;
+        return true;
+    }
+
+private:
+    bool build_called_ = false;
+};
+
+}  // namespace
 
 TEST(RenderManagerTests, InitializeAndShutdown) {
     RenderManager manager;
@@ -151,6 +175,44 @@ TEST(WindowHostTests, DestroyNotificationClearsInternalState) {
     EXPECT_FALSE(host.is_created());
     EXPECT_FALSE(host.is_visible());
     EXPECT_EQ(host.hwnd(), nullptr);
+}
+
+TEST(WindowTests, SkeletonWindowInitializesWithoutDemoControls) {
+    RenderManager manager;
+    ASSERT_TRUE(manager.initialize(true));
+
+    SkeletonWindow window(&manager, nullptr, 1U);
+    AppConfig config;
+    config.width = 320;
+    config.height = 240;
+
+    ASSERT_TRUE(window.initialize(config));
+    EXPECT_TRUE(window.build_called());
+    EXPECT_FALSE(window.needs_continuous_rendering());
+
+    window.host().request_render();
+    EXPECT_TRUE(window.render_if_requested());
+
+    window.host().destroy();
+    manager.shutdown();
+}
+
+TEST(ApplicationTests, InitializeDoesNotCreateWindowUntilRequested) {
+    int factory_invocations = 0;
+
+    {
+        Application app;
+        app.set_window_factory([&factory_invocations](RenderManager* render_manager, Application* application, std::size_t window_id) {
+            ++factory_invocations;
+            return std::make_unique<SkeletonWindow>(render_manager, application, window_id);
+        });
+
+        ASSERT_TRUE(app.initialize("demo/demo-config.json"));
+        EXPECT_EQ(factory_invocations, 0);
+
+        ASSERT_TRUE(app.create_window());
+        EXPECT_EQ(factory_invocations, 1);
+    }
 }
 
 }  // namespace dcompframe::tests
