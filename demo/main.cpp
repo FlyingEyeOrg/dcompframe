@@ -100,7 +100,7 @@ private:
         hero_row_->set_column_gap(20.0F);
         hero_row_->set_row_gap(24.0F);
         hero_row_->set_wrap(dcompframe::FlexWrap::Wrap);
-        hero_row_->set_align_items(dcompframe::FlexAlignItems::Stretch);
+        hero_row_->set_align_items(dcompframe::FlexAlignItems::Start);
 
         form_column_->set_padding(make_insets(16.0F, 14.0F));
         form_column_->set_row_gap(18.0F);
@@ -123,7 +123,7 @@ private:
         action_row_->set_align_items(dcompframe::FlexAlignItems::Center);
 
         preview_column_->set_padding(make_insets(16.0F, 14.0F));
-        preview_column_->set_row_gap(18.0F);
+        preview_column_->set_row_gap(14.0F);
         preview_column_->set_flex_grow(1.0F);
         preview_column_->set_flex_basis(420.0F);
         preview_column_->set_min_size(dcompframe::Size {.width = 420.0F, .height = 0.0F});
@@ -135,7 +135,7 @@ private:
 
         collections_row_->set_padding(make_insets(14.0F, 14.0F));
         collections_row_->set_column_gap(20.0F);
-        collections_row_->set_row_gap(24.0F);
+        collections_row_->set_row_gap(18.0F);
         collections_row_->set_wrap(dcompframe::FlexWrap::Wrap);
 
         list_view_->set_flex_grow(1.0F);
@@ -225,7 +225,7 @@ private:
 
         tab_control_->set_tabs({"Overview", "Layout", "Route", "API"});
         tab_control_->set_selected_index(1);
-        tab_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 156.0F});
+        tab_control_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 124.0F});
 
         expander_->set_header("布局与架构约束");
         expander_->set_content_text(
@@ -234,7 +234,7 @@ private:
             "3. 标题栏进入自定义非客户区路径。"
         );
         expander_->set_expanded(true);
-        expander_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 132.0F});
+        expander_->set_desired_size(dcompframe::Size {.width = 0.0F, .height = 108.0F});
 
         progress_->set_range(0.0F, 100.0F);
         progress_->set_value(65.0F);
@@ -253,7 +253,7 @@ private:
         );
         popup_->set_modal(true);
         popup_->set_open(true);
-        popup_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 64.0F});
+        popup_->set_desired_size(dcompframe::Size {.width = 220.0F, .height = 44.0F});
 
         list_view_->set_groups({
             dcompframe::ListGroup {.name = "Flex Core", .items = {"direction", "wrap", "basis", "grow", "padding"}},

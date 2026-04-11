@@ -2,6 +2,15 @@
 
 ## 已完成
 
+- 2026-04-11（窗口边框一致性 + Flex 交叉轴拉伸修复 + Chrome 风格标题栏按钮）
+  - `WindowRenderTarget` 调整 DWM frame 扩展边距为四边一致，消除窗口左侧单边黑线，恢复非最大化窗口四边边框统一观感。
+  - caption 三按钮改为纯客户端自绘交互：采用更接近 Chrome 的最小化 / 最大化 / 关闭图标与 hover/press 配色，并在 `WM_LBUTTONDOWN/UP` 上完成状态切换与关闭动作，不再依赖系统 `HTMINBUTTON/HTMAXBUTTON/HTCLOSE` 返回值。
+  - `WindowRenderTarget` 为 caption 按钮补齐按下态跟踪，避免“悬停可见、点击无响应”的消息链断裂。
+  - `FlexPanel::arrange()` 修正单行容器交叉轴拉伸条件，仅在 `align_content == Stretch` 时扩展整行，避免表单与预览控件在单行场景被异常拉高、挤压和变形。
+  - `demo/main.cpp` 收紧右侧预览区和集合区的间距与固定高度，减少 Tab / Expander / Popup 在中等窗口尺寸下互相挤压。
+  - 集成测试同步为新契约：标题栏按钮区域现在返回 `HTCLIENT`，并显式验证最小化、最大化点击后窗口状态可切换。
+  - 验证：`cmake --build --preset vs2022-x64-debug --target dcompframe_demo`、`cmake --build --preset vs2022-x64-debug --target dcompframe_tests`、`ctest --preset vs2022-x64-debug-tests` 通过，结果 `59/59`。
+
 - 2026-04-11（DWM 兼容窗口语义 + Demo 标签占位修复 + Element Plus 第二轮收口）
   - `WindowHost` 默认扩展样式切回 `WS_EX_APPWINDOW`，把 `WS_EX_NOREDIRECTIONBITMAP` 收敛为显式可选项，优先保留 DWM 阴影、系统 resize 边框和更稳定的自定义标题栏行为。
   - `WindowRenderTarget` 的 caption hit-test 调整为更接近 Chromium/Chrome 的 Windows 语义：caption 按钮返回 `HTMINBUTTON/HTMAXBUTTON/HTCLOSE`，标题区返回 `HTCAPTION`，边框 resize 厚度改为读取系统 frame metrics。

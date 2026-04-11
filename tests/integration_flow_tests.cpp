@@ -234,7 +234,7 @@ TEST(IntegrationTests, WindowRenderTargetReturnsSystemCaptionAndResizeHitTests) 
         0,
         client_to_screen_lparam(host.hwnd(), static_cast<LONG>(size.width - 69.0F), 24),
         result));
-    EXPECT_EQ(result, HTMAXBUTTON);
+    EXPECT_EQ(result, HTCLIENT);
 
     result = 0;
     EXPECT_TRUE(target.handle_window_message(
@@ -251,6 +251,20 @@ TEST(IntegrationTests, WindowRenderTargetReturnsSystemCaptionAndResizeHitTests) 
         client_to_screen_lparam(host.hwnd(), static_cast<LONG>(size.width - 2.0F), static_cast<LONG>(size.height * 0.5F)),
         result));
     EXPECT_EQ(result, HTRIGHT);
+
+    const LPARAM minimize_lparam = MAKELPARAM(static_cast<LONG>(size.width - 115.0F), 24);
+    EXPECT_TRUE(target.handle_window_message(WM_LBUTTONDOWN, MK_LBUTTON, minimize_lparam, result));
+    EXPECT_TRUE(target.handle_window_message(WM_LBUTTONUP, 0, minimize_lparam, result));
+    EXPECT_EQ(host.window_state(), WindowState::Minimized);
+
+    host.set_window_state(WindowState::Normal);
+
+    const LPARAM maximize_lparam = MAKELPARAM(static_cast<LONG>(size.width - 69.0F), 24);
+    EXPECT_TRUE(target.handle_window_message(WM_LBUTTONDOWN, MK_LBUTTON, maximize_lparam, result));
+    EXPECT_TRUE(target.handle_window_message(WM_LBUTTONUP, 0, maximize_lparam, result));
+    EXPECT_EQ(host.window_state(), WindowState::Maximized);
+
+    host.set_window_state(WindowState::Normal);
 
     host.destroy();
 }

@@ -668,6 +668,72 @@ HitResult hit_test(const OverlayLayout& layout, float x, float y) {
     return {};
 }
 
+CaptionButtonState caption_button_state_from_hit(HitTarget target) {
+    switch (target) {
+    case HitTarget::CaptionMinimize:
+        return CaptionButtonState::Minimize;
+    case HitTarget::CaptionMaximize:
+        return CaptionButtonState::Maximize;
+    case HitTarget::CaptionClose:
+        return CaptionButtonState::Close;
+    default:
+        return CaptionButtonState::None;
+    }
+}
+
+void draw_caption_button_symbol(
+    ID2D1DeviceContext* context,
+    ID2D1SolidColorBrush* brush,
+    const D2D1_RECT_F& rect,
+    CaptionButtonState state,
+    D2D1_COLOR_F color,
+    bool maximized) {
+    if (context == nullptr || brush == nullptr || !rect_has_area(rect) || state == CaptionButtonState::None) {
+        return;
+    }
+
+    brush->SetColor(color);
+    const float center_x = (rect.left + rect.right) * 0.5F;
+    const float center_y = (rect.top + rect.bottom) * 0.5F;
+    switch (state) {
+    case CaptionButtonState::Minimize:
+        context->DrawLine(
+            D2D1::Point2F(center_x - 8.0F, center_y + 6.0F),
+            D2D1::Point2F(center_x + 8.0F, center_y + 6.0F),
+            brush,
+            1.4F);
+        break;
+    case CaptionButtonState::Maximize:
+        if (maximized) {
+            const D2D1_RECT_F back = D2D1::RectF(center_x - 7.0F, center_y - 5.0F, center_x + 5.0F, center_y + 7.0F);
+            const D2D1_RECT_F front = D2D1::RectF(center_x - 4.0F, center_y - 8.0F, center_x + 8.0F, center_y + 4.0F);
+            context->DrawRectangle(back, brush, 1.2F);
+            context->FillRectangle(D2D1::RectF(back.left + 2.0F, back.top, back.right, back.top + 2.0F), brush);
+            context->DrawRectangle(front, brush, 1.2F);
+            context->FillRectangle(D2D1::RectF(front.left + 2.0F, front.top, front.right, front.top + 2.0F), brush);
+        } else {
+            const D2D1_RECT_F square = D2D1::RectF(center_x - 7.0F, center_y - 6.0F, center_x + 7.0F, center_y + 8.0F);
+            context->DrawRectangle(square, brush, 1.2F);
+            context->FillRectangle(D2D1::RectF(square.left + 2.0F, square.top, square.right, square.top + 2.0F), brush);
+        }
+        break;
+    case CaptionButtonState::Close:
+        context->DrawLine(
+            D2D1::Point2F(center_x - 7.0F, center_y - 7.0F),
+            D2D1::Point2F(center_x + 7.0F, center_y + 7.0F),
+            brush,
+            1.4F);
+        context->DrawLine(
+            D2D1::Point2F(center_x + 7.0F, center_y - 7.0F),
+            D2D1::Point2F(center_x - 7.0F, center_y + 7.0F),
+            brush,
+            1.4F);
+        break;
+    case CaptionButtonState::None:
+        break;
+    }
+}
+
 bool create_text_layout(
     IDWriteFactory* factory,
     IDWriteTextFormat* format,
@@ -981,22 +1047,28 @@ void draw_caption_button(
         return;
     }
 
-    const auto& palette = element_palette();
+    (void)format;
+    (void)glyph;
 
+    const auto& palette = element_palette();
     const D2D1_COLOR_F fill = destructive
-        ? (pressed ? palette.danger_text : (hovered ? D2D1::ColorF(0.96F, 0.30F, 0.30F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)))
-        : (pressed ? palette.surface_active : (hovered ? palette.surface_hover : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)));
+        ? (pressed ? D2D1::ColorF(0.78F, 0.12F, 0.12F, 1.0F) : (hovered ? D2D1::ColorF(0.91F, 0.28F, 0.28F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)))
+        : (pressed ? D2D1::ColorF(0.88F, 0.91F, 0.96F, 1.0F) : (hovered ? D2D1::ColorF(0.93F, 0.95F, 0.98F, 1.0F) : D2D1::ColorF(0.0F, 0.0F, 0.0F, 0.0F)));
     if (fill.a > 0.0F) {
-        fill_rounded_rect(context, brush, inset_rect(rect, 4.0F, 6.0F), fill, 8.0F);
+        brush->SetColor(fill);
+        context->FillRectangle(rect, brush);
     }
-    draw_text_line(
+
+    const CaptionButtonState state = destructive
+        ? CaptionButtonState::Close
+        : (glyph != nullptr && glyph[0] == L'-' ? CaptionButtonState::Minimize : CaptionButtonState::Maximize);
+    draw_caption_button_symbol(
         context,
         brush,
-        format,
-        glyph,
         rect,
+        state,
         destructive && hovered ? palette.text_inverse : palette.text_secondary,
-        DWRITE_TEXT_ALIGNMENT_CENTER);
+        glyph != nullptr && glyph[0] == L'[');
 }
 
 void draw_toggle_switch_control(
@@ -1123,7 +1195,7 @@ void apply_dwm_frame(HWND hwnd) {
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
     const int corner_preference = kDwmWindowCornerPreferenceRound;
     DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corner_preference, sizeof(corner_preference));
-    const MARGINS margins {0, 0, 1, 0};
+    const MARGINS margins {1, 1, 1, 1};
     DwmExtendFrameIntoClientArea(hwnd, &margins);
 }
 
@@ -1453,6 +1525,9 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
         const bool caption_minimize_hovered = hovered.target == HitTarget::CaptionMinimize;
         const bool caption_maximize_hovered = hovered.target == HitTarget::CaptionMaximize;
         const bool caption_close_hovered = hovered.target == HitTarget::CaptionClose;
+        const bool caption_minimize_pressed = caption_button_pressed_ && pressed_caption_button_ == CaptionButtonState::Minimize;
+        const bool caption_maximize_pressed = caption_button_pressed_ && pressed_caption_button_ == CaptionButtonState::Maximize;
+        const bool caption_close_pressed = caption_button_pressed_ && pressed_caption_button_ == CaptionButtonState::Close;
         button_hovered_ = hovered.target == HitTarget::PrimaryButton;
         text_box_hovered_ = hovered.target == HitTarget::TextBox;
         rich_text_box_hovered_ = hovered.target == HitTarget::RichTextBox;
@@ -1493,7 +1568,7 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
 
                 fill_rounded_rect(d2d_context_, d2d_brush_, layout.caption_icon, palette.primary, 10.0F);
                 draw_text_line(d2d_context_, d2d_brush_, item_text_format_, L"F", layout.caption_icon, palette.text_inverse, DWRITE_TEXT_ALIGNMENT_CENTER);
-                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_minimize, L"-", caption_minimize_hovered, false);
+                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_minimize, L"-", caption_minimize_hovered, caption_minimize_pressed);
                 draw_caption_button(
                     d2d_context_,
                     d2d_brush_,
@@ -1501,8 +1576,16 @@ bool WindowRenderTarget::render_frame(bool has_dirty_changes) {
                     layout.caption_maximize,
                     window_host_->window_state() == WindowState::Maximized ? L"[]" : L"O",
                     caption_maximize_hovered,
-                    false);
-                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_close, L"X", caption_close_hovered, false, true);
+                    caption_maximize_pressed);
+                draw_caption_button(d2d_context_, d2d_brush_, item_text_format_, layout.caption_close, L"X", caption_close_hovered, caption_close_pressed, true);
+
+                stroke_rounded_rect(
+                    d2d_context_,
+                    d2d_brush_,
+                    D2D1::RectF(0.5F, 0.5F, width - 0.5F, height - 0.5F),
+                    D2D1::ColorF(0.84F, 0.87F, 0.92F, window_host_->window_state() == WindowState::Maximized ? 0.0F : 1.0F),
+                    1.0F,
+                    window_host_->window_state() == WindowState::Maximized ? 0.0F : 12.0F);
             } else {
                 d2d_brush_->SetColor(D2D1::ColorF(1.0F, 1.0F, 1.0F, 1.0F));
                 const D2D1_ROUNDED_RECT card = D2D1::RoundedRect(card_rect, 4.0F, 4.0F);
@@ -2434,16 +2517,10 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         const float x = static_cast<float>(client_point.x);
         const float y = static_cast<float>(client_point.y);
 
-        if (point_in_rect(layout.caption_close, x, y)) {
-            result = HTCLOSE;
-            return true;
-        }
-        if (point_in_rect(layout.caption_maximize, x, y)) {
-            result = HTMAXBUTTON;
-            return true;
-        }
-        if (point_in_rect(layout.caption_minimize, x, y)) {
-            result = HTMINBUTTON;
+        if (point_in_rect(layout.caption_close, x, y)
+            || point_in_rect(layout.caption_maximize, x, y)
+            || point_in_rect(layout.caption_minimize, x, y)) {
+            result = HTCLIENT;
             return true;
         }
         if (point_in_rect(layout.caption_icon, x, y)) {
@@ -2521,6 +2598,8 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         rich_text_box_selecting_ = false;
         slider_dragging_ = false;
         drag_scroll_target_ = DragScrollTarget::None;
+        caption_button_pressed_ = false;
+        pressed_caption_button_ = CaptionButtonState::None;
         button_pressed_ = false;
         combo_box_pressed_ = false;
         result = 0;
@@ -2586,25 +2665,18 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         }
         switch (hit.target) {
         case HitTarget::CaptionMinimize:
-            if (GetCapture() == window_host_->hwnd()) {
-                ReleaseCapture();
-            }
-            window_host_->set_window_state(WindowState::Minimized);
+            caption_button_pressed_ = true;
+            pressed_caption_button_ = CaptionButtonState::Minimize;
             result = 0;
             return true;
         case HitTarget::CaptionMaximize:
-            if (GetCapture() == window_host_->hwnd()) {
-                ReleaseCapture();
-            }
-            window_host_->set_window_state(
-                window_host_->window_state() == WindowState::Maximized ? WindowState::Normal : WindowState::Maximized);
+            caption_button_pressed_ = true;
+            pressed_caption_button_ = CaptionButtonState::Maximize;
             result = 0;
             return true;
         case HitTarget::CaptionClose:
-            if (GetCapture() == window_host_->hwnd()) {
-                ReleaseCapture();
-            }
-            PostMessageW(window_host_->hwnd(), WM_CLOSE, 0, 0);
+            caption_button_pressed_ = true;
+            pressed_caption_button_ = CaptionButtonState::Close;
             result = 0;
             return true;
         case HitTarget::PrimaryButton:
@@ -2839,9 +2911,33 @@ bool WindowRenderTarget::handle_window_message(UINT msg, WPARAM wparam, LPARAM l
         const HitResult hit = hit_test(layout, x, y);
         const bool handled_by_tree = root_element_ != nullptr
             && input_manager_.route_pointer_up(root_element_, Point {.x = x, .y = y});
+        if (!handled_by_tree && caption_button_pressed_) {
+            switch (pressed_caption_button_) {
+            case CaptionButtonState::Minimize:
+                if (hit.target == HitTarget::CaptionMinimize) {
+                    window_host_->set_window_state(WindowState::Minimized);
+                }
+                break;
+            case CaptionButtonState::Maximize:
+                if (hit.target == HitTarget::CaptionMaximize) {
+                    window_host_->set_window_state(
+                        window_host_->window_state() == WindowState::Maximized ? WindowState::Normal : WindowState::Maximized);
+                }
+                break;
+            case CaptionButtonState::Close:
+                if (hit.target == HitTarget::CaptionClose) {
+                    PostMessageW(window_host_->hwnd(), WM_CLOSE, 0, 0);
+                }
+                break;
+            case CaptionButtonState::None:
+                break;
+            }
+        }
         if (!handled_by_tree && button_pressed_ && hit.target == HitTarget::PrimaryButton) {
             perform_primary_action();
         }
+        caption_button_pressed_ = false;
+        pressed_caption_button_ = CaptionButtonState::None;
         button_pressed_ = false;
         combo_box_pressed_ = false;
         text_box_selecting_ = false;

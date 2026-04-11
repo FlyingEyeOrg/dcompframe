@@ -486,7 +486,7 @@ void FlexPanel::arrange(const Size& available_size) {
     const float available_cross = cross_extent(direction_, inner_available);
     const float line_gap = cross_gap(direction_, row_gap_, column_gap_);
 
-    if (lines.size() == 1U && std::isfinite(available_cross)) {
+    if (lines.size() == 1U && std::isfinite(available_cross) && align_content_ == FlexAlignContent::Stretch) {
         lines.front().cross_size = std::max(lines.front().cross_size, available_cross);
     }
 

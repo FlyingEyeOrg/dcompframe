@@ -29,6 +29,13 @@ enum class DragScrollTarget {
     LogBox,
 };
 
+enum class CaptionButtonState {
+    None,
+    Minimize,
+    Maximize,
+    Close,
+};
+
 class WindowRenderTarget {
 public:
     struct OverlayScene {
@@ -124,6 +131,7 @@ private:
     std::function<void()> primary_action_handler_ {};
     bool interactive_mode_enabled_ = false;
     bool mouse_left_down_ = false;
+    bool caption_button_pressed_ = false;
     bool button_hovered_ = false;
     bool button_pressed_ = false;
     bool text_box_selecting_ = false;
@@ -148,6 +156,7 @@ private:
     float combo_box_scroll_offset_ = 0.0F;
     float page_scroll_offset_ = 0.0F;
     std::size_t focused_control_index_ = 0;
+    CaptionButtonState pressed_caption_button_ = CaptionButtonState::None;
     std::optional<std::size_t> pressed_combo_index_ {};
     unsigned long long caret_blink_seed_ = 0;
     DragScrollTarget drag_scroll_target_ = DragScrollTarget::None;

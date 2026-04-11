@@ -94,6 +94,16 @@
 - 运行时复验：鼠标移动可触发列表逐项 hover 高亮，按钮按下/释放后状态可切换并保持可见反馈。
 - 本次回归重点：验证 Flex-only 几何、真实控件 bounds 驱动命中、自定义标题栏系统 hit-test 语义，以及默认 DWM 兼容窗口配置未破坏既有交互。
 
+## 本轮补充十三（2026-04-11）
+
+- 回归目标：
+	- 锁定标题栏按钮从“系统非客户区按钮”切换到“客户端自绘按钮”后的命中与点击行为。
+	- 验证最小化、最大化按钮在 `WM_LBUTTONDOWN/UP` 链路上可真正切换窗口状态。
+	- 验证 `FlexPanel` 单行交叉轴修复未破坏右边框 resize hit-test。
+- 更新用例：
+	- `IntegrationTests.WindowRenderTargetReturnsSystemCaptionAndResizeHitTests`
+- 最新结果：`ctest --preset vs2022-x64-debug-tests`，`59/59` 通过。
+
 ## 本轮补充十二（2026-04-11）
 
 - 新增用例：

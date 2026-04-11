@@ -55,6 +55,7 @@
 - 支持 `row_gap` / `column_gap`。
 - 子元素支持 `flex_grow`、`flex_shrink`、`flex_basis`、`order`、`align_self`。
 - `measure()` 负责 line 拆分和内容需求计算；`arrange()` 负责剩余空间解析和最终 bounds 分配。
+- 单行容器只会在 `align_content == Stretch` 时扩展交叉轴，避免非 stretch 语义下的控件整体变形。
 
 ## 旧布局模块（已移除）
 
@@ -120,7 +121,9 @@
 	- DirectX 后端下创建 `DXGI SwapChain for Composition` 并绑定 `IDCompositionVisual`。
 	- 使用 `D2D/DirectWrite` 在 swapchain 上绘制可见卡片与控件内容。
 	- 当前 caption 区由 render target 直接绘制，并通过 `WM_NCCALCSIZE/WM_NCHITTEST` 与 `WindowHost` 协同保留 DWM frame 特性。
-	- caption 按钮在 hit-test 时返回系统非客户区代码，最大化按钮区域可继续交由系统提供 Snap/窗口管理行为。
+	- caption 按钮采用客户端自绘命中与点击状态机：`WM_NCHITTEST` 在按钮区域返回 `HTCLIENT`，`WM_LBUTTONDOWN/UP` 决定最小化、最大化/还原与关闭动作。
+	- caption 图标与配色改为更接近 Chrome 的 Windows 按钮风格，hover/press 态与关闭按钮危险色单独区分。
+	- DWM frame 扩展边距收敛为四边一致，避免单边黑线；非最大化时额外绘制统一轮廓边框。
 	- 控件渲染与命中以真实控件 bounds 为主，不再依赖 preview card 内部派生几何作为主布局来源。
 	- Demo 中带标签控件的标签空间通过控件 margin 显式预留，避免标签文本跨出控件边界后侵占相邻视觉区。
 	- `GridPanel` / `StackPanel` / `Panel` 保持 WPF 风格容器语义；按钮、输入框、下拉框、复选框、滑块、滚动容器统一收敛到 Element Plus 风格的圆角、边框、悬停和聚焦反馈。
